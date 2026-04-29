@@ -1,0 +1,57 @@
+{
+  // ── Copilot behaviour ──────────────────────────────────────────────────────
+
+  // Enable MCP servers for Copilot Chat
+  "chat.mcp.enabled": true,
+
+  // ── Editor behaviour ───────────────────────────────────────────────────────
+
+  // Use 2-space indentation for TypeScript/JavaScript
+  "[typescript]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascript]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  // Use 4-space indentation for Python (PEP 8)
+  "[python]": {
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true
+  },
+
+  // Format on save for all files
+  "editor.formatOnSave": true,
+
+  // ── Python environment ─────────────────────────────────────────────────────
+
+  // Point the Python extension to the backend venv
+  "python.defaultInterpreterPath": "${workspaceFolder}/backend/.venv/bin/python",
+
+  // ── File associations ──────────────────────────────────────────────────────
+
+  "files.associations": {
+    "*.html.j2": "jinja-html"    // Jinja2 templates used by WeasyPrint renderer
+  },
+
+  // ── Recommended extensions reminder ───────────────────────────────────────
+  // Install these from the Extensions panel:
+  //   esbenp.prettier-vscode       — TypeScript/JS formatter
+  //   ms-python.python             — Python language support
+  //   ms-python.black-formatter    — Python formatter (Black)
+  //   ms-python.pylance            — Python type checking
+  //   GitHub.copilot               — Copilot completions
+  //   GitHub.copilot-chat          — Copilot Chat
+  //   samuelcolvin.jinjahtml        — Jinja2 template syntax highlighting
+
+  "extensions.ignoreRecommendations": false
+}
