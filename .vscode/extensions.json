@@ -1,0 +1,42 @@
+{
+  "recommendations": [
+    // ── Required for this project ──────────────────────────────────────────
+
+    // Copilot — completions and chat
+    "GitHub.copilot",
+    "GitHub.copilot-chat",
+
+    // Python language support — required for ADK backend
+    "ms-python.python",
+    "ms-python.pylance",           // type checking, import resolution
+    "ms-python.black-formatter",   // code formatting (PEP 8)
+    "ms-python.isort",             // import sorting
+
+    // TypeScript / Next.js frontend
+    "esbenp.prettier-vscode",      // TypeScript/JS formatter
+    "dbaeumer.vscode-eslint",      // ESLint integration
+
+    // ── Strongly recommended ───────────────────────────────────────────────
+
+    // Jinja2 template syntax highlighting (used by WeasyPrint renderer)
+    "samuelcolvin.jinjahtml",
+
+    // YAML support (adk_config.yaml)
+    "redhat.vscode-yaml",
+
+    // REST client — test the ADK backend endpoint directly from VS Code
+    // Create a file like test_requests.http and send requests without leaving the editor
+    "humao.rest-client",
+
+    // ── Useful but optional ────────────────────────────────────────────────
+
+    // Visualise the ADK graph structure as a diagram (dot/graphviz files)
+    "joaompinto.vscode-graphviz",
+
+    // JSON schema validation — validates your eval .json files
+    "moorhen-tools.json-validator",
+
+    // Git history and blame inline
+    "eamodio.gitlens"
+  ]
+}
