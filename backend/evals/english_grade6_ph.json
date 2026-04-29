@@ -1,0 +1,100 @@
+{
+  "_comment": "ADK eval test case — English Grade 6 PH. Run with: adk eval evals/english_grade6_ph.json",
+
+  "input": {
+    "lesson_metadata": {
+      "subject": "English",
+      "grade_level": 6,
+      "market": "PH",
+      "language": "en",
+      "unit_number": 2,
+      "unit_title": "Reading with Purpose",
+      "lesson_number": 1,
+      "lesson_title": "Identifying Author's Purpose",
+      "lesson_code": "E6_Q1_0201"
+    },
+    "curriculum": {
+      "competency_code": "EN6RC-Ia-2.2",
+      "competency_description": "Identify the author's purpose for writing a text.",
+      "sub_competencies": [
+        { "id": "sc1", "label": "Identify purpose to entertain" },
+        { "id": "sc2", "label": "Identify purpose to inform" },
+        { "id": "sc3", "label": "Identify purpose to persuade" }
+      ]
+    },
+    "instructional_design": {
+      "core_concept": "Authors write with a specific purpose — to entertain, inform, or persuade — and recognising this purpose helps readers understand and evaluate texts more critically.",
+      "bloom_targets": [
+        "Remember the three main author purposes (entertain, inform, persuade)",
+        "Understand how language and tone signal an author's purpose",
+        "Apply purpose identification to an unseen passage"
+      ],
+      "essential_question_seed": "Why does it matter why an author wrote something?"
+    }
+  },
+
+  "assertions": [
+    {
+      "type": "section_count",
+      "description": "All 17 sections must be present in the output",
+      "expected": 17
+    },
+    {
+      "type": "section_keys_present",
+      "description": "All required section keys must exist in session state",
+      "expected": [
+        "blueprint",
+        "intro",
+        "learning_targets",
+        "warmup",
+        "vocabulary",
+        "core_explainer",
+        "strategy_list",
+        "deep_dive",
+        "model_passage",
+        "check_in",
+        "key_points",
+        "assessment_passage",
+        "assessment_questions",
+        "step_up",
+        "self_assessment",
+        "answer_key"
+      ]
+    },
+    {
+      "type": "hard_validator",
+      "name": "vocab_presence",
+      "description": "All vocabulary words from blueprint must appear in body sections"
+    },
+    {
+      "type": "hard_validator",
+      "name": "self_assess_targets",
+      "description": "Self-assessment skills must match learning targets verbatim"
+    },
+    {
+      "type": "hard_validator",
+      "name": "answer_key_quotes",
+      "description": "Answer key possible answers must quote verbatim from assessment passage"
+    },
+    {
+      "type": "hard_validator",
+      "name": "passage_domain_diff",
+      "description": "Assessment passage topic domain must differ from model passage topic domain"
+    },
+    {
+      "type": "output_present",
+      "field": "pdf_base64",
+      "description": "PDF output must be present and non-empty"
+    },
+    {
+      "type": "output_present",
+      "field": "preview.sections",
+      "description": "Web preview sections must be present"
+    },
+    {
+      "type": "json_schema",
+      "description": "GenerateResponse must match the documented schema",
+      "schema_ref": "types.GenerateResponse"
+    }
+  ]
+}

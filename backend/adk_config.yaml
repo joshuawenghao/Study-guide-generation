@@ -1,0 +1,61 @@
+# ADK Agent Configuration
+# backend/adk_config.yaml
+#
+# This file configures the ADK local runner and eval framework.
+# Reference: https://google.github.io/adk-docs/
+
+# ── Agent entry point ──────────────────────────────────────────────────────────
+agent:
+  module: agent          # maps to backend/agent.py
+  name: study_guide_orchestrator
+
+# ── Local runner settings ──────────────────────────────────────────────────────
+runner:
+  host: localhost
+  port: 8000
+  # Enable the ADK dev UI (inspect graph, session state, Gemini call logs)
+  # Access at http://localhost:8000/dev-ui after running: adk web
+  enable_dev_ui: true
+
+# ── Model settings ─────────────────────────────────────────────────────────────
+model:
+  default: gemini-2.0-flash
+  # Temperature overrides per node type — these are read by backend/nodes/base.py
+  temperature_presets:
+    blueprint: 0.3
+    section: 0.7
+    answer_key: 0.3
+    retry: 0.3       # retries always use lower temperature for more conservative output
+
+# ── Session state settings ─────────────────────────────────────────────────────
+session:
+  # Store session state to disk during local development so you can inspect it
+  # after a run. In production (Cloud Run) this should be set to "memory".
+  storage: disk
+  storage_path: .adk_sessions    # gitignored — see .gitignore
+
+# ── Logging ────────────────────────────────────────────────────────────────────
+logging:
+  level: DEBUG          # use INFO in production
+  # Log each Gemini call's full prompt and response during local development.
+  # Disable in production to avoid logging sensitive content.
+  log_llm_calls: true
+  log_session_state: true
+
+# ── MCP tool servers (none required for prototype) ────────────────────────────
+# Uncomment and configure when adding external tool access to agent nodes.
+# These are tools available TO the agent at runtime — separate from the
+# MCP servers in .vscode/mcp.json which are for Copilot Chat during coding.
+#
+# mcp_servers:
+#   filesystem:
+#     command: npx
+#     args:
+#       - "-y"
+#       - "@modelcontextprotocol/server-filesystem"
+#       - "./data/curriculum_standards"   # read-only access to standards docs
+#   fetch:
+#     command: npx
+#     args:
+#       - "-y"
+#       - "@modelcontextprotocol/server-fetch"
