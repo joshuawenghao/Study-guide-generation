@@ -25,24 +25,27 @@
 
 The system is a web application with two logical layers: a **Next.js frontend** that collects teacher inputs and displays results, and an **ADK agent graph** that drives all generation, validation, and retry logic on the backend.
 
-The frontend and backend communicate over a single HTTP endpoint. The frontend sends a structured lesson request and streams progress events back; the backend runs the full graph and returns a completed PDF and a structured web preview payload.
+The frontend and backend communicate over a single HTTP endpoint. The frontend sends a structured lesson request and streams progress events back; the backend runs the full dynamic workflow and returns a completed PDF and a structured web preview payload.
 
-```
-┌─────────────────────────────┐        ┌──────────────────────────────────────┐
-│        Next.js frontend      │        │           ADK backend                │
-│                             │        │                                      │
-│  ┌─────────────────────┐   │  POST  │  ┌────────────────────────────────┐  │
-│  │   Input form         │──────────▶│  │    ADK agent graph             │  │
-│  │  (lesson metadata,   │   /gen    │  │    (graph-based workflow)      │  │
-│  │   curriculum, etc.)  │          │  │                                │  │
-│  └─────────────────────┘   │        │  │  blueprint → sections →        │  │
-│                             │◀───────│  │  validate → retry? → render   │  │
-│  ┌─────────────────────┐   │  SSE   │  │                                │  │
-│  │  Progress tracker    │   │        │  └────────────────────────────────┘  │
-│  │  Web preview         │   │        │                                      │
-│  │  PDF download        │   │        │  Gemini 2.0 Flash (all LLM calls)    │
-│  └─────────────────────┘   │        └──────────────────────────────────────┘
-└─────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph Frontend ["Next.js Frontend (localhost:3000 / Vercel)"]
+        Form["Input Form\n(lesson metadata,\ncurriculum, etc.)"]
+        Tracker["Progress Tracker"]
+        Preview["Web Preview"]
+        Download["PDF Download"]
+    end
+
+    subgraph Backend ["ADK Backend (localhost:8000 / Cloud Run)"]
+        Workflow["Dynamic Workflow\n(blueprint → sections →\nvalidate → retry? → render)"]
+        Gemini["Gemini 2.0 Flash\n(all LLM calls)"]
+        Workflow --> Gemini
+    end
+
+    Form -- "POST /generate\n(GenerateRequest JSON)" --> Workflow
+    Workflow -- "SSE stream\n(ProgressEvents)" --> Tracker
+    Workflow -- "GenerateResponse\n(pdf_base64 + preview JSON)" --> Preview
+    Preview --> Download
 ```
 
 ---
@@ -53,22 +56,24 @@ The frontend and backend communicate over a single HTTP endpoint. The frontend s
 |---|---|---|
 | Frontend framework | Next.js 14 (App Router) | Single repo for UI and API proxy; SSE streaming support built in |
 | Styling | Tailwind CSS | Utility-first, no design system overhead for a prototype |
-| Agent framework | Google ADK 2.0 (Python) | Graph-based workflow with durable state; native Gemini integration; conditional edge routing for validation retry |
+| Agent framework | Google ADK 2.0 Python (dynamic workflows) | `@node` + `ctx.run_node()` with automatic checkpointing; conditional retry via `while` loop; native Gemini integration |
 | LLM | Gemini 2.0 Flash | Best cost/latency ratio for 17 sequential/parallel calls; ADK has first-class Gemini support |
 | PDF rendering | WeasyPrint (Python) | HTML/CSS → PDF with full layout control; runs server-side in the ADK process |
 | Web preview | Structured JSON → React components | Preview is assembled from the same section JSON that feeds the PDF renderer |
-| Deployment (Phase 1) | Local — Next.js dev server + ADK local runner | Fastest iteration loop; no infrastructure required |
-| Deployment (Phase 2) | Vercel (frontend) + Google Cloud Run (ADK) | ADK deploys natively to Cloud Run; Vercel handles Next.js with zero config |
+| Deployment (Phase 1) | Local — Next.js dev server + `adk web` local runner | Fastest iteration loop; no infrastructure required |
+| Deployment (Phase 2) | Vercel (frontend) + Google Cloud Run (ADK) | ADK deploys natively to Cloud Run; `ADK_BACKEND_URL` env var switches the proxy target |
 
-### Why ADK over a plain Next.js orchestrator
+### Why ADK dynamic workflows over graph-based workflows or a plain orchestrator
 
-A plain async orchestrator (as considered earlier) is sufficient when the pipeline is fully static. ADK is chosen here for three specific reasons that map to IFC criteria:
+ADK 2.0 offers two workflow styles. **Graph-based workflows** define execution as a static `edges` array with `JoinNode` for fan-out and `Event(route=...)` for branching. **Dynamic workflows** use the `@node` decorator and `ctx.run_node()` called from plain Python code, with automatic checkpointing of each node execution.
 
-1. **Durable workflow state.** ADK persists graph state between node executions. If a section generation call times out or fails, the graph resumes from the last committed node rather than restarting from scratch. This directly satisfies the *automated retry on validation failure* must-have without hand-rolling state management.
+Dynamic workflows are chosen for this project for three specific reasons:
 
-2. **Conditional edge routing.** After the validation node runs, ADK graph edges can conditionally route only failed sections back to their respective generation nodes. This is a first-class graph feature — not a workaround built on `if` statements in application code.
+1. **Automatic checkpointing for retry.** When the workflow resumes after a validation failure, ADK's deterministic execution IDs mean nodes that already completed are automatically skipped. Retrying only the failed sections requires a `while` loop calling `ctx.run_node()` — not 16 explicit retry edges in a graph definition.
 
-3. **Future agent extensibility.** The IFC nice-to-have for deployment to managed infrastructure is satisfied by ADK's native Cloud Run deployment path. Adding a reading-level validator agent or a curriculum alignment agent later requires registering a new node, not restructuring the pipeline.
+2. **Readable parallel execution.** `asyncio.gather()` inside a `@node` function expresses wave-based parallel execution in standard Python. The graph-based equivalent requires a `JoinNode` per wave and careful `edges` array construction that becomes unwieldy at 16 sections.
+
+3. **Future agent extensibility.** Adding a reading-level validator or curriculum alignment step requires adding one `ctx.run_node()` call in the workflow function, not restructuring an `edges` array and registering new routes.
 
 ---
 
@@ -93,7 +98,7 @@ A plain async orchestrator (as considered earlier) is sufficient when the pipeli
 │   └── package.json
 │
 └── backend/                         # ADK agent (Python)
-    ├── agent.py                     # ADK graph definition — the single source of truth
+    ├── agent.py                     # ADK dynamic workflow definition — the single source of truth
     ├── nodes/
     │   ├── blueprint.py             # Node: generate blueprint JSON
     │   ├── sections/
@@ -135,147 +140,204 @@ The frontend and backend are separated into distinct directories because the ADK
 
 ---
 
-## 4. ADK agent graph
+## 4. ADK dynamic workflow
 
-This is the central design of the system. The graph encodes the full generation, validation, and retry workflow as a directed graph with conditional edges.
+The backend is implemented as an ADK 2.0 **dynamic workflow** using the `@node` decorator and `ctx.run_node()`. This is distinct from ADK's graph-based workflow (`Workflow` + `edges` array) — dynamic workflows express execution order as plain Python code with automatic checkpointing of every node execution.
 
-### Graph diagram
+### Why dynamic workflow over graph-based workflow
 
-```
-                    ┌─────────────┐
-                    │  START node  │
-                    │ (input form  │
-                    │  payload)    │
-                    └──────┬──────┘
-                           │
-                           ▼
-                    ┌─────────────┐
-                    │  blueprint  │
-                    │   node      │
-                    └──────┬──────┘
-                           │ blueprint JSON written to session state
-                           │
-          ┌────────────────┼─────────────────┐
-          │                │                 │
-          ▼                ▼                 ▼
-   ┌─────────┐      ┌─────────┐      ┌─────────────┐      (Wave 1 — no dependencies)
-   │  intro  │      │ targets │      │   warmup    │  ...
-   └────┬────┘      └────┬────┘      └──────┬──────┘
-        │                │                  │
-        └────────────────┼──────────────────┘
-                         │ all Wave 1 sections complete
-                         ▼
-              ┌──────────────────┐
-              │   model_passage  │             (Wave 2 — no cross-dependencies)
-              │  assess_passage  │
-              │  core_explainer  │  ...
-              └────────┬─────────┘
-                       │
-          ┌────────────┼────────────┐
-          ▼            ▼            ▼
-      ┌────────┐  ┌──────────┐  ┌──────────┐  (Wave 3 — depend on Wave 2)
-      │check_in│  │assess_Qs │  │ step_up  │
-      └────┬───┘  └─────┬────┘  └────┬─────┘
-           └────────────┼────────────┘
-                        │
-                        ▼
-               ┌─────────────────┐
-               │   answer_key    │             (Always last)
-               └────────┬────────┘
-                        │
-                        ▼
-               ┌─────────────────┐
-               │    VALIDATOR    │
-               │      node       │
-               └────────┬────────┘
-                        │
-            ┌───────────┴────────────┐
-            │ conditional edge       │
-            ▼                        ▼
-   [all sections pass]       [one or more sections fail]
-            │                        │
-            ▼                        │ routes only to failed section nodes
-   ┌─────────────────┐               │
-   │    RENDERER     │    ┌──────────┴────────────┐
-   │      node       │    │  targeted retry nodes  │
-   │ (PDF + preview) │    │  (one per failed sect) │
-   └────────┬────────┘    └──────────┬────────────┘
-            │                        │
-            ▼                        ▼
-      ┌──────────┐          ┌─────────────────┐
-      │  output  │          │  VALIDATOR node  │
-      │ (PDF +   │          │  (second pass)   │
-      │  preview │          └────────┬─────────┘
-      │  JSON)   │                   │
-      └──────────┘                   ▼
-                              [pass → RENDERER]
-                              [fail → surface warning,
-                               proceed with best output]
+ADK 2.0 offers both styles. Graph-based workflows suit simple linear or branching pipelines. Dynamic workflows are chosen here because:
+
+- Retry logic for failed sections is a `while` loop — not 16 explicit retry edges in an `edges` array
+- Wave parallelism is `asyncio.gather()` — not a `JoinNode` per wave
+- Checkpointing is automatic — nodes that completed are skipped on resume without any manual state bookkeeping
+
+### Workflow structure
+
+```mermaid
+flowchart TD
+    START(["START\n(GenerateRequest written\nto context)"])
+    BP["blueprint_node\n(generates shared Blueprint JSON)"]
+
+    subgraph Wave1 ["Wave 1 — asyncio.gather() — blueprint only"]
+        W1A["intro_node"]
+        W1B["learning_targets_node"]
+        W1C["warmup_node"]
+        W1D["vocabulary_node"]
+        W1E["key_points_node"]
+        W1F["self_assessment_node"]
+    end
+
+    subgraph Wave2 ["Wave 2 — asyncio.gather() — blueprint only"]
+        W2A["core_explainer_node"]
+        W2B["subconcept_node ×N\n(one per sub-competency)"]
+        W2C["strategy_list_node"]
+        W2D["deep_dive_node"]
+        W2E["model_passage_node"]
+        W2F["assessment_passage_node"]
+    end
+
+    subgraph Wave3 ["Wave 3 — depends on Wave 2 outputs"]
+        W3A["check_in_node\n(depends on: model_passage)"]
+        W3B["assessment_questions_node\n(depends on: assessment_passage)"]
+        W3C["step_up_node\n(depends on: assessment_questions)"]
+    end
+
+    AK["answer_key_node\n(always last — depends on\ncheck_in + assessment_questions)"]
+
+    VAL["validator_node\n(runs all hard + soft validators)"]
+
+    RETRY{"validation\npassed?"}
+
+    subgraph RetryLoop ["Retry loop — while failed_sections:"]
+        RL["ctx.run_node() for each\nfailed section only\n(RETRY_CONTEXT appended to prompt)"]
+        RVAL["validator_node\n(second pass)"]
+    end
+
+    RENDER["renderer_node\n(Jinja2 → WeasyPrint → PDF\n+ WebPreviewPayload JSON)"]
+    END(["END\n(GenerateResponse returned)"])
+
+    START --> BP
+    BP --> Wave1
+    Wave1 --> Wave2
+    Wave2 --> Wave3
+    Wave3 --> AK
+    AK --> VAL
+    VAL --> RETRY
+    RETRY -- "yes" --> RENDER
+    RETRY -- "no" --> RetryLoop
+    RetryLoop --> RENDER
+    RENDER --> END
 ```
 
-### Graph node execution model
+### agent.py skeleton
 
-The graph uses ADK's `ParallelNode` for sections within the same wave and `SequentialNode` dependencies for sections that require prior outputs. The validation node uses ADK's conditional edge API to route only failed sections to retry nodes rather than re-running the full graph.
+The entry point uses ADK's `Workflow` with a single dynamic workflow node as the orchestrator:
 
-Session state is the shared data store across all nodes. Each generation node reads from session state (the blueprint and any dependency outputs) and writes its result back to session state under its section key. The validator node reads all section keys, the renderer node reads all section keys and the blueprint.
+```python
+from google.adk import Workflow
+from google.adk import node, Context
+import asyncio
+
+@node(rerun_on_resume=True)
+async def study_guide_workflow(ctx: Context, request: GenerateRequest):
+    # Stage 1 — blueprint
+    blueprint = await ctx.run_node(blueprint_node, request)
+
+    # Stage 2 — Wave 1 (parallel, blueprint only)
+    wave1_results = await asyncio.gather(
+        ctx.run_node(intro_node, blueprint),
+        ctx.run_node(learning_targets_node, blueprint),
+        ctx.run_node(warmup_node, blueprint),
+        ctx.run_node(vocabulary_node, blueprint),
+        ctx.run_node(key_points_node, blueprint),
+        ctx.run_node(self_assessment_node, blueprint),
+    )
+
+    # Stage 2 — Wave 2 (parallel, blueprint only)
+    wave2_results = await asyncio.gather(
+        ctx.run_node(core_explainer_node, blueprint),
+        *[ctx.run_node(subconcept_node, (blueprint, i))
+          for i in range(len(blueprint.sub_competencies))],
+        ctx.run_node(strategy_list_node, blueprint),
+        ctx.run_node(deep_dive_node, blueprint),
+        ctx.run_node(model_passage_node, blueprint),
+        ctx.run_node(assessment_passage_node, blueprint),
+    )
+
+    # Stage 2 — Wave 3 (sequential dependencies within wave)
+    model_passage, assessment_passage = wave2_results[-2], wave2_results[-1]
+    check_in = await ctx.run_node(check_in_node, (blueprint, model_passage))
+    assessment_questions = await ctx.run_node(
+        assessment_questions_node, (blueprint, assessment_passage)
+    )
+    step_up = await ctx.run_node(
+        step_up_node, (blueprint, assessment_passage, assessment_questions)
+    )
+
+    # Stage 3 — answer key (always last)
+    answer_key = await ctx.run_node(
+        answer_key_node, (blueprint, check_in, assessment_questions)
+    )
+
+    # Stage 4 — validate; retry failed sections once
+    all_sections = {... all section outputs ...}
+    validation = await ctx.run_node(validator_node, all_sections)
+
+    retry_count = 0
+    while not validation.passed and retry_count < 1:
+        for section_key in validation.failed_sections:
+            # ctx.run_node with a new node instance forces re-execution
+            # even though the original node was checkpointed
+            all_sections[section_key] = await ctx.run_node(
+                retry_node_for(section_key, validation.failures[section_key]),
+                (blueprint, all_sections),
+            )
+        validation = await ctx.run_node(validator_node, all_sections)
+        retry_count += 1
+
+    # Stage 5 — render
+    return await ctx.run_node(renderer_node, (blueprint, all_sections, validation))
+
+
+root_agent = Workflow(
+    name="study_guide_generator",
+    edges=[("START", study_guide_workflow)],
+)
+```
 
 ### Execution waves
 
-| Wave | Nodes | Dependency |
+| Wave | Nodes | Runs via |
 |---|---|---|
-| 0 | `blueprint` | None — runs first, always |
-| 1 | `intro`, `learning_targets`, `warmup`, `vocabulary`, `key_points`, `self_assessment` | Blueprint only |
-| 2 | `core_explainer`, `subconcept` ×N, `strategy_list`, `deep_dive`, `model_passage`, `assessment_passage` | Blueprint only |
-| 3 | `check_in`, `assessment_questions`, `step_up` | Wave 2 outputs (`model_passage`, `assessment_passage`) |
-| 4 | `answer_key` | All question-bearing sections from Waves 1–3 |
-| 5 | `validator` | All section outputs |
-| 6 | `renderer` (conditional on validation pass) or targeted retry nodes | Validator output |
+| 0 | `blueprint_node` | `await ctx.run_node()` — sequential |
+| 1 | `intro`, `learning_targets`, `warmup`, `vocabulary`, `key_points`, `self_assessment` | `asyncio.gather()` — parallel |
+| 2 | `core_explainer`, `subconcept` ×N, `strategy_list`, `deep_dive`, `model_passage`, `assessment_passage` | `asyncio.gather()` — parallel |
+| 3 | `check_in`, `assessment_questions`, `step_up` | mixed — `check_in` and `assessment_questions` parallel; `step_up` sequential after both |
+| 4 | `answer_key` | `await ctx.run_node()` — sequential, always last |
+| 5 | `validator` | `await ctx.run_node()` — sequential |
+| 6 | retry loop (failed sections only) | `while` loop + `ctx.run_node()` — one retry per failed section |
+| 7 | `renderer` | `await ctx.run_node()` — sequential |
+
+
 
 ---
 
-## 5. Graph nodes reference
+## 5. Workflow nodes reference
 
-### blueprint node
+### blueprint_node
 
-Reads the raw lesson request from session state. Produces a `Blueprint` JSON object containing: essential question, learning targets, vocabulary list, topic domains, and sub-competency labels. Every subsequent node reads from the blueprint rather than the raw request — this is the single shared context object for the entire run.
+Decorated with `@node`. Reads the `GenerateRequest` from its input, builds the system prompt and blueprint prompt, calls Gemini, validates and returns a `Blueprint` object. All subsequent nodes receive the blueprint as part of their input — it is never stored in a separate session state object; instead `ctx.run_node()` passes it directly as a function argument.
 
 ### Section generation nodes (Waves 1–4)
 
-Each section node follows the same pattern:
+Each section node is a `@node`-decorated function following this pattern:
 
-1. Read blueprint and any dependency outputs from session state.
-2. Build a section-specific prompt using the corresponding template from `prompts/templates/`.
-3. Call Gemini 2.0 Flash via ADK's built-in model integration with `responseMimeType: application/json`.
-4. Parse and lightly validate the JSON schema of the response (structural check only — content validation happens in the validator node).
-5. Write the parsed output to session state under the section's key.
+1. Receive `blueprint` (and any dependency outputs) as input from `ctx.run_node()`
+2. Build a section-specific prompt using the corresponding template from `prompts/templates/`
+3. Call Gemini 2.0 Flash with `response_mime_type="application/json"`
+4. Parse and structurally validate the JSON response (schema check only — content validation happens in the validator node)
+5. Return the parsed dict
 
-The `subconcept` node is called once per sub-competency entry in the blueprint. ADK's `LoopNode` manages this iteration so the graph definition does not hard-code the number of sub-competencies.
+Because `ctx.run_node()` returns outputs directly, there is no session state dictionary to read from or write to. Dependency data is threaded through function arguments by the `study_guide_workflow` orchestrator node.
 
-The `answer_key` node explicitly reads the outputs of `check_in`, `assessment_questions`, and `step_up` in addition to the blueprint. It is the only node that assembles cross-section content, which is why it runs last and why answer leakage validation focuses on its output.
+The `subconcept_node` is called once per sub-competency using a list comprehension inside `asyncio.gather()`. The orchestrator node handles this loop — not a framework-level `LoopNode`.
 
-### validator node
+The `answer_key_node` explicitly receives `check_in`, `assessment_questions`, and `assessment_passage` outputs as inputs. It is the only node that assembles cross-section content.
 
-Runs after all generation nodes are complete. Executes all hard validators and soft validators in sequence against the full session state. Writes a `ValidationResult` object to session state with the following shape:
+### validator_node
 
-```python
-ValidationResult:
-  passed: bool                          # True only if all hard validators pass
-  failed_sections: list[str]            # Section keys that failed a hard validator
-  failures: dict[str, list[str]]        # section_key → list of failure messages
-  warnings: list[str]                   # Soft validator warnings (non-blocking)
-```
+Decorated with `@node`. Receives all section outputs as a dict. Runs all hard and soft validators. Returns a `ValidationResult`. Does not raise exceptions — all failures are captured in the return value.
 
-The conditional edge logic reads `passed` and `failed_sections`. If `passed` is True, the edge routes to the renderer node. If False, edges route to the specific retry nodes listed in `failed_sections` — no other nodes are re-executed.
+### retry_node_for(section_key, failure_messages)
 
-After a retry pass, the validator runs a second time. On a second failure, the validator sets a `best_effort` flag and routes to the renderer regardless, passing the warnings list for surface display to the user.
+Not a fixed node — the orchestrator creates a new node instance per failed section using a factory function. The retry node uses the same prompt template as the original generation pass but prepends a `RETRY_CONTEXT` block to the user prompt containing the specific failure message from the validator. This gives Gemini targeted correction guidance.
 
-### renderer node
+Because each retry node is a new instance with a distinct name, ADK's checkpointing system treats it as a fresh execution rather than skipping it as already-completed.
 
-Reads the full validated session state and assembles the final output in two formats:
+### renderer_node
 
-**PDF** — uses WeasyPrint to render a structured HTML template populated with section content into a PDF binary. The HTML template is the canonical layout definition: section order, heading levels, table structures (vocabulary, self-assessment), and page break rules (answer key always starts on a new page) are all defined here.
-
-**Web preview JSON** — a structured JSON object that mirrors the PDF layout, used to render the web preview in the React frontend without re-fetching the PDF. Shape documented in section 6.
+Decorated with `@node`. Receives blueprint, all section outputs, and validation result. Produces two outputs: a base64-encoded PDF binary (via Jinja2 + WeasyPrint) and a `WebPreviewPayload` JSON object for the React frontend. Returns both as a single dict.
 
 Both outputs are written to session state and returned to the frontend in the final response payload.
 
@@ -407,9 +469,11 @@ Soft validators produce warnings that are surfaced to the user in the web previe
 
 ### Retry logic
 
-When the validator node identifies failed sections, ADK's conditional edge routing fires a retry edge only to the generation nodes of failed sections. The retry nodes use the same prompt templates as the original generation pass but append a `RETRY_CONTEXT` block to the user prompt describing the specific constraint that was violated. This gives Gemini targeted correction guidance rather than regenerating blindly.
+When the validator node returns `passed=False`, the `study_guide_workflow` orchestrator node enters a `while` loop. For each section key in `validation.failed_sections`, it calls `ctx.run_node()` with a retry node instance created by the `retry_node_for()` factory. The retry node appends a `RETRY_CONTEXT` block to the prompt describing the specific constraint that was violated, giving Gemini targeted correction guidance rather than regenerating blindly.
 
-After the retry pass, the validator runs a second time. The system does not retry more than once per section per run — on a second failure the section is flagged as `best_effort` and the warning is surfaced to the user.
+After all failed sections are retried, the validator runs a second time. The `while` loop condition limits retries to one pass — on a second failure the section is included as `best_effort` in the final `ValidationResult` and the warning is surfaced to the user in the web preview.
+
+Because ADK dynamic workflows checkpoint each node execution by deterministic execution ID, a mid-run timeout or infrastructure failure resumes from the last successful node — not from the start of the workflow.
 
 ---
 
@@ -473,48 +537,77 @@ The Download PDF tab renders `DownloadButton.tsx`, which decodes the `pdf_base64
 
 ### Phase 1 — local development
 
-```
-Browser → Next.js dev server (localhost:3000) → ADK local runner (localhost:8000)
+```mermaid
+flowchart LR
+    Browser --> NextJS["Next.js dev server\nlocalhost:3000"]
+    NextJS --> ADK["ADK local runner\nlocalhost:8000\n(adk web agent.py)"]
+    ADK --> Gemini["Gemini 2.0 Flash\n(Google API)"]
 ```
 
-Next.js and the ADK backend run as separate local processes. The Next.js API proxy points to `localhost:8000`. No cloud infrastructure required.
+Next.js and the ADK backend run as separate local processes. The Next.js API proxy reads `ADK_BACKEND_URL=http://localhost:8000` from `frontend/.env.local` and forwards requests there. No cloud infrastructure required.
 
 ### Phase 2 — production
 
-```
-Browser → Vercel (Next.js) → Cloud Run (ADK backend)
+```mermaid
+flowchart LR
+    Browser --> Vercel["Vercel\n(Next.js)"]
+    Vercel --> CloudRun["Google Cloud Run\n(ADK backend)"]
+    CloudRun --> Gemini["Gemini 2.0 Flash\n(Google API)"]
 ```
 
-The ADK backend is containerised using ADK's built-in `adk deploy` tooling and deployed to Google Cloud Run. The Next.js frontend is deployed to Vercel. The API proxy route's target URL is set via an environment variable (`ADK_BACKEND_URL`). Cloud Run handles autoscaling and the long-running generation timeout (up to 3600 seconds per request).
+The ADK backend is containerised and deployed to Google Cloud Run. The Next.js frontend is deployed to Vercel. The only change between Phase 1 and Phase 2 is the value of `ADK_BACKEND_URL` in the environment:
 
-The frontend and backend are deployed and scaled independently. The only shared interface is the JSON API contract documented in section 6.
+| Environment | `ADK_BACKEND_URL` value |
+|---|---|
+| Local dev | `http://localhost:8000` |
+| Production | `https://your-service.run.app` (Cloud Run URL) |
+
+**No proxy architecture change is required** — the Next.js API route forwards requests to whatever URL `ADK_BACKEND_URL` points to. The frontend code is identical in both environments.
+
+**CORS:** The ADK backend must be configured to accept requests from the Vercel domain in production. In local dev, both processes are on localhost so CORS is not an issue. Configure allowed origins in the ADK server startup when deploying to Cloud Run.
+
+Cloud Run handles autoscaling and supports long-running requests (up to 3600 seconds), which is required for the 30–90 second generation window.
 
 ---
 
 ## 11. Key design decisions and alternatives considered
 
-### Decision: ADK graph-based workflow over plain async orchestrator
+### Decision: ADK dynamic workflow over ADK graph-based workflow
 
-The plain Next.js orchestrator considered earlier resolves section dependencies correctly but has no durable state — a mid-run timeout discards all completed section outputs and the entire guide must restart. ADK's graph-based workflow commits each node's output to durable session state, so a timeout or retry resumes from the last successful node. This maps directly to the IFC must-have for automated retry on validation failure.
+ADK 2.0 offers two workflow styles. Graph-based workflows (`Workflow` + `edges` array + `JoinNode`) are appropriate for simple linear or branching pipelines where all paths are known at design time. Dynamic workflows (`@node` + `ctx.run_node()` + plain Python) are chosen here for three reasons:
 
-**Alternative considered:** Hand-rolled retry logic in the Next.js orchestrator with Redis for state persistence. Rejected because it replicates ADK's graph management in application code, adding maintenance overhead without a technical advantage.
+**Retry logic is a `while` loop, not 16 explicit retry edges.** In a graph-based workflow, routing only failed sections to retry nodes requires an `Event(route=...)` per section and a corresponding entry in the `edges` array — one route per section type, or 16+ entries. In a dynamic workflow, the same logic is `while not validation.passed: for s in failed: await ctx.run_node(retry_node_for(s))`. The intent is immediately readable.
 
-### Decision: Single validation pass with conditional fan-out, not per-section inline validation
+**Wave parallelism is `asyncio.gather()`.** Graph-based fan-out requires a `JoinNode` per wave and careful `edges` construction. `asyncio.gather()` is standard Python and needs no framework primitives.
 
-After each section generates, a structural JSON schema check runs immediately (cheap, catches malformed responses early). The full content validation — vocab presence, verbatim quote checks, answer leakage — runs once after all sections are complete. This is the correct order because most hard validators are cross-section checks: vocab presence requires all body sections to be complete before it can pass, and answer leakage requires the answer key to exist before it can be checked.
+**Automatic checkpointing covers the retry case.** Dynamic workflow nodes are checkpointed by deterministic execution ID. On resume after a timeout, already-completed nodes are skipped. This means the retry-on-failure behaviour is a natural consequence of how dynamic workflows resume, not an extra feature to implement.
 
-**Alternative considered:** Per-section validation inline, with each node retrying itself if it fails its own constraints. Rejected because it cannot handle cross-section validators by definition, and produces a more complex graph that is harder to reason about during debugging.
+**Alternative considered:** ADK graph-based workflow. Rejected because the `edges` array at 16+ sections with per-section retry routes becomes unwieldy and harder to read than the equivalent Python code.
 
-### Decision: WeasyPrint for PDF rendering over a JavaScript PDF library (pdf-lib, Puppeteer)
+### Decision: ADK dynamic workflow over plain async orchestrator
 
-WeasyPrint renders HTML/CSS → PDF server-side in the Python ADK process. The HTML template that drives it also serves as the canonical layout spec, making it easy to audit the section order, heading hierarchy, and table structure in one place. A JavaScript PDF library (pdf-lib) would require the renderer to be reimplemented in TypeScript and run in the Next.js layer, splitting the pipeline across two runtimes.
+A plain `async def orchestrate()` function in Next.js resolves section dependencies and runs waves correctly, but has no durable state. A mid-run timeout discards all completed outputs and the entire guide must restart. ADK dynamic workflows checkpoint every `ctx.run_node()` call, so a timeout resumes from the last successful node.
 
-**Alternative considered:** Puppeteer (headless Chrome). Has better CSS support than WeasyPrint but requires a full Chrome binary in the Docker image, significantly increasing container size and cold start time on Cloud Run. Rejected for the prototype.
+**Alternative considered:** Plain Next.js orchestrator with Redis for state persistence. Rejected because it replicates ADK's checkpointing in application code with no technical advantage.
 
-### Decision: Web preview from structured JSON, not from parsing the PDF
+### Decision: Single validation pass after all sections complete, not per-section inline validation
 
-The web preview is rendered from the same structured JSON that feeds the PDF renderer, not by extracting content from the PDF after the fact. This means the preview is available immediately when generation completes, without waiting for PDF rendering, and sections with soft validator warnings can be highlighted precisely because the warning is attached to the structured JSON, not to a rendered page.
+After each section generates, a structural JSON schema check runs immediately (cheap, catches malformed Gemini responses). The full content validation runs once after all sections complete. This is the correct order because most hard validators are cross-section: vocab presence requires all body sections; answer leakage requires the answer key to exist first.
 
-### Decision: SSE for progress streaming over WebSockets
+**Alternative considered:** Per-section validation inline. Rejected because cross-section validators cannot run per-section by definition, and it would produce a more complex workflow that is harder to reason about.
 
-Generation takes 30–90 seconds. SSE (Server-Sent Events) provides one-directional streaming from server to browser with no additional library, works through Vercel's Edge Runtime, and is sufficient for progress events — the browser never needs to send messages back during generation. WebSockets add bidirectional complexity that is not needed.
+### Decision: WeasyPrint for PDF rendering over Puppeteer
+
+WeasyPrint renders HTML/CSS → PDF server-side in the Python ADK process. The Jinja2 template it uses is also the canonical section-order and layout spec. Puppeteer has better CSS support but requires a full Chrome binary in the Docker image, significantly increasing container size and Cloud Run cold start time.
+
+### Decision: Web preview from structured JSON, not from the PDF
+
+The web preview is rendered from the same structured JSON that feeds the PDF renderer. This means the preview is available immediately on generation completion, without waiting for PDF rendering. Soft validator warnings are attached to the structured JSON, so they can be displayed precisely on the affected section in the React preview.
+
+### Decision: SSE over WebSockets for progress streaming
+
+Generation takes 30–90 seconds. SSE provides one-directional server-to-browser streaming with no additional library, works through Vercel's Edge Runtime, and is sufficient because the browser never needs to send messages back during generation.
+
+### Decision: `ADK_BACKEND_URL` environment variable over a separate proxy service
+
+The Next.js API route reads `ADK_BACKEND_URL` and forwards requests directly. In local dev this is `http://localhost:8000`; in production it is the Cloud Run URL. No separate proxy service, gateway, or network configuration change is required when moving between environments. The only addition for production is CORS configuration on the ADK backend allowing the Vercel domain.
