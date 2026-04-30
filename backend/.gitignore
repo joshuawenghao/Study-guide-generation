@@ -3,3 +3,4 @@
 __pycache__/
 *.pyc
 .adk_sessions/
+study_guide_agent/.env
