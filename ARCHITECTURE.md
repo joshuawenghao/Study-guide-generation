@@ -422,6 +422,16 @@ Blueprint
 Returned from ADK backend to the Next.js proxy on completion.
 
 ```
+ValidationResult
+  passed: bool
+  failed_sections: string[]      # sections that failed the latest validation pass
+  failures: Record<string, string[]>
+                                 # per-section hard validation failure messages
+  warnings: string[]             # soft validator warnings to surface in UI
+  best_effort_sections: string[] # sections included despite unresolved retry failure
+```
+
+```
 GenerateResponse
   success: bool
   pdf_base64: string              # base64-encoded PDF binary
@@ -431,10 +441,7 @@ GenerateResponse
       section_type: string
       title: string
       content: object             # shape varies by section_type; documented per-section
-  validation:
-    passed: bool
-    warnings: string[]            # soft validator warnings to surface in UI
-    retried_sections: string[]    # sections that were retried during validation pass
+  validation: ValidationResult
   error?: string                  # present only on failure
 ```
 
