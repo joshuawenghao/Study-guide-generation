@@ -200,7 +200,7 @@ flowchart TD
     RETRY{"validation\npassed?"}
 
     subgraph RetryLoop ["Retry loop — while failed_sections:"]
-        RL["ctx.run_node() for each\nfailed section only\n(RETRY_CONTEXT appended to prompt)"]
+      RL["ctx.run_node() for each\nfailed section only\n(failure-specific retry prompt\n+ TEMP_RETRY)"]
         RVAL["validator_node\n(second pass)"]
     end
 
@@ -341,7 +341,7 @@ Decorated with `@node`. Receives all section outputs as a dict. Runs all hard an
 
 ### retry_node_for(section_key, failure_messages)
 
-Not a fixed node — the orchestrator creates a new node instance per failed section using a factory function. The retry node uses the same prompt template as the original generation pass but prepends a `RETRY_CONTEXT` block to the user prompt containing the specific failure message from the validator. This gives Gemini targeted correction guidance.
+Not a fixed node — the orchestrator creates a new node instance per failed section using a factory function. The retry node uses the same prompt template as the original generation pass, includes the specific validator failure message in the retry prompt, and calls the shared Gemini wrapper with `TEMP_RETRY`. This gives Gemini targeted correction guidance while keeping retries conservative.
 
 Because each retry node is a new instance with a distinct name, ADK's checkpointing system treats it as a fresh execution rather than skipping it as already-completed.
 
@@ -349,7 +349,7 @@ Because each retry node is a new instance with a distinct name, ADK's checkpoint
 
 Decorated with `@node`. Receives blueprint, all section outputs, and validation result. Produces two outputs: a base64-encoded PDF binary (via Jinja2 + WeasyPrint) and a `WebPreviewPayload` JSON object for the React frontend. Returns both as a single dict.
 
-Both outputs are written to session state and returned to the frontend in the final response payload.
+Both outputs are returned to the frontend in the final response payload.
 
 ---
 
@@ -392,7 +392,7 @@ GenerateRequest
 
 ### Blueprint
 
-Written to session state by the blueprint node. Read by all section nodes.
+Returned by the blueprint node and passed by the orchestrator to all dependent section nodes as a function argument.
 
 ```
 Blueprint
@@ -479,7 +479,7 @@ Soft validators produce warnings that are surfaced to the user in the web previe
 
 ### Retry logic
 
-When the validator node returns `passed=False`, the `study_guide_workflow` orchestrator node enters a `while` loop. For each section key in `validation.failed_sections`, it calls `ctx.run_node()` with a retry node instance created by the `retry_node_for()` factory. The retry node appends a `RETRY_CONTEXT` block to the prompt describing the specific constraint that was violated, giving Gemini targeted correction guidance rather than regenerating blindly.
+When the validator node returns `passed=False`, the `study_guide_workflow` orchestrator node enters a `while` loop. For each section key in `validation.failed_sections`, it calls `ctx.run_node()` with a retry node instance created by the `retry_node_for()` factory. The retry node includes the specific validator failure message in the retry prompt and regenerates with `TEMP_RETRY = 0.3`, giving Gemini targeted correction guidance rather than regenerating blindly.
 
 After all failed sections are retried, the validator runs a second time. The `while` loop condition limits retries to one pass — on a second failure the section is included as `best_effort` in the final `ValidationResult` and the warning is surfaced to the user in the web preview.
 
