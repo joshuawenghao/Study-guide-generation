@@ -1,4 +1,5 @@
 # Architecture
+
 ## Study Guide Generation Web App
 
 > This document should be read alongside `IFC.md`. Every architectural decision here is traceable to a criterion in that document.
@@ -52,16 +53,16 @@ flowchart LR
 
 ## 2. Tech stack decisions
 
-| Layer | Choice | Reason |
-|---|---|---|
-| Frontend framework | Next.js 14 (App Router) | Single repo for UI and API proxy; SSE streaming support built in |
-| Styling | Tailwind CSS | Utility-first, no design system overhead for a prototype |
-| Agent framework | Google ADK 2.0 Python (dynamic workflows) | `@node` + `ctx.run_node()` with automatic checkpointing; conditional retry via `while` loop; native Gemini integration |
-| LLM | Gemini 2.0 Flash | Best cost/latency ratio for 17 sequential/parallel calls; ADK has first-class Gemini support |
-| PDF rendering | WeasyPrint (Python) | HTML/CSS → PDF with full layout control; runs server-side in the ADK process |
-| Web preview | Structured JSON → React components | Preview is assembled from the same section JSON that feeds the PDF renderer |
-| Deployment (Phase 1) | Local — Next.js dev server + `adk web` local runner | Fastest iteration loop; no infrastructure required |
-| Deployment (Phase 2) | Vercel (frontend) + Google Cloud Run (ADK) | ADK deploys natively to Cloud Run; `ADK_BACKEND_URL` env var switches the proxy target |
+| Layer                | Choice                                              | Reason                                                                                                                 |
+| -------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Frontend framework   | Next.js 14 (App Router)                             | Single repo for UI and API proxy; SSE streaming support built in                                                       |
+| Styling              | Tailwind CSS                                        | Utility-first, no design system overhead for a prototype                                                               |
+| Agent framework      | Google ADK 2.0 Python (dynamic workflows)           | `@node` + `ctx.run_node()` with automatic checkpointing; conditional retry via `while` loop; native Gemini integration |
+| LLM                  | Gemini 2.0 Flash                                    | Best cost/latency ratio for 17 sequential/parallel calls; ADK has first-class Gemini support                           |
+| PDF rendering        | WeasyPrint (Python)                                 | HTML/CSS → PDF with full layout control; runs server-side in the ADK process                                           |
+| Web preview          | Structured JSON → React components                  | Preview is assembled from the same section JSON that feeds the PDF renderer                                            |
+| Deployment (Phase 1) | Local — Next.js dev server + `adk web` local runner | Fastest iteration loop; no infrastructure required                                                                     |
+| Deployment (Phase 2) | Vercel (frontend) + Google Cloud Run (ADK)          | ADK deploys natively to Cloud Run; `ADK_BACKEND_URL` env var switches the proxy target                                 |
 
 ### Why ADK dynamic workflows over graph-based workflows or a plain orchestrator
 
@@ -298,18 +299,16 @@ root_agent = Workflow(
 
 ### Execution waves
 
-| Wave | Nodes | Runs via |
-|---|---|---|
-| 0 | `blueprint_node` | `await ctx.run_node()` — sequential |
-| 1 | `intro`, `learning_targets`, `warmup`, `vocabulary`, `key_points`, `self_assessment` | `asyncio.gather()` — parallel |
-| 2 | `core_explainer`, `subconcept` ×N, `strategy_list`, `deep_dive`, `model_passage`, `assessment_passage` | `asyncio.gather()` — parallel |
-| 3 | `check_in`, `assessment_questions`, `step_up` | mixed — `check_in` and `assessment_questions` parallel; `step_up` sequential after both |
-| 4 | `answer_key` | `await ctx.run_node()` — sequential, always last |
-| 5 | `validator` | `await ctx.run_node()` — sequential |
-| 6 | retry loop (failed sections only) | `while` loop + `ctx.run_node()` — one retry per failed section |
-| 7 | `renderer` | `await ctx.run_node()` — sequential |
-
-
+| Wave | Nodes                                                                                                  | Runs via                                                                                |
+| ---- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| 0    | `blueprint_node`                                                                                       | `await ctx.run_node()` — sequential                                                     |
+| 1    | `intro`, `learning_targets`, `warmup`, `vocabulary`, `key_points`, `self_assessment`                   | `asyncio.gather()` — parallel                                                           |
+| 2    | `core_explainer`, `subconcept` ×N, `strategy_list`, `deep_dive`, `model_passage`, `assessment_passage` | `asyncio.gather()` — parallel                                                           |
+| 3    | `check_in`, `assessment_questions`, `step_up`                                                          | mixed — `check_in` and `assessment_questions` parallel; `step_up` sequential after both |
+| 4    | `answer_key`                                                                                           | `await ctx.run_node()` — sequential, always last                                        |
+| 5    | `validator`                                                                                            | `await ctx.run_node()` — sequential                                                     |
+| 6    | retry loop (failed sections only)                                                                      | `while` loop + `ctx.run_node()` — one retry per failed section                          |
+| 7    | `renderer`                                                                                             | `await ctx.run_node()` — sequential                                                     |
 
 ---
 
@@ -460,22 +459,22 @@ ProgressEvent
 
 Hard validators block document assembly. A section that fails a hard validator is retried once. If the retry also fails, the document is assembled with a visible warning on the affected section.
 
-| Validator | What it checks | Section(s) it applies to |
-|---|---|---|
-| `vocab_presence` | Every vocabulary word from the blueprint appears (case-insensitive) in the combined body section text | All body sections collectively |
-| `self_assess_targets` | Each skill row in the self-assessment matches a learning target objective verbatim | `self_assessment` |
-| `answer_key_quotes` | Each possible answer in the answer key contains a verbatim phrase from the assessment passage | `answer_key` |
-| `passage_domain_diff` | The topic domain of the assessment passage differs from the model passage domain | `assessment_passage` |
-| `json_schema` | Each section output parses correctly against its expected JSON schema | All section nodes |
+| Validator             | What it checks                                                                                        | Section(s) it applies to       |
+| --------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------ |
+| `vocab_presence`      | Every vocabulary word from the blueprint appears (case-insensitive) in the combined body section text | All body sections collectively |
+| `self_assess_targets` | Each skill row in the self-assessment matches a learning target objective verbatim                    | `self_assessment`              |
+| `answer_key_quotes`   | Each possible answer in the answer key contains a verbatim phrase from the assessment passage         | `answer_key`                   |
+| `passage_domain_diff` | The topic domain of the assessment passage differs from the model passage domain                      | `assessment_passage`           |
+| `json_schema`         | Each section output parses correctly against its expected JSON schema                                 | All section nodes              |
 
 ### Soft validators
 
 Soft validators produce warnings that are surfaced to the user in the web preview but do not block assembly or trigger retries.
 
-| Validator | What it checks |
-|---|---|
+| Validator        | What it checks                                                                               |
+| ---------------- | -------------------------------------------------------------------------------------------- |
 | `answer_leakage` | Body sections do not contain verbatim phrases that appear in the answer key possible answers |
-| `reading_level` | Each section's Flesch-Kincaid grade score falls within ±1.0 of the target grade band |
+| `reading_level`  | Each section's Flesch-Kincaid grade score falls within ±1.0 of the target grade band         |
 
 ### Retry logic
 
@@ -567,10 +566,10 @@ flowchart LR
 
 The ADK backend is containerised and deployed to Google Cloud Run. The Next.js frontend is deployed to Vercel. The only change between Phase 1 and Phase 2 is the value of `ADK_BACKEND_URL` in the environment:
 
-| Environment | `ADK_BACKEND_URL` value |
-|---|---|
-| Local dev | `http://localhost:8000` |
-| Production | `https://your-service.run.app` (Cloud Run URL) |
+| Environment | `ADK_BACKEND_URL` value                        |
+| ----------- | ---------------------------------------------- |
+| Local dev   | `http://localhost:8000`                        |
+| Production  | `https://your-service.run.app` (Cloud Run URL) |
 
 **No proxy architecture change is required** — the Next.js API route forwards requests to whatever URL `ADK_BACKEND_URL` points to. The frontend code is identical in both environments.
 
