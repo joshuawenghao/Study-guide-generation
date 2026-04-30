@@ -97,9 +97,13 @@ Dynamic workflows are chosen for this project for three specific reasons:
 │   │   └── types.ts                 # Shared TypeScript types (mirrored from backend)
 │   └── package.json
 │
-└── backend/                         # ADK agent (Python)
-    ├── agent.py                     # ADK dynamic workflow definition — the single source of truth
+└── backend/                         # ADK project root — run `adk web` from here
+    ├── study_guide_agent/           # ADK agent package (required structure)
+    │   ├── __init__.py              # Required by ADK
+    │   ├── agent.py                 # root_agent lives here — ADK entry point
+    │   └── .env                    # GOOGLE_API_KEY (gitignored)
     ├── nodes/
+    │   ├── base.py                  # Shared Gemini client + call wrapper
     │   ├── blueprint.py             # Node: generate blueprint JSON
     │   ├── sections/
     │   │   ├── intro.py
@@ -117,26 +121,32 @@ Dynamic workflows are chosen for this project for three specific reasons:
     │   │   ├── assessment_questions.py  # Depends on: assessment_passage
     │   │   ├── step_up.py           # Depends on: assessment_questions
     │   │   ├── self_assessment.py
-    │   │   └── answer_key.py        # Always last; depends on all question sections
+    │   │   └── answer_key.py        # Always last
     │   ├── validator.py             # Node: runs all hard + soft validators
     │   └── renderer.py              # Node: assembles validated JSON → PDF + preview JSON
     ├── prompts/
-    │   ├── system_prompt.py         # Global system prompt builder (market, grade, subject)
+    │   ├── system_prompt.py         # Global system prompt builder
     │   └── templates/               # One prompt template function per section type
     ├── validators/
     │   ├── hard/
     │   │   ├── vocab_presence.py
     │   │   ├── self_assess_targets.py
     │   │   ├── answer_key_quotes.py
-    │   │   └── passage_domain_diff.py
+    │   │   ├── passage_domain_diff.py
+    │   │   └── json_schema.py
     │   └── soft/
     │       ├── answer_leakage.py
     │       └── reading_level.py
+    ├── templates/
+    │   └── study_guide.html.j2      # Jinja2 template for WeasyPrint PDF
+    ├── evals/                       # ADK eval test cases
+    │   ├── english_grade6_ph.json
+    │   └── math_grade4_vn.json
     ├── types.py                     # Pydantic models for all data contracts
     └── requirements.txt
 ```
 
-The frontend and backend are separated into distinct directories because the ADK backend is Python and the frontend is TypeScript. They share no runtime but mirror their data contracts through a common JSON schema documented in section 6.
+**Key structural rule:** ADK's `adk web` and `adk run` commands are run from `backend/` (the parent directory). ADK discovers the agent by finding the `study_guide_agent/` subdirectory containing `__init__.py` and `agent.py` with a `root_agent` defined. All other backend code (`nodes/`, `prompts/`, `validators/`) lives at the `backend/` level and is imported by `agent.py` using relative imports.
 
 ---
 

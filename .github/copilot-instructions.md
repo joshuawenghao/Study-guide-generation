@@ -200,15 +200,18 @@ MARKET_DEFAULT=PH
 ## Running locally
 
 ```bash
-# Backend
+# Backend — run from backend/ (parent of the agent package)
 cd backend
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-adk run agent.py          # starts ADK local runner on port 8000
+# Copy .env.example to .env inside the agent package and add your API key:
+cp study_guide_agent/.env.example study_guide_agent/.env
+adk web          # starts ADK dev UI on localhost:8000
+                 # select study_guide_agent from the dropdown in the UI
 
 # Frontend
 cd frontend
 npm install
-npm run dev               # starts Next.js on port 3000
+npm run dev      # starts Next.js on localhost:3000
 ```
