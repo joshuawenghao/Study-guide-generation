@@ -35,10 +35,40 @@ Before you begin, ensure you have:
 
 ## Quick Start
 
+If `agents-cli` is not on your shell `PATH`, use the repo-local wrapper from this directory:
+
+```bash
+./agents-cli --help
+./agents-cli install
+./agents-cli info
+```
+
+This wrapper delegates to the globally installed CLI at `$HOME/.local/bin/agents-cli`, so you do not need to copy the CLI or its skills into the repository.
+
+Minimal setup for this repo:
+
+- Keep the global CLI install (`uv tool install google-agents-cli`)
+- Use `./agents-cli ...` from this directory if your shell cannot find `agents-cli`
+- Do not run `./agents-cli setup --workspace` unless you explicitly want workspace-local skill adapters for multiple coding agents
+
+Why this is the minimal set:
+
+- The backend project commands (`install`, `info`, `playground`, `deploy`) only need the CLI binary
+- The Google skills do not need to be copied into this repository for normal CLI usage
+- `setup --workspace` generates per-tool adapter folders like `.claude/`, `.continue/`, `.windsurf/`, `.agents/`, and `skills/`, which are useful only if you want this repo itself to carry local coding-agent integrations
+
+If you want workspace-local skills again later, rerun:
+
+```bash
+./agents-cli setup --workspace
+```
+
+If you just want the CLI commands and a cleaner repo, the current setup is enough.
+
 Install required packages:
 
 ```bash
-agents-cli install
+./agents-cli install
 ```
 
 Create the backend environment file in the scaffolded project root:
@@ -61,18 +91,18 @@ You can also use features from the [ADK](https://adk.dev/) CLI with `uv run adk`
 
 | Command                                      | Description                          |
 | -------------------------------------------- | ------------------------------------ |
-| `agents-cli install`                         | Install dependencies using uv        |
-| `agents-cli playground`                      | Launch local development environment |
-| `agents-cli lint`                            | Run code quality checks              |
+| `./agents-cli install`                       | Install dependencies using uv        |
+| `./agents-cli playground`                    | Launch local development environment |
+| `./agents-cli lint`                          | Run code quality checks              |
 | `uv run pytest tests/unit tests/integration` | Run unit and integration tests       |
 
 ## 🛠️ Project Management
 
-| Command                       | What It Does                                                   |
-| ----------------------------- | -------------------------------------------------------------- |
-| `agents-cli scaffold enhance` | Add CI/CD pipelines and Terraform infrastructure               |
-| `agents-cli infra cicd`       | One-command setup of entire CI/CD pipeline + infrastructure    |
-| `agents-cli scaffold upgrade` | Auto-upgrade to latest version while preserving customizations |
+| Command                         | What It Does                                                   |
+| ------------------------------- | -------------------------------------------------------------- |
+| `./agents-cli scaffold enhance` | Add CI/CD pipelines and Terraform infrastructure               |
+| `./agents-cli infra cicd`       | One-command setup of entire CI/CD pipeline + infrastructure    |
+| `./agents-cli scaffold upgrade` | Auto-upgrade to latest version while preserving customizations |
 
 ---
 
@@ -112,11 +142,11 @@ The old `backend/evals/` JSON files were not discarded; they now live under `tes
 
 ```bash
 gcloud config set project <your-project-id>
-agents-cli deploy
+./agents-cli deploy
 ```
 
-To add CI/CD and Terraform, run `agents-cli scaffold enhance`.
-To set up your production infrastructure, run `agents-cli infra cicd`.
+To add CI/CD and Terraform, run `./agents-cli scaffold enhance`.
+To set up your production infrastructure, run `./agents-cli infra cicd`.
 
 ## Observability
 

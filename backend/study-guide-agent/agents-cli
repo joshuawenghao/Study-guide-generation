@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+if [[ -x "$HOME/.local/bin/agents-cli" ]]; then
+  exec "$HOME/.local/bin/agents-cli" "$@"
+fi
+
+if command -v agents-cli >/dev/null 2>&1; then
+  exec "$(command -v agents-cli)" "$@"
+fi
+
+echo "agents-cli is not installed. Install it with: uv tool install google-agents-cli" >&2
+exit 127
