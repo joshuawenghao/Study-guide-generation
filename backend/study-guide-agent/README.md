@@ -41,6 +41,14 @@ Install required packages:
 agents-cli install
 ```
 
+Create the backend environment file in the scaffolded project root:
+
+```bash
+cp .env.example .env
+```
+
+The backend runtime reads `backend/study-guide-agent/.env`. At minimum set `GOOGLE_API_KEY`; `MARKET_DEFAULT=PH` is included as the default market.
+
 Test the agent with a local web server:
 
 ```bash
