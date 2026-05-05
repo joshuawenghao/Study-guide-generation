@@ -13,6 +13,8 @@ Key reference documents (read these before making architectural decisions):
 
 - `IFC.md` — the problem statement, facts, and acceptance criteria
 - `ARCHITECTURE.md` — the full system design, graph structure, data contracts, and design decisions
+- `TASKS.md` — the canonical implementation plan for the scaffolded repo layout
+- `TASK_STATUS.md` — the current completion snapshot and task-by-task status
 
 ---
 
@@ -25,6 +27,15 @@ Key reference documents (read these before making architectural decisions):
 ```
 
 These are two separate runtimes. They share no code — only a JSON contract documented in `ARCHITECTURE.md` section 6.
+
+## Task Tracking
+
+- `TASKS.md` is the stable implementation plan. Do not treat it as a live progress log.
+- `TASK_STATUS.md` is the mutable progress snapshot for the current repository state.
+- Before implementing new product work, read both `TASKS.md` and `TASK_STATUS.md` to determine what already exists and what can be built on top of it.
+- When a task is fully completed, update `TASK_STATUS.md` in the same turn.
+- Only mark a task as complete after the implementation exists in the repo and at least one focused validation step has passed.
+- If a task is only scaffolded or partially working, mark it as partial rather than complete.
 
 ---
 
@@ -204,7 +215,7 @@ These are non-negotiable constraints. Every hard validator must enforce them:
 ADK_BACKEND_URL=http://localhost:8000   # points to local ADK runner in dev
 ```
 
-### Backend (`backend/.env`)
+### Backend (`backend/study-guide-agent/.env`)
 
 ```
 GOOGLE_API_KEY=your_key_here
