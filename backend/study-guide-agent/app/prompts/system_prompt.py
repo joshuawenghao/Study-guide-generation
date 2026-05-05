@@ -1,0 +1,1 @@
+"""Placeholder system prompt module migrated from the legacy backend."""

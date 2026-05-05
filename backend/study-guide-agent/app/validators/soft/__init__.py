@@ -1,0 +1,1 @@
+"""Soft validators for the study guide workflow."""

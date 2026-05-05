@@ -1,0 +1,1 @@
+"""Placeholder check-in section node migrated from the legacy backend."""

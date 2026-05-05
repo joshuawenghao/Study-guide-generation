@@ -53,16 +53,16 @@ flowchart LR
 
 ## 2. Tech stack decisions
 
-| Layer                | Choice                                              | Reason                                                                                                                 |
-| -------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| Frontend framework   | Next.js 14 (App Router)                             | Single repo for UI and API proxy; SSE streaming support built in                                                       |
-| Styling              | Tailwind CSS                                        | Utility-first, no design system overhead for a prototype                                                               |
-| Agent framework      | Google ADK 2.0 Python (dynamic workflows)           | `@node` + `ctx.run_node()` with automatic checkpointing; conditional retry via `while` loop; native Gemini integration |
-| LLM                  | Gemini 2.0 Flash                                    | Best cost/latency ratio for 17 sequential/parallel calls; ADK has first-class Gemini support                           |
-| PDF rendering        | WeasyPrint (Python)                                 | HTML/CSS → PDF with full layout control; runs server-side in the ADK process                                           |
-| Web preview          | Structured JSON → React components                  | Preview is assembled from the same section JSON that feeds the PDF renderer                                            |
-| Deployment (Phase 1) | Local — Next.js dev server + `adk web` local runner | Fastest iteration loop; no infrastructure required                                                                     |
-| Deployment (Phase 2) | Vercel (frontend) + Google Cloud Run (ADK)          | ADK deploys natively to Cloud Run; `ADK_BACKEND_URL` env var switches the proxy target                                 |
+| Layer                | Choice                                                  | Reason                                                                                                                 |
+| -------------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Frontend framework   | Next.js 14 (App Router)                                 | Single repo for UI and API proxy; SSE streaming support built in                                                       |
+| Styling              | Tailwind CSS                                            | Utility-first, no design system overhead for a prototype                                                               |
+| Agent framework      | Google ADK 2.0 Python (dynamic workflows)               | `@node` + `ctx.run_node()` with automatic checkpointing; conditional retry via `while` loop; native Gemini integration |
+| LLM                  | Gemini 2.0 Flash                                        | Best cost/latency ratio for 17 sequential/parallel calls; ADK has first-class Gemini support                           |
+| PDF rendering        | WeasyPrint (Python)                                     | HTML/CSS → PDF with full layout control; runs server-side in the ADK process                                           |
+| Web preview          | Structured JSON → React components                      | Preview is assembled from the same section JSON that feeds the PDF renderer                                            |
+| Deployment (Phase 1) | Local — Next.js dev server + scaffolded FastAPI backend | Fastest iteration loop; no infrastructure required                                                                     |
+| Deployment (Phase 2) | Vercel (frontend) + Google Cloud Run (ADK)              | ADK deploys natively to Cloud Run; `ADK_BACKEND_URL` env var switches the proxy target                                 |
 
 ### Why ADK dynamic workflows over graph-based workflows or a plain orchestrator
 
@@ -98,56 +98,53 @@ Dynamic workflows are chosen for this project for three specific reasons:
 │   │   └── types.ts                 # Shared TypeScript types (mirrored from backend)
 │   └── package.json
 │
-└── backend/                         # ADK project root — run `adk web` from here
-    ├── study_guide_agent/           # ADK agent package (required structure)
-    │   ├── __init__.py              # Required by ADK
-    │   ├── agent.py                 # root_agent lives here — ADK entry point
-    │   └── .env                    # GOOGLE_API_KEY (gitignored)
-    ├── nodes/
-    │   ├── base.py                  # Shared Gemini client + call wrapper
-    │   ├── blueprint.py             # Node: generate blueprint JSON
-    │   ├── sections/
-    │   │   ├── intro.py
-    │   │   ├── learning_targets.py
-    │   │   ├── warmup.py
-    │   │   ├── vocabulary.py
-    │   │   ├── core_explainer.py
-    │   │   ├── subconcept.py        # Called once per sub-competency
-    │   │   ├── strategy_list.py
-    │   │   ├── deep_dive.py
-    │   │   ├── model_passage.py
-    │   │   ├── check_in.py          # Depends on: model_passage
-    │   │   ├── key_points.py
-    │   │   ├── assessment_passage.py
-    │   │   ├── assessment_questions.py  # Depends on: assessment_passage
-    │   │   ├── step_up.py           # Depends on: assessment_questions
-    │   │   ├── self_assessment.py
-    │   │   └── answer_key.py        # Always last
-    │   ├── validator.py             # Node: runs all hard + soft validators
-    │   └── renderer.py              # Node: assembles validated JSON → PDF + preview JSON
-    ├── prompts/
-    │   ├── system_prompt.py         # Global system prompt builder
-    │   └── templates/               # One prompt template function per section type
-    ├── validators/
-    │   ├── hard/
-    │   │   ├── vocab_presence.py
-    │   │   ├── self_assess_targets.py
-    │   │   ├── answer_key_quotes.py
-    │   │   ├── passage_domain_diff.py
-    │   │   └── json_schema.py
-    │   └── soft/
-    │       ├── answer_leakage.py
-    │       └── reading_level.py
-    ├── templates/
-    │   └── study_guide.html.j2      # Jinja2 template for WeasyPrint PDF
-    ├── evals/                       # ADK eval test cases
-    │   ├── english_grade6_ph.json
-    │   └── math_grade4_vn.json
-    ├── types.py                     # Pydantic models for all data contracts
-    └── requirements.txt
+└── backend/
+  └── study-guide-agent/           # Canonical agents-cli backend project
+    ├── app/
+    │   ├── agent.py             # root_agent + App entrypoint
+    │   ├── fast_api_app.py      # FastAPI server for the frontend proxy
+    │   ├── types.py             # Pydantic models for all data contracts
+    │   ├── nodes/
+    │   │   ├── base.py          # Shared Gemini client + call wrapper
+    │   │   ├── blueprint.py     # Node: generate blueprint JSON
+    │   │   ├── validator.py     # Node: runs all hard + soft validators
+    │   │   ├── renderer.py      # Node: assembles validated JSON → PDF + preview JSON
+    │   │   └── sections/
+    │   │       ├── intro.py
+    │   │       ├── learning_targets.py
+    │   │       ├── warmup.py
+    │   │       ├── vocabulary.py
+    │   │       ├── core_explainer.py
+    │   │       ├── subconcept.py
+    │   │       ├── strategy_list.py
+    │   │       ├── deep_dive.py
+    │   │       ├── model_passage.py
+    │   │       ├── check_in.py
+    │   │       ├── key_points.py
+    │   │       ├── assessment_passage.py
+    │   │       ├── assessment_questions.py
+    │   │       ├── step_up.py
+    │   │       ├── self_assessment.py
+    │   │       └── answer_key.py
+    │   ├── prompts/
+    │   │   ├── system_prompt.py
+    │   │   └── templates/
+    │   ├── validators/
+    │   │   ├── hard/
+    │   │   └── soft/
+    │   └── templates/
+    │       └── study_guide.html.j2
+    ├── tests/
+    │   ├── eval/evalsets/       # agents-cli evalsets
+    │   ├── fixtures/legacy_evals/ # preserved legacy acceptance fixtures
+    │   ├── integration/
+    │   └── unit/
+    ├── .env.example
+    ├── pyproject.toml
+    └── uv.lock
 ```
 
-**Key structural rule:** ADK's `adk web` and `adk run` commands are run from `backend/` (the parent directory). ADK discovers the agent by finding the `study_guide_agent/` subdirectory containing `__init__.py` and `agent.py` with a `root_agent` defined. All other backend code (`nodes/`, `prompts/`, `validators/`) lives at the `backend/` level and is imported by `agent.py` using relative imports.
+**Key structural rule:** The canonical backend project root is `backend/study-guide-agent/`. All backend code now lives inside its `app/` package, and tests, evalsets, and preserved legacy fixtures live under `backend/study-guide-agent/tests/`.
 
 ---
 
@@ -354,7 +351,7 @@ Both outputs are returned to the frontend in the final response payload.
 
 ## 6. Data contracts
 
-All contracts are defined as Pydantic models in `backend/types.py` and mirrored as TypeScript interfaces in `frontend/lib/types.ts`. The JSON schema is the source of truth.
+All contracts are defined as Pydantic models in `backend/study-guide-agent/app/types.py` and mirrored as TypeScript interfaces in `frontend/lib/types.ts`. The JSON schema is the source of truth.
 
 ### GenerateRequest
 
@@ -556,7 +553,7 @@ The Download PDF tab renders `DownloadButton.tsx`, which decodes the `pdf_base64
 ```mermaid
 flowchart LR
     Browser --> NextJS["Next.js dev server\nlocalhost:3000"]
-    NextJS --> ADK["ADK local runner\nlocalhost:8000\n(adk web agent.py)"]
+    NextJS --> ADK["Scaffolded backend server\nlocalhost:8000\n(uv run uvicorn app.fast_api_app:app)"]
     ADK --> Gemini["Gemini 2.0 Flash\n(Google API)"]
 ```
 

@@ -1,0 +1,1 @@
+"""Placeholder assessment questions section node migrated from the legacy backend."""

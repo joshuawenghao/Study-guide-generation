@@ -1,0 +1,1 @@
+"""Placeholder strategy list section node migrated from the legacy backend."""

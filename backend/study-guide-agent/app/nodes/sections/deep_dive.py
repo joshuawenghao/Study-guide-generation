@@ -1,0 +1,1 @@
+"""Placeholder deep dive section node migrated from the legacy backend."""

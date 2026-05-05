@@ -81,13 +81,13 @@ These are two separate runtimes. They share no code — only a JSON contract doc
 ### General
 
 - Python 3.11+. Use type hints everywhere — all function signatures, all class fields.
-- Use Pydantic v2 for all data models. All models live in `backend/types.py`. Never define ad-hoc dicts for structured data.
+- Use Pydantic v2 for all data models. All models live in `backend/study-guide-agent/app/types.py`. Never define ad-hoc dicts for structured data.
 - Use `async`/`await` throughout. All Gemini calls are async. All file I/O is async.
 - Never use `print()` for debugging — use the `logging` module with appropriate levels.
 
 ### ADK agent graph
 
-- The dynamic workflow definition is the single source of truth for execution order. It lives in `backend/study_guide_agent/agent.py`.
+- The dynamic workflow definition is the single source of truth for execution order. It lives in `backend/study-guide-agent/app/agent.py`.
 - The workflow uses ADK 2.0 **dynamic workflows**: `@node` decorator + `ctx.run_node()` + plain Python. Do NOT use graph-based workflow syntax (`edges` array, `JoinNode`, `Event(route=...)`).
 - Wave parallelism uses `asyncio.gather()` — not any framework parallel primitive.
 - Retry logic for failed sections is a `while` loop calling `ctx.run_node()` with a new retry node instance — not conditional graph edges.
@@ -96,7 +96,7 @@ These are two separate runtimes. They share no code — only a JSON contract doc
 
 ### Gemini calls
 
-- All Gemini calls go through the shared wrapper in `backend/nodes/base.py` (a thin async wrapper around the shared `google-genai` client). Never instantiate the Gemini client directly in a node file.
+- All Gemini calls go through the shared wrapper in `backend/study-guide-agent/app/nodes/base.py` (a thin async wrapper around the shared `google-genai` client). Never instantiate the Gemini client directly in a node file.
 - Always set `response_mime_type="application/json"` for section generation calls.
 - Temperature settings per call type:
   - Blueprint: `0.3`
@@ -107,22 +107,22 @@ These are two separate runtimes. They share no code — only a JSON contract doc
 
 ### Prompt templates
 
-- All prompt templates live in `backend/prompts/templates/`. One file per section type.
+- All prompt templates live in `backend/study-guide-agent/app/prompts/templates/`. One file per section type.
 - Every template file exports a single function: `def build_prompt(spec, blueprint, request) -> str`
 - Prompts must include the output JSON schema inline. Never rely on Gemini inferring the schema.
 - Never hardcode market, grade, or subject strings inside a template. Always read from `blueprint` or `request`.
 
 ### Validators
 
-- Hard validators live in `backend/validators/hard/`. Soft validators in `backend/validators/soft/`.
+- Hard validators live in `backend/study-guide-agent/app/validators/hard/`. Soft validators in `backend/study-guide-agent/app/validators/soft/`.
 - Validators take explicit structured inputs for the sections they validate and return a `ValidationResult`.
 - Hard validators raise nothing — they return a `ValidationResult` with `passed=False` and a list of failure messages. Never use exceptions for validation logic.
 - The retry prompt for a failed section must include the specific failure message from the validator, not a generic retry instruction.
 
 ### PDF rendering
 
-- The WeasyPrint renderer lives in `backend/nodes/renderer.py`.
-- The HTML template lives in `backend/templates/study_guide.html.j2` (Jinja2).
+- The WeasyPrint renderer lives in `backend/study-guide-agent/app/nodes/renderer.py`.
+- The HTML template lives in `backend/study-guide-agent/app/templates/study_guide.html.j2` (Jinja2).
 - Section order in the HTML template is the canonical definition of the 17-section order. Never derive section order from anywhere else.
 - The answer key section always starts on a new page (`page-break-before: always` in CSS).
 
@@ -131,7 +131,7 @@ These are two separate runtimes. They share no code — only a JSON contract doc
 ## Data contracts
 
 The JSON contract between frontend and backend is documented in `ARCHITECTURE.md` section 6.
-When changing any field in `backend/types.py`, the corresponding type in `frontend/lib/types.ts` must be updated in the same commit. These must always be in sync.
+When changing any field in `backend/study-guide-agent/app/types.py`, the corresponding type in `frontend/lib/types.ts` must be updated in the same commit. These must always be in sync.
 
 Key types:
 
@@ -216,15 +216,12 @@ MARKET_DEFAULT=PH
 ## Running locally
 
 ```bash
-# Backend — run from backend/ (parent of the agent package)
-cd backend
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-# Copy .env.example to .env inside the agent package and add your API key:
-cp study_guide_agent/.env.example study_guide_agent/.env
-adk web          # starts ADK dev UI on localhost:8000
-                 # select study_guide_agent from the dropdown in the UI
+# Backend — run from the scaffolded project root
+cd backend/study-guide-agent
+agents-cli install
+# Copy .env.example to .env in the scaffolded project and add your API key:
+cp .env.example .env
+uv run uvicorn app.fast_api_app:app --reload --host 0.0.0.0 --port 8000
 
 # Frontend
 cd frontend

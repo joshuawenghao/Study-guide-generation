@@ -1,0 +1,1 @@
+"""Placeholder blueprint node migrated from the legacy backend structure."""

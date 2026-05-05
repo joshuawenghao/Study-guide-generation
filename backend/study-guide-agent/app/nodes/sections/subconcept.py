@@ -1,0 +1,1 @@
+"""Placeholder subconcept section node migrated from the legacy backend."""

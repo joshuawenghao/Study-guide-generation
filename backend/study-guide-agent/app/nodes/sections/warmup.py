@@ -1,0 +1,1 @@
+"""Placeholder warmup section node migrated from the legacy backend."""

@@ -1,0 +1,1 @@
+"""Placeholder soft validator migrated from the legacy backend."""
