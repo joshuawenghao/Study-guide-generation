@@ -1,3 +1,7 @@
+from app.app_utils.adk_compat import ensure_google_adk_beta_compat
+
+ensure_google_adk_beta_compat()
+
 from google.adk.agents import Agent
 from google.adk.apps import App
 

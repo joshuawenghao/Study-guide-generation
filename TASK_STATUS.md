@@ -1,6 +1,6 @@
 # Task Status
 
-Last updated: 2026-05-05
+Last updated: 2026-05-06
 
 This file mirrors the structure of `TASKS.md` and records the current repo state against each task directly.
 Use it together with `TASKS.md`:
@@ -19,7 +19,8 @@ Status legend:
 - Canonical backend root: `backend/study-guide-agent/`
 - Legacy root-level backend code has been removed
 - Backend scaffold, environment files, core type contracts, and eval fixture preservation are in place
-- The workflow, prompts, validators, renderer, and frontend product UI are still largely unimplemented
+- The backend now uses the project-local `backend/study-guide-agent/.venv` for ADK 2.0 beta work, with a narrow compatibility shim for the broken `google.adk.features` import surface in `google-adk==2.0.0b1`
+- The system prompt builder, blueprint prompt template, blueprint node, and focused blueprint unit test are now implemented; the remaining validators, renderer, and frontend product UI are still largely unimplemented
 
 ## Phase 0 — Repository and tooling setup
 
@@ -63,7 +64,7 @@ Notes: `backend/study-guide-agent/app/nodes/base.py` contains the shared Gemini 
 ### Task 1.3 — Align the scaffold entrypoint with the study-guide app identity
 
 Status: `partial`
-Notes: `app/agent.py` and `app/fast_api_app.py` have been aligned to the study-guide project identity, but the real study-guide workflow is not implemented yet.
+Notes: `app/agent.py` and `app/fast_api_app.py` have been aligned to the study-guide project identity, and now load the repo-local ADK beta compatibility shim before ADK imports; the real study-guide workflow is still not implemented yet.
 
 ## Phase 2 — Data contracts and type sync
 
@@ -86,23 +87,23 @@ Notes: Backend and frontend types are present, but there is no ongoing enforceme
 
 ### Task 3.1 — Implement the system prompt builder
 
-Status: `not started`
-Notes: `backend/study-guide-agent/app/prompts/system_prompt.py` is still placeholder-level.
+Status: `complete`
+Notes: `backend/study-guide-agent/app/prompts/system_prompt.py` now builds a request-aware system prompt covering role, reading level, voice, cultural relevance, JSON-only formatting, and structured output discipline.
 
 ### Task 3.2 — Implement the blueprint prompt template
 
-Status: `not started`
-Notes: A real blueprint prompt template has not been implemented yet.
+Status: `complete`
+Notes: `backend/study-guide-agent/app/prompts/templates/blueprint.py` now builds a request-aware blueprint prompt with inline schema, essential-question guidance, vocabulary-count rules, learning-target instructions, and enforced topic-domain separation.
 
 ### Task 3.3 — Implement the blueprint node
 
-Status: `not started`
-Notes: `backend/study-guide-agent/app/nodes/blueprint.py` is still a placeholder.
+Status: `complete`
+Notes: `backend/study-guide-agent/app/nodes/blueprint.py` now builds system and blueprint prompts from a direct `GenerateRequest`, calls Gemini with `TEMP_BLUEPRINT`, parses JSON, validates the `Blueprint` model, and raises `RuntimeError` with raw response context on parse or schema failure.
 
 ### Task 3.4 — Add a focused blueprint test
 
-Status: `not started`
-Notes: No dedicated blueprint test exists yet.
+Status: `complete`
+Notes: `backend/study-guide-agent/tests/unit/test_blueprint.py` now covers the fixture-based blueprint path with a stubbed Gemini response, asserting required Blueprint fields, learning-target count, and distinct model versus assessment passage domains.
 
 ## Phase 4 — Section generation nodes
 

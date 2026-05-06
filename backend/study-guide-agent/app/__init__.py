@@ -12,6 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .agent import app
+from pathlib import Path
+from typing import Any
+
+from dotenv import load_dotenv
+
+from app.app_utils.adk_compat import ensure_google_adk_beta_compat
+
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
+ensure_google_adk_beta_compat()
 
 __all__ = ["app"]
+
+
+def __getattr__(name: str) -> Any:
+	if name == "app":
+		from .agent import app as adk_app
+
+		return adk_app
+	raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

@@ -15,6 +15,11 @@
 import os
 
 from fastapi import FastAPI
+
+from app.app_utils.adk_compat import ensure_google_adk_beta_compat
+
+ensure_google_adk_beta_compat()
+
 from google.adk.cli.fast_api import get_fast_api_app
 
 from app.app_utils.telemetry import setup_telemetry

@@ -19,7 +19,15 @@ TEMP_RETRY = 0.3
 MAX_OUTPUT_TOKENS = 2048
 MODEL_NAME = "gemini-2.0-flash"
 
-_client = genai.Client(api_key=os.environ["GOOGLE_API_KEY"])
+
+def _get_client() -> genai.Client:
+    api_key = os.getenv("GOOGLE_API_KEY")
+    if not api_key:
+        raise RuntimeError(
+            "GOOGLE_API_KEY is not set. Expected it in the shell environment or "
+            "in backend/study-guide-agent/.env."
+        )
+    return genai.Client(api_key=api_key)
 
 
 async def call_gemini(
@@ -52,7 +60,7 @@ async def call_gemini(
                 len(user_prompt),
             )
 
-            response = await _client.aio.models.generate_content(
+            response = await _get_client().aio.models.generate_content(
                 model=MODEL_NAME,
                 contents=user_prompt,
                 config=config,

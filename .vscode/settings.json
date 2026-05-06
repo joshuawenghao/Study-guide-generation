@@ -35,7 +35,7 @@
   // ── Python environment ─────────────────────────────────────────────────────
 
   // Point the Python extension to the backend venv
-  "python.defaultInterpreterPath": "${workspaceFolder}/backend/.venv/bin/python",
+  "python.defaultInterpreterPath": "${workspaceFolder}/backend/study-guide-agent/.venv/bin/python",
 
   // ── File associations ──────────────────────────────────────────────────────
 
