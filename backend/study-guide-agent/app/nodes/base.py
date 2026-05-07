@@ -39,11 +39,13 @@ async def call_gemini(
 ) -> str:
     """Call Gemini with the JSON response mode used by section generators."""
 
-    config = types.GenerateContentConfig(
-        system_instruction=system_prompt,
-        temperature=temperature,
-        max_output_tokens=MAX_OUTPUT_TOKENS,
-        response_mime_type="application/json",
+    config = types.GenerateContentConfig.model_validate(
+        {
+            "system_instruction": system_prompt,
+            "temperature": temperature,
+            "max_output_tokens": MAX_OUTPUT_TOKENS,
+            "response_mime_type": "application/json",
+        }
     )
 
     last_error: Exception | None = None
