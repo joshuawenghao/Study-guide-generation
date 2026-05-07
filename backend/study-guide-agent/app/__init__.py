@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from dotenv import load_dotenv
 
@@ -22,12 +22,19 @@ from app.app_utils.adk_compat import ensure_google_adk_beta_compat
 load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 ensure_google_adk_beta_compat()
 
+if TYPE_CHECKING:
+    from google.adk.apps import App as AppType
+
+    from .agent import app
+
+    app: AppType
+
 __all__ = ["app"]
 
 
 def __getattr__(name: str) -> Any:
-	if name == "app":
-		from .agent import app as adk_app
+    if name == "app":
+        from .agent import app as adk_app
 
-		return adk_app
-	raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+        return adk_app
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

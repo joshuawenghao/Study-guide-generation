@@ -137,7 +137,11 @@ def test_chat_stream(server_fixture: subprocess.Popen[str]) -> None:
         "session_id": session_id,
         "new_message": {
             "role": "user",
-            "parts": [{"text": "Create a Grade 6 science study guide outline about photosynthesis."}],
+            "parts": [
+                {
+                    "text": "Create a Grade 6 science study guide outline about photosynthesis."
+                }
+            ],
         },
         "streaming": True,
     }

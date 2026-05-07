@@ -1,10 +1,11 @@
+# ruff: noqa: E402
+
 from app.app_utils.adk_compat import ensure_google_adk_beta_compat
 
 ensure_google_adk_beta_compat()
 
 from google.adk.agents import Agent
 from google.adk.apps import App
-
 
 root_agent = Agent(
     model="gemini-2.0-flash",

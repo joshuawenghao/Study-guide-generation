@@ -1,0 +1,13 @@
+{
+  "venvPath": "backend/study-guide-agent",
+  "venv": ".venv",
+  "executionEnvironments": [
+    {
+      "root": "backend/study-guide-agent",
+      "venv": ".venv",
+      "extraPaths": [
+        "backend/study-guide-agent"
+      ]
+    }
+  ]
+}

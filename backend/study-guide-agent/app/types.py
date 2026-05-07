@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
 
-class LengthPreset(str, Enum):
+class LengthPreset(StrEnum):
     """Supported output length presets for generation."""
 
     SHORT = "short"

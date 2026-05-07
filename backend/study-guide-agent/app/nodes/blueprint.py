@@ -1,5 +1,7 @@
 """Blueprint generation node for the study guide workflow."""
 
+# ruff: noqa: E402
+
 from __future__ import annotations
 
 import json
@@ -11,7 +13,6 @@ from app.app_utils.adk_compat import ensure_google_adk_beta_compat
 ensure_google_adk_beta_compat()
 
 from google.adk.workflow import node
-
 from pydantic import ValidationError
 
 from app.nodes.base import TEMP_BLUEPRINT, call_gemini

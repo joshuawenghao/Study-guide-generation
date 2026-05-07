@@ -18,7 +18,9 @@ def build_prompt(spec, blueprint, request: GenerateRequest) -> str:
             "Use the teacher-provided seed words as the canonical vocabulary words, "
             "in the same order, and write a definition and example sentence for each one."
         )
-        vocabulary_seed_text = "Teacher-provided vocabulary seeds: " + ", ".join(vocabulary_seeds)
+        vocabulary_seed_text = "Teacher-provided vocabulary seeds: " + ", ".join(
+            vocabulary_seeds
+        )
     else:
         vocabulary_instruction = (
             "Generate exactly 5 vocabulary entries. Choose words that are central to the "

@@ -36,5 +36,5 @@ def ensure_google_adk_beta_compat() -> None:
     features.FeatureName = _FeatureNameProxy()
     features.is_feature_enabled = lambda *args, **kwargs: False
     features.override_feature_enabled = lambda *args, **kwargs: None
-    features.experimental = lambda *args, **kwargs: (lambda value: value)
+    features.experimental = lambda *args, **kwargs: lambda value: value
     sys.modules["google.adk.features"] = features

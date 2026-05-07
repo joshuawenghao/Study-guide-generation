@@ -37,6 +37,19 @@ These are two separate runtimes. They share no code — only a JSON contract doc
 - Only mark a task as complete after the implementation exists in the repo and at least one focused validation step has passed.
 - If a task is only scaffolded or partially working, mark it as partial rather than complete.
 
+## Workspace Automation Skills
+
+- Workspace-local automation skills live under `.github/skills/`.
+- Use `repo-automation` to decide whether the session should start from spec grooming, task planning, implementation, or docs reconciliation.
+- For new or stale requirements, route through `spec-groom` before `spec-to-tasks`.
+- For existing tasks, use the loop `task-implement` -> `task-done` -> `docs-drift`.
+- Do not treat `task-implement` as permission to mark work complete; the done gate belongs to `task-done`.
+- The repository validation entrypoint for the automation loop is `./scripts/validate-task.sh` from the repo root.
+- `task-done` should only mark a task complete after `./scripts/validate-task.sh` passes, unless the user explicitly waives that gate.
+- When the user has opted into iterative workflow commits, `task-done` should create a small git commit for the completed task slice and must not include unrelated dirty files.
+- The default iterative commit message format is `task(<task-id>): <imperative summary>`, or `task: <imperative summary>` when there is no task id.
+- `docs-drift` owns `CODEBASE_STATE.md`, which should describe the shipped code in plain language and be refreshed whenever shipped behavior or repo workflow changes.
+
 ---
 
 ## Frontend conventions (Next.js / TypeScript)

@@ -195,6 +195,7 @@ my_env.tfvars
 .env
 .requirements.txt
 .google-agents-cli/
+study_guide_agent/.adk/
 
 # agents-cli workspace skill installs
 .agents/
