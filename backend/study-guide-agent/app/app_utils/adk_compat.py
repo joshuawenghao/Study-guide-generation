@@ -4,12 +4,21 @@ from __future__ import annotations
 
 import sys
 import types
+from collections.abc import Callable
 from importlib.metadata import PackageNotFoundError, version
+from typing import Any
 
 
 class _FeatureNameProxy:
     def __getattr__(self, name: str) -> str:
         return name
+
+
+class _CompatFeaturesModule(types.ModuleType):
+    FeatureName: _FeatureNameProxy
+    is_feature_enabled: Callable[..., bool]
+    override_feature_enabled: Callable[..., None]
+    experimental: Callable[..., Callable[[Any], Any]]
 
 
 def ensure_google_adk_beta_compat() -> None:
@@ -32,7 +41,7 @@ def ensure_google_adk_beta_compat() -> None:
     if adk_version != "2.0.0b1":
         return
 
-    features = types.ModuleType("google.adk.features")
+    features = _CompatFeaturesModule("google.adk.features")
     features.FeatureName = _FeatureNameProxy()
     features.is_feature_enabled = lambda *args, **kwargs: False
     features.override_feature_enabled = lambda *args, **kwargs: None
