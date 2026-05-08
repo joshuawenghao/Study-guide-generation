@@ -1,6 +1,6 @@
 # Codebase State
 
-Last updated: 2026-05-07
+Last updated: 2026-05-08
 
 This document is the live plain-language summary of the shipped codebase.
 It is intended to answer, in words, what currently exists in the repository without requiring a reader to inspect source files directly.
@@ -8,7 +8,7 @@ It is intended to answer, in words, what currently exists in the repository with
 ## Executive Summary
 
 - The repository now includes a working Copilot automation loop with workspace-local skills, a repo-level validation script, and a live shipped-state document.
-- The backend blueprint slice remains the main implemented product path.
+- The backend now includes the first implemented Wave 1 section prompt-template slice beyond blueprint generation.
 - The ADK FastAPI loader now has a compatibility adapter so the server integration path can locate `study_guide_agent.root_agent` correctly.
 
 ## Repository Shape
@@ -20,6 +20,8 @@ It is intended to answer, in words, what currently exists in the repository with
 ## Shipped Backend
 
 - Phase 3 of the planned backend work is complete: the system prompt builder, blueprint prompt template, blueprint node, and focused blueprint unit test exist.
+- Task 4.1 is now implemented: the Wave 1 prompt templates for intro, learning targets, warm-up, vocabulary, key points, and self-assessment now build blueprint-driven prompts with explicit inline JSON schemas.
+- The backend now includes a focused unit test for those Wave 1 prompt templates using the preserved Grade 6 English fixture shape.
 - The backend uses the scaffolded ADK project structure created by `agents-cli`.
 - Core typed contracts are implemented in `backend/study-guide-agent/app/types.py` and mirrored in `frontend/lib/types.ts`.
 - The repo includes a compatibility shim in `backend/study-guide-agent/app/app_utils/adk_compat.py` to smooth over current ADK beta import-surface issues before ADK imports are loaded.
@@ -51,6 +53,6 @@ It is intended to answer, in words, what currently exists in the repository with
 
 ## Current Product Gaps
 
-- Many section prompt templates, section nodes, validators, and renderer files still exist only as placeholders.
+- Wave 1 prompt templates are implemented, but many later section prompt templates, section nodes, validators, and renderer files still exist only as placeholders.
 - End-to-end workflow orchestration is still partial rather than complete.
 - Phase 4 onward remains mostly scaffolded or placeholder-only, including section generation nodes, validators, renderer implementation, and most frontend product experience work.

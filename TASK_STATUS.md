@@ -1,6 +1,6 @@
 # Task Status
 
-Last updated: 2026-05-06
+Last updated: 2026-05-08
 
 This file mirrors the structure of `TASKS.md` and records the current repo state against each task directly.
 Use it together with `TASKS.md`:
@@ -20,7 +20,7 @@ Status legend:
 - Legacy root-level backend code has been removed
 - Backend scaffold, environment files, core type contracts, and eval fixture preservation are in place
 - The backend now uses the project-local `backend/study-guide-agent/.venv` for ADK 2.0 beta work, with a narrow compatibility shim for the broken `google.adk.features` import surface in `google-adk==2.0.0b1`
-- The system prompt builder, blueprint prompt template, blueprint node, and focused blueprint unit test are now implemented; the remaining validators, renderer, and frontend product UI are still largely unimplemented
+- The system prompt builder, blueprint prompt template, blueprint node, and focused blueprint unit test are now implemented, and Wave 1 prompt templates now exist with a focused prompt-template unit test; the remaining section nodes, validators, renderer, and frontend product UI are still largely unimplemented
 
 ## Phase 0 — Repository and tooling setup
 
@@ -109,8 +109,8 @@ Notes: `backend/study-guide-agent/tests/unit/test_blueprint.py` now covers the f
 
 ### Task 4.1 — Implement Wave 1 section prompt templates
 
-Status: `not started`
-Notes: Wave 1 prompt template files exist, but they are still placeholders.
+Status: `complete`
+Notes: `intro.py`, `learning_targets.py`, `warmup.py`, `vocabulary.py`, `key_points.py`, and `self_assessment.py` now build blueprint-driven prompts with inline JSON schemas and strict JSON-only return instructions; `tests/unit/test_wave1_prompt_templates.py` provides focused fixture-backed coverage for the template strings.
 
 ### Task 4.2 — Implement Wave 1 section nodes
 
