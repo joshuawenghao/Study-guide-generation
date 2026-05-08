@@ -59,6 +59,7 @@ It is intended to answer, in words, what currently exists in the repository with
 - The backend `test_chat_stream` integration failure caused by ADK loader discovery has been resolved by the new loader adapter package.
 - Python analysis for backend files is now pinned through `pyrightconfig.json` so the backend venv is used for import resolution in editor diagnostics.
 - The full repo-level validation script now passes end to end, including backend lint, backend tests, and frontend lint.
+- The repo-level validation script now also runs backend Pyright against the shared repo `pyrightconfig.json`, so editor-visible backend type errors can fail the done gate before a task is marked complete.
 
 ## Current Product Gaps
 

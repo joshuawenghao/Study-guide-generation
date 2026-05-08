@@ -24,7 +24,7 @@ A task can be marked `complete` only if all of the following are true:
 
 1. The planned behavior exists in code.
 2. At least one focused validation step passed.
-3. `./scripts/validate-task.sh` passed without unresolved failures.
+3. `./scripts/validate-task.sh` passed without unresolved failures, including the backend Pyright pass.
 4. The implementation does not obviously violate repo instructions or architecture constraints.
 5. Any required paired updates, such as mirrored type changes, are present.
 6. `TASK_STATUS.md` notes match reality.
@@ -35,7 +35,8 @@ If any item fails, mark the task `partial` or keep it `not started`, depending o
 
 1. Reuse the focused validation from `task-implement`.
 2. Require a successful run of `./scripts/validate-task.sh` unless the user explicitly waives the done gate.
-3. Record what was validated and what remains unverified.
+3. Treat backend Pyright failures as done-gate failures, even if `ty` and pytest pass, because editor-visible type errors should block task completion.
+4. Record what was validated and what remains unverified.
 
 ## Repository-Specific Rules
 

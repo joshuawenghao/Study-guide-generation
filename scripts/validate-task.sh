@@ -25,6 +25,11 @@ run_backend_lint() {
       cd "$BACKEND_DIR"
       ./agents-cli lint
     )
+    echo "==> Running backend Pyright"
+    (
+      cd "$BACKEND_DIR"
+      uv run pyright --project "$ROOT_DIR/pyrightconfig.json"
+    )
   else
     echo "==> Skipping backend lint: agents-cli wrapper not found"
   fi
