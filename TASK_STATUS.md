@@ -20,7 +20,7 @@ Status legend:
 - Legacy root-level backend code has been removed
 - Backend scaffold, environment files, core type contracts, and eval fixture preservation are in place
 - The backend now uses the project-local `backend/study-guide-agent/.venv` for ADK 2.0 beta work, with a narrow compatibility shim for the broken `google.adk.features` import surface in `google-adk==2.0.0b1`
-- The system prompt builder, blueprint prompt template, blueprint node, and focused blueprint unit test are now implemented, and Wave 1 through Wave 3 templates and section nodes now exist with focused unit coverage; the remaining answer-key path, validators, renderer, and frontend product UI are still largely unimplemented
+- The system prompt builder, blueprint prompt template, blueprint node, and focused blueprint unit test are now implemented, and Wave 1 through Wave 3 plus the answer-key path now exist with focused unit coverage; validators, renderer, and frontend product UI are still largely unimplemented
 
 ## Phase 0 — Repository and tooling setup
 
@@ -129,13 +129,13 @@ Notes: `check_in.py`, `assessment_questions.py`, and `step_up.py` now build depe
 
 ### Task 4.5 — Implement the answer key template and node
 
-Status: `not started`
-Notes: The answer key template and node are still placeholders.
+Status: `complete`
+Notes: `answer_key.py` now builds a dependency-aware prompt from `check_in`, `assessment_passage`, and `assessment_questions`, requiring quoted passage evidence inside assessment `possible_answer` fields; the answer-key node now uses `TEMP_ANSWER_KEY`, parses structured JSON, and `tests/unit/test_answer_key_node.py` provides focused coverage for shape and malformed-JSON handling.
 
 ### Task 4.6 — Add focused section-generation tests
 
-Status: `not started`
-Notes: No focused section-generation test suite exists yet.
+Status: `partial`
+Notes: Focused section-generation tests now exist across `test_wave1_section_nodes.py`, `test_wave2_section_nodes.py`, `test_wave3_section_nodes.py`, and `test_answer_key_node.py`, but the task has not yet been reconciled into the explicit representative test slice described in `TASKS.md`.
 
 ## Phase 5 — Validation layer
 
