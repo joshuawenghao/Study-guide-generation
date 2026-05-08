@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import cast
 
 import pytest
 
@@ -115,9 +116,13 @@ async def test_generate_answer_key_returns_structured_json(
         max_retries: int = 2,
         context_label: str = "unknown",
     ) -> str:
+        check_in_questions = cast(list[dict[str, object]], check_in["questions"])
+        assessment_question_list = cast(
+            list[dict[str, object]], assessment_questions["questions"]
+        )
         assert "PH Grade 6 English" in system_prompt
-        assert check_in["questions"][0]["question"] in user_prompt
-        assert assessment_questions["questions"][0]["question"] in user_prompt
+        assert str(check_in_questions[0]["question"]) in user_prompt
+        assert str(assessment_question_list[0]["question"]) in user_prompt
         assert (
             '"Mangrove forests protect coastlines from strong waves."'
             not in user_prompt
@@ -133,7 +138,7 @@ async def test_generate_answer_key_returns_structured_json(
                 "check_in_answers": [
                     {
                         "question_number": 1,
-                        "question": check_in["questions"][0]["question"],
+                        "question": str(check_in_questions[0]["question"]),
                         "possible_answer": "The author uses an encouraging tone and says students should join the event because it will be fun.",
                         "evidence_quote": '"encouraging tone"',
                     }
@@ -141,7 +146,7 @@ async def test_generate_answer_key_returns_structured_json(
                 "assessment_answers": [
                     {
                         "question_number": 1,
-                        "question": assessment_questions["questions"][0]["question"],
+                        "question": str(assessment_question_list[0]["question"]),
                         "possible_answer": 'The author wants to inform and persuade readers because "protect coastlines" shows why mangroves matter.',
                         "evidence_quote": '"protect coastlines"',
                     }

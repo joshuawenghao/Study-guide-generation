@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import cast
 
 import pytest
 
@@ -138,18 +139,28 @@ async def test_wave3_section_nodes_generate_structured_json(
         assert temperature == sections_module.TEMP_SECTION
         assert max_retries == 2
 
+        model_passage_lines = cast(list[str], model_passage["passage"])
+        model_evidence_focus = cast(str, model_passage["evidence_focus"])
+        assessment_passage_lines = cast(list[str], assessment_passage["passage"])
+        assessment_evidence_clues = cast(
+            list[str], assessment_passage["evidence_clues"]
+        )
+        assessment_question_list = cast(
+            list[dict[str, object]], assessment_questions["questions"]
+        )
+
         expected_fragments: dict[str, list[str]] = {
             "check_in": [
-                str(model_passage["passage"][0]),
-                str(model_passage["evidence_focus"]),
+                model_passage_lines[0],
+                model_evidence_focus,
             ],
             "assessment_questions": [
-                str(assessment_passage["passage"][0]),
-                str(assessment_passage["evidence_clues"][0]),
+                assessment_passage_lines[0],
+                assessment_evidence_clues[0],
             ],
             "step_up": [
-                str(assessment_passage["passage"][0]),
-                str(assessment_questions["questions"][0]["question"]),
+                assessment_passage_lines[0],
+                str(assessment_question_list[0]["question"]),
             ],
         }
         for fragment in expected_fragments[context_label]:
