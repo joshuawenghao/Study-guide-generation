@@ -20,7 +20,7 @@ Status legend:
 - Legacy root-level backend code has been removed
 - Backend scaffold, environment files, core type contracts, and eval fixture preservation are in place
 - The backend now uses the project-local `backend/study-guide-agent/.venv` for ADK 2.0 beta work, with a narrow compatibility shim for the broken `google.adk.features` import surface in `google-adk==2.0.0b1`
-- The system prompt builder, blueprint prompt template, blueprint node, and focused blueprint unit test are now implemented, and Wave 1 prompt templates now exist with a focused prompt-template unit test; the remaining section nodes, validators, renderer, and frontend product UI are still largely unimplemented
+- The system prompt builder, blueprint prompt template, blueprint node, and focused blueprint unit test are now implemented, and Wave 1 prompt templates and Wave 1 section nodes now exist with focused unit coverage; the remaining later section nodes, validators, renderer, and frontend product UI are still largely unimplemented
 
 ## Phase 0 — Repository and tooling setup
 
@@ -114,8 +114,8 @@ Notes: `intro.py`, `learning_targets.py`, `warmup.py`, `vocabulary.py`, `key_poi
 
 ### Task 4.2 — Implement Wave 1 section nodes
 
-Status: `not started`
-Notes: Wave 1 section node files exist, but they are still placeholders.
+Status: `complete`
+Notes: `intro.py`, `learning_targets.py`, `warmup.py`, `vocabulary.py`, `key_points.py`, and `self_assessment.py` now build request-aware system prompts, call the shared Gemini wrapper with `TEMP_SECTION`, parse structured JSON payloads, and export ADK node wrappers using explicit `request` and `blueprint` arguments; `tests/unit/test_wave1_section_nodes.py` provides focused fixture-backed coverage for the shared generation path and malformed-JSON handling.
 
 ### Task 4.3 — Implement Wave 2 templates and nodes
 
