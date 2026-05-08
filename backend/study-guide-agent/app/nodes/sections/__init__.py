@@ -35,9 +35,10 @@ async def generate_section(
     blueprint: Blueprint,
     prompt_builder: Callable[[Any, Blueprint, GenerateRequest], str],
     context_label: str,
+    spec: Any = None,
 ) -> dict[str, Any]:
     system_prompt = build_system_prompt(request)
-    user_prompt = prompt_builder(None, blueprint, request)
+    user_prompt = prompt_builder(spec, blueprint, request)
     response_text = await call_gemini(
         system_prompt=system_prompt,
         user_prompt=user_prompt,

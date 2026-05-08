@@ -1,7 +1,42 @@
 from __future__ import annotations
 
+from app.types import Blueprint, GenerateRequest
 
-def build_prompt(spec, blueprint, request) -> str:
-    """Placeholder prompt builder migrated from the legacy backend."""
 
-    raise NotImplementedError("Deep dive prompt template is not implemented yet.")
+def build_prompt(spec, blueprint: Blueprint, request: GenerateRequest) -> str:
+    del spec, request
+
+    deep_dive_schema = """{
+    "title": "Deep Dive",
+    "compare_focus": "string",
+    "examples": [
+        {
+            "mode": "string",
+            "topic_domain": "string",
+            "explanation": "string",
+            "signal_words": [
+                "string"
+            ]
+        }
+    ],
+    "takeaway": "string"
+}"""
+
+    prompt_lines = [
+        "Create the deep dive section for a K-12 study guide.",
+        f"- Lesson title: {blueprint.title}",
+        f"- Core concept: {blueprint.core_concept}",
+        "- Topic domains for rhetorical examples:",
+        f"  - entertain_example: {blueprint.topic_domains.entertain_example}",
+        f"  - inform_example: {blueprint.topic_domains.inform_example}",
+        f"  - persuade_example: {blueprint.topic_domains.persuade_example}",
+        "Requirements:",
+        "- Compare how entertain, inform, and persuade differ in purpose.",
+        "- Use the blueprint example domains directly so the examples stay distinct.",
+        "- Include signal_words lists that help students notice clues in texts.",
+        "Expected JSON schema:",
+        deep_dive_schema,
+        "Return only JSON.",
+    ]
+
+    return "\n".join(prompt_lines)
