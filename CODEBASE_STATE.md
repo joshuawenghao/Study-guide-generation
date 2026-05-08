@@ -8,7 +8,7 @@ It is intended to answer, in words, what currently exists in the repository with
 ## Executive Summary
 
 - The repository now includes a working Copilot automation loop with workspace-local skills, a repo-level validation script, and a live shipped-state document.
-- The backend now includes implemented Wave 1 and Wave 2 section-generation slices beyond blueprint generation.
+- The backend now includes implemented Wave 1, Wave 2, and Wave 3 section-generation slices beyond blueprint generation.
 - The ADK FastAPI loader now has a compatibility adapter so the server integration path can locate `study_guide_agent.root_agent` correctly.
 
 ## Repository Shape
@@ -27,6 +27,8 @@ It is intended to answer, in words, what currently exists in the repository with
 - Task 4.3 is now implemented: the Wave 2 prompt templates and section nodes for core explainer, subconcept, strategy list, deep dive, model passage, and assessment passage now generate blueprint-aware JSON prompts and request-aware node wrappers.
 - The shared section helper now supports section-specific `spec` inputs so `subconcept` generation can run once per sub-competency without reading from session state.
 - The backend now includes a focused Wave 2 unit test covering sub-competency-aware prompt generation, passage-domain-aware generation, and malformed JSON failure handling.
+- Task 4.4 is now implemented: the Wave 3 prompt templates and section nodes for check-in, assessment questions, and step-up now consume upstream section payloads directly through explicit node arguments rather than shared session state.
+- The backend now includes a focused Wave 3 unit test covering dependency-aware prompt generation for passage-based questions and malformed JSON failure handling.
 - The backend uses the scaffolded ADK project structure created by `agents-cli`.
 - Core typed contracts are implemented in `backend/study-guide-agent/app/types.py` and mirrored in `frontend/lib/types.ts`.
 - The repo includes a compatibility shim in `backend/study-guide-agent/app/app_utils/adk_compat.py` to smooth over current ADK beta import-surface issues before ADK imports are loaded.
@@ -58,6 +60,6 @@ It is intended to answer, in words, what currently exists in the repository with
 
 ## Current Product Gaps
 
-- Wave 1 and Wave 2 prompt templates and section nodes are implemented, but Wave 3 sections, answer-key generation, validators, and renderer files still exist only as placeholders.
+- Wave 1, Wave 2, and Wave 3 prompt templates and section nodes are implemented, but the answer-key path, validators, and renderer files still exist only as placeholders.
 - End-to-end workflow orchestration is still partial rather than complete.
 - Phase 4 onward remains mostly scaffolded or placeholder-only, including section generation nodes, validators, renderer implementation, and most frontend product experience work.

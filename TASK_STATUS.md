@@ -20,7 +20,7 @@ Status legend:
 - Legacy root-level backend code has been removed
 - Backend scaffold, environment files, core type contracts, and eval fixture preservation are in place
 - The backend now uses the project-local `backend/study-guide-agent/.venv` for ADK 2.0 beta work, with a narrow compatibility shim for the broken `google.adk.features` import surface in `google-adk==2.0.0b1`
-- The system prompt builder, blueprint prompt template, blueprint node, and focused blueprint unit test are now implemented, and Wave 1 plus Wave 2 templates and section nodes now exist with focused unit coverage; the remaining Wave 3 sections, validators, renderer, and frontend product UI are still largely unimplemented
+- The system prompt builder, blueprint prompt template, blueprint node, and focused blueprint unit test are now implemented, and Wave 1 through Wave 3 templates and section nodes now exist with focused unit coverage; the remaining answer-key path, validators, renderer, and frontend product UI are still largely unimplemented
 
 ## Phase 0 — Repository and tooling setup
 
@@ -124,8 +124,8 @@ Notes: `core_explainer.py`, `subconcept.py`, `strategy_list.py`, `deep_dive.py`,
 
 ### Task 4.4 — Implement Wave 3 templates and nodes
 
-Status: `not started`
-Notes: Wave 3 templates and node implementations are still placeholder-only.
+Status: `complete`
+Notes: `check_in.py`, `assessment_questions.py`, and `step_up.py` now build dependency-aware prompts and request-aware section nodes that consume upstream structured payloads directly through explicit arguments and shared `spec` passing; `tests/unit/test_wave3_section_nodes.py` provides focused coverage for dependency-aware prompt generation and malformed-JSON handling.
 
 ### Task 4.5 — Implement the answer key template and node
 
