@@ -31,6 +31,7 @@ It is intended to answer, in words, what currently exists in the repository with
 - The backend now includes a focused Wave 3 unit test covering dependency-aware prompt generation for passage-based questions and malformed JSON failure handling.
 - Task 4.5 is now implemented: the answer-key prompt template and node now consume check-in, assessment passage, and assessment question payloads directly, use `TEMP_ANSWER_KEY`, and require quoted passage evidence in assessment answers.
 - The backend now includes a focused answer-key unit test covering both structured output shape and malformed JSON failure handling.
+- Task 4.6 is now implemented: `tests/unit/test_section_generation.py` provides a dedicated representative section-generation module that covers a few Wave 1 node calls, a dependency-aware Wave 3 node, and answer-key output shape without testing the whole workflow.
 - The backend uses the scaffolded ADK project structure created by `agents-cli`.
 - Core typed contracts are implemented in `backend/study-guide-agent/app/types.py` and mirrored in `frontend/lib/types.ts`.
 - The repo includes a compatibility shim in `backend/study-guide-agent/app/app_utils/adk_compat.py` to smooth over current ADK beta import-surface issues before ADK imports are loaded.

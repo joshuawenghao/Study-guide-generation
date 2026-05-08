@@ -134,8 +134,8 @@ Notes: `answer_key.py` now builds a dependency-aware prompt from `check_in`, `as
 
 ### Task 4.6 — Add focused section-generation tests
 
-Status: `partial`
-Notes: Focused section-generation tests now exist across `test_wave1_section_nodes.py`, `test_wave2_section_nodes.py`, `test_wave3_section_nodes.py`, and `test_answer_key_node.py`, but the task has not yet been reconciled into the explicit representative test slice described in `TASKS.md`.
+Status: `complete`
+Notes: `tests/unit/test_section_generation.py` now provides the dedicated representative section-generation slice from `TASKS.md` with fixture-based Blueprint input, narrow Wave 1 node coverage, a dependency-aware Wave 3 step-up test, and a shape-focused answer-key output test.
 
 ## Phase 5 — Validation layer
 
