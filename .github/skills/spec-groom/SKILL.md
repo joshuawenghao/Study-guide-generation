@@ -15,6 +15,7 @@ Produce a spec delta that is precise enough to drive task generation and later i
 
 - `IFC.md`
 - `ARCHITECTURE.md`
+- `DEPLOYMENT.md` for deployment-related or environment-parity requirements
 - `TASKS.md`
 - `TASK_STATUS.md`
 - `.github/copilot-instructions.md`
@@ -44,6 +45,7 @@ Produce a groomed spec delta that covers:
 
 - Prefer updating `IFC.md` and `ARCHITECTURE.md` when the change belongs in the main product contract.
 - Create a separate spec document only when the change is large enough that the main docs would become unclear.
+- Keep `DEPLOYMENT.md` as the detailed deployment source of truth when the change is about environment topology, parity mode, secrets ownership, or release workflow.
 - If types or API payloads will change, call that out explicitly for both backend and frontend.
 - If the change affects section order, validators, or workflow orchestration, state that explicitly because those are tightly constrained in this repo.
 

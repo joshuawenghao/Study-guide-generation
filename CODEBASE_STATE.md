@@ -11,12 +11,14 @@ It is intended to answer, in words, what currently exists in the repository with
 - The backend now includes implemented Wave 1, Wave 2, Wave 3, and answer-key generation slices beyond blueprint generation.
 - The validation layer now has its first implemented hard validator: json-schema validation for generated section payloads against backend Pydantic models.
 - The ADK FastAPI loader now has a compatibility adapter so the server integration path can locate `study_guide_agent.root_agent` correctly.
+- The repo documentation now includes an explicit deployment plan and task phase covering Vercel, Cloud Run, and a production-like local parity mode.
 
 ## Repository Shape
 
 - The repository is split into two runtimes: `frontend/` for the Next.js app and `backend/study-guide-agent/` for the ADK backend.
 - The scaffolded backend under `backend/study-guide-agent/` is the only canonical backend implementation path.
 - Root planning and control documents are `IFC.md`, `ARCHITECTURE.md`, `TASKS.md`, and `TASK_STATUS.md`.
+- `DEPLOYMENT.md` now serves as the deployment-specific reference for environment topology, parity goals, and staged deployment checkpoints.
 
 ## Shipped Backend
 
@@ -55,6 +57,7 @@ It is intended to answer, in words, what currently exists in the repository with
 - `task-done` is intended to require the repo-level validation script and create a small iterative commit once the done gate passes.
 - The default iterative commit message format is `task(<task-id>): <imperative summary>`, or `task: <imperative summary>` when no task id applies.
 - `docs-drift` is responsible for keeping this document current.
+- Deployment planning is now tracked explicitly in `TASKS.md` and `TASK_STATUS.md` rather than being implied by backend scaffold defaults.
 
 ## Validation And Quality Gates
 
@@ -71,3 +74,4 @@ It is intended to answer, in words, what currently exists in the repository with
 - Wave 1, Wave 2, Wave 3, and answer-key generation are implemented, and the first hard validator now exists, but the rest of the validator layer and the renderer are still incomplete.
 - End-to-end workflow orchestration is still partial rather than complete.
 - Phase 4 onward remains mostly scaffolded or placeholder-only, including section generation nodes, validators, renderer implementation, and most frontend product experience work.
+- Deployment is now specified, but the parity stack, Cloud Run configuration, Vercel setup, and staged remote deployment checkpoints are still not implemented.

@@ -89,7 +89,14 @@ Phase 9  — Teacher input form
 Phase 10 — API proxy and streaming progress
 Phase 11 — Results experience
 Phase 12 — End-to-end validation and QA
+Phase 13 — Deployment and parity
 ```
+
+Deployment checkpoints should be exercised before the end of the roadmap:
+
+- After Phase 7 is working well enough to boot the real backend workflow, validate a backend-only remote deployment.
+- After Phase 10 is working, validate the deployed proxy and SSE path in a remote dev environment.
+- After Phase 12 passes, run a full release-candidate deployment and smoke test.
 
 ---
 
@@ -1634,6 +1641,148 @@ After each fully completed task or phase, update `TASK_STATUS.md`.
 ---
 
 **✅ Phase 12 done.** The prototype has been implemented and validated against the repo’s documented requirements.
+
+---
+
+## Phase 13 — Deployment and parity
+
+> Goal: make deployment repeatable before final feature completion, and make local reproduction mirror the remote topology closely enough to debug production-only failures.
+
+This phase is cross-cutting. Do not wait until every Phase 13 task is finished before running deployment checks; execute the staged checkpoints when Phases 7, 10, and 12 reach the stated readiness levels.
+
+---
+
+### Task 13.1 — Document the deployment topology and environment matrix
+
+🧑 **You**
+
+Use `DEPLOYMENT.md`, `IFC.md`, and `ARCHITECTURE.md` as the deployment source of truth.
+Confirm that the repo documents these modes clearly:
+
+- fast local dev
+- local parity
+- remote dev
+- production
+
+Confirm the recommended production split remains:
+
+- Vercel for the frontend
+- Cloud Run for the backend
+
+**Done looks like:**
+
+- `DEPLOYMENT.md` exists at the repo root
+- The environment matrix and secret ownership are documented
+- The staged deployment checkpoints are documented in the task plan
+
+---
+
+### Task 13.2 — Containerize the backend for Cloud Run parity
+
+🧑 **You**
+
+Use the existing backend Docker path as the starting point and verify it is suitable for both Cloud Run and local parity testing.
+
+Confirm at minimum:
+
+- WeasyPrint system dependencies are installed in the image
+- the image boots `app.fast_api_app:app`
+- runtime configuration comes from environment variables and not hardcoded values
+- the same image can be run locally and on Cloud Run
+
+**Done looks like:**
+
+- A backend container can be built locally
+- The container serves the backend on a configurable port
+- The deployment guide documents the local and Cloud Run commands
+
+---
+
+### Task 13.3 — Add a local parity orchestration path
+
+🧑 **You**
+
+Create a repeatable local parity flow that runs the frontend in production mode and the backend in its Cloud Run-style container/runtime shape.
+
+Possible implementation options:
+
+- `docker compose`
+- a repo script that builds and runs the backend container plus the production frontend
+- another single-command wrapper with equivalent behavior
+
+Whichever option you choose, keep the two-runtime split intact.
+
+**Done looks like:**
+
+- One documented command starts the parity stack
+- The frontend talks to the backend through `ADK_BACKEND_URL`
+- Production-only routing or CORS bugs can be reproduced locally without changing application code
+
+---
+
+### Task 13.4 — Configure the backend deployment for Cloud Run
+
+🧑 **You**
+
+Add the deployment configuration and documentation needed for a non-production and production Cloud Run service.
+
+Capture at minimum:
+
+- required environment variables and secret sources
+- allowed origins for preview and production frontends
+- request timeout and concurrency assumptions for long-running generation requests
+- the deploy command or IaC entrypoint the repo will standardize on
+
+**Done looks like:**
+
+- The backend can be deployed to a dev Cloud Run service without manual code edits
+- Preview and production origins are documented for CORS
+- The deployment path is written down in `DEPLOYMENT.md`
+
+---
+
+### Task 13.5 — Configure the frontend deployment for Vercel
+
+🧑 **You**
+
+Set up the frontend deployment path so preview and production environments can target the correct backend URL through environment configuration only.
+
+Confirm at minimum:
+
+- `ADK_BACKEND_URL` is set separately for preview/dev and production
+- the Next.js proxy route stays thin and forwards to the backend URL without business logic
+- the deployment guide documents which values belong in Vercel project settings
+
+**Done looks like:**
+
+- A Vercel preview environment can talk to the dev Cloud Run backend
+- A Vercel production environment can talk to the production Cloud Run backend
+- No frontend code changes are required when switching environments
+
+---
+
+### Task 13.6 — Run staged deployment checkpoints
+
+🧑 **You**
+
+Do not wait until the whole roadmap is complete before testing deployment.
+Run these checkpoints when the corresponding phases are ready:
+
+1. After Phase 7, deploy the backend to a dev environment and verify the service boots and accepts a representative request.
+2. After Phase 10, deploy the integrated frontend preview plus dev backend and verify the proxy plus SSE path works remotely.
+3. After Phase 12, deploy the release candidate and run a smoke test covering form submit, progress, preview, and PDF download.
+
+Record the results in `TASK_STATUS.md` as you go.
+
+**Done looks like:**
+
+- Each checkpoint has been executed when its prerequisite phase was ready
+- Deployment issues are found incrementally rather than at final release time
+- The task tracker records which checkpoint was last validated
+
+---
+
+**✅ Phase 13 done.** Deployment is documented, parity tooling exists, and the repo has a repeatable staged path from local reproduction to managed cloud release.
 
 ---
 

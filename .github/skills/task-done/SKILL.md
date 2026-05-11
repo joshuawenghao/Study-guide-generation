@@ -28,6 +28,7 @@ A task can be marked `complete` only if all of the following are true:
 4. The implementation does not obviously violate repo instructions or architecture constraints.
 5. Any required paired updates, such as mirrored type changes, are present.
 6. `TASK_STATUS.md` notes match reality.
+7. If the task is deployment- or parity-related, the task-specific environment validation required by `TASKS.md` has passed or any remaining blocked external step is recorded explicitly.
 
 If any item fails, mark the task `partial` or keep it `not started`, depending on actual state.
 
@@ -36,13 +37,14 @@ If any item fails, mark the task `partial` or keep it `not started`, depending o
 1. Reuse the focused validation from `task-implement`.
 2. Require a successful run of `./scripts/validate-task.sh` unless the user explicitly waives the done gate.
 3. Treat backend Pyright failures as done-gate failures, even if `ty` and pytest pass, because editor-visible type errors should block task completion.
-4. Record what was validated and what remains unverified.
+4. For deployment or parity tasks, require the task-specific environment validation named in `TASKS.md`, unless an external prerequisite is still missing and the task is therefore only `partial`.
+5. Record what was validated and what remains unverified.
 
 ## Repository-Specific Rules
 
 - Update `TASK_STATUS.md` in the same turn when the task status changes.
 - Do not edit `TASKS.md` unless the plan itself is now wrong.
-- After the done gate passes, create a small git commit for the task slice.
+- After the done gate passes, create a small git commit for the task slice only when the user has opted into iterative workflow commits.
 - Stage only the files that belong to the completed task slice and related status/doc updates.
 - Never include unrelated dirty files in the commit. If unrelated changes would be swept in, stop and ask the user how to proceed.
 - Use the commit message format `task(<task-id>): <imperative summary>` when the task id is known, for example `task(4.1): implement wave 1 prompt templates`.

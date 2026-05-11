@@ -15,6 +15,7 @@ Take one concrete task from plan to implemented-with-focused-validation, while k
 
 - `TASKS.md`
 - `TASK_STATUS.md`
+- `DEPLOYMENT.md` when implementing deployment, parity, or remote-validation tasks
 - `.github/copilot-instructions.md`
 - The nearest owning implementation files for the chosen task
 
@@ -46,6 +47,7 @@ Take one concrete task from plan to implemented-with-focused-validation, while k
 - Run the narrowest focused validation you can immediately after the first substantive edit.
 - Before handing off to `task-done`, run the repository validation script at `./scripts/validate-task.sh` from the repo root.
 - The repository validation script is expected to run backend lint, backend unit tests, backend integration tests, and frontend lint when those surfaces exist.
+- For deployment or parity tasks, also run the narrowest task-specific environment check available, such as a local container boot check, a parity-stack smoke check, or the staged remote deployment check named by the task.
 - If the repo-wide validation step fails because of pre-existing baseline debt outside the task slice, record that explicitly and keep the task out of the done gate until the failure is resolved or consciously waived.
 - If commands are unavailable, explain the limitation and preserve a clear next validation step.
 

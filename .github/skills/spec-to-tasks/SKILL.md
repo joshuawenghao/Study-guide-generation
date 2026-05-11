@@ -16,6 +16,7 @@ Translate a spec into execution-ready tasks that are small enough for iterative 
 - The groomed spec source.
 - `IFC.md`
 - `ARCHITECTURE.md`
+- `DEPLOYMENT.md` when deployment or parity work is in scope
 - `TASKS.md`
 - `TASK_STATUS.md`
 - `.github/copilot-instructions.md`
@@ -42,6 +43,7 @@ Update or create:
 - Use `complete`, `partial`, and `not started` consistently.
 - Do not mark anything `complete` while planning.
 - Prefer inserting new tasks into the existing phase structure unless a new phase is clearly required.
+- When deployment work is cross-cutting, allow checkpoint tasks to reference readiness in earlier phases instead of forcing all deployment work to the very end.
 
 ## Planning Process
 

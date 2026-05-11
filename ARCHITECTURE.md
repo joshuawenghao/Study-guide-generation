@@ -53,16 +53,17 @@ flowchart LR
 
 ## 2. Tech stack decisions
 
-| Layer                | Choice                                                  | Reason                                                                                                                 |
-| -------------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| Frontend framework   | Next.js 14 (App Router)                                 | Single repo for UI and API proxy; SSE streaming support built in                                                       |
-| Styling              | Tailwind CSS                                            | Utility-first, no design system overhead for a prototype                                                               |
-| Agent framework      | Google ADK 2.0 Python (dynamic workflows)               | `@node` + `ctx.run_node()` with automatic checkpointing; conditional retry via `while` loop; native Gemini integration |
-| LLM                  | Gemini 2.0 Flash                                        | Best cost/latency ratio for 17 sequential/parallel calls; ADK has first-class Gemini support                           |
-| PDF rendering        | WeasyPrint (Python)                                     | HTML/CSS → PDF with full layout control; runs server-side in the ADK process                                           |
-| Web preview          | Structured JSON → React components                      | Preview is assembled from the same section JSON that feeds the PDF renderer                                            |
-| Deployment (Phase 1) | Local — Next.js dev server + scaffolded FastAPI backend | Fastest iteration loop; no infrastructure required                                                                     |
-| Deployment (Phase 2) | Vercel (frontend) + Google Cloud Run (ADK)              | ADK deploys natively to Cloud Run; `ADK_BACKEND_URL` env var switches the proxy target                                 |
+| Layer                      | Choice                                                       | Reason                                                                                                                 |
+| -------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| Frontend framework         | Next.js 14 (App Router)                                      | Single repo for UI and API proxy; SSE streaming support built in                                                       |
+| Styling                    | Tailwind CSS                                                 | Utility-first, no design system overhead for a prototype                                                               |
+| Agent framework            | Google ADK 2.0 Python (dynamic workflows)                    | `@node` + `ctx.run_node()` with automatic checkpointing; conditional retry via `while` loop; native Gemini integration |
+| LLM                        | Gemini 2.0 Flash                                             | Best cost/latency ratio for 17 sequential/parallel calls; ADK has first-class Gemini support                           |
+| PDF rendering              | WeasyPrint (Python)                                          | HTML/CSS → PDF with full layout control; runs server-side in the ADK process                                           |
+| Web preview                | Structured JSON → React components                           | Preview is assembled from the same section JSON that feeds the PDF renderer                                            |
+| Deployment (Fast local)    | Next.js dev server + scaffolded FastAPI backend              | Fastest iteration loop for feature work; no container build step                                                       |
+| Deployment (Local parity)  | Production-mode Next.js frontend + backend container locally | Mirrors the remote two-runtime topology and routing contract closely enough for production bug reproduction            |
+| Deployment (Managed cloud) | Vercel (frontend) + Google Cloud Run (ADK backend)           | Best fit for the split stack: Vercel for Next.js delivery, Cloud Run for Python ADK and WeasyPrint                     |
 
 ### Why ADK dynamic workflows over graph-based workflows or a plain orchestrator
 
@@ -548,7 +549,29 @@ The Download PDF tab renders `DownloadButton.tsx`, which decodes the `pdf_base64
 
 ## 10. Deployment architecture
 
-### Phase 1 — local development
+### Recommended topology
+
+The recommended deployment shape remains a split stack:
+
+- **Frontend:** Vercel for the Next.js 14 application and its thin API proxy route
+- **Backend:** Google Cloud Run for the Python ADK service and WeasyPrint renderer
+
+This remains the best default for the current repo because it matches the runtime split already designed into the app, keeps the backend on the infrastructure that ADK tooling targets most directly, and avoids forcing the Python runtime into a frontend-first hosting model.
+
+### Environment modes
+
+The repo should support four operating modes:
+
+| Mode           | Frontend runtime                                                          | Backend runtime                                          | Primary purpose                                             |
+| -------------- | ------------------------------------------------------------------------- | -------------------------------------------------------- | ----------------------------------------------------------- |
+| Fast local dev | `npm run dev`                                                             | `uv run uvicorn app.fast_api_app:app --reload`           | Fast feature iteration                                      |
+| Local parity   | `next build && next start` or equivalent production-mode frontend runtime | Same container image intended for Cloud Run, run locally | Reproducing deployment-only bugs                            |
+| Remote dev     | Vercel preview or dev environment                                         | Separate non-production Cloud Run service                | Early deployment checks after key implementation milestones |
+| Production     | Vercel production                                                         | Cloud Run production service                             | End-user traffic                                            |
+
+Across all four modes, the application contract stays the same: the frontend talks only to the backend URL configured through `ADK_BACKEND_URL`, and the backend owns Gemini access, validation, and PDF rendering.
+
+### Fast local development
 
 ```mermaid
 flowchart LR
@@ -559,7 +582,18 @@ flowchart LR
 
 Next.js and the ADK backend run as separate local processes. The Next.js API proxy reads `ADK_BACKEND_URL=http://localhost:8000` from `frontend/.env.local` and forwards requests there. No cloud infrastructure required.
 
-### Phase 2 — production
+### Local parity mode
+
+For deployment debugging, the repo should also support a production-like local mode where:
+
+- the backend runs from the same container image configuration intended for Cloud Run
+- the frontend runs in production mode rather than the hot-reload dev server
+- the request path stays the same as remote usage: browser -> Next.js -> ADK backend
+- environment values are injected through the same variables and secret names used remotely, with local overrides only where URLs differ
+
+This mode is slower than normal development and should not replace the default local loop. Its purpose is parity, not iteration speed.
+
+### Managed cloud deployment
 
 ```mermaid
 flowchart LR
@@ -568,18 +602,22 @@ flowchart LR
     CloudRun --> Gemini["Gemini 2.0 Flash\n(Google API)"]
 ```
 
-The ADK backend is containerised and deployed to Google Cloud Run. The Next.js frontend is deployed to Vercel. The only change between Phase 1 and Phase 2 is the value of `ADK_BACKEND_URL` in the environment:
+The ADK backend is containerised and deployed to Google Cloud Run. The Next.js frontend is deployed to Vercel. The same frontend proxy architecture is preserved in local and remote environments; the main environment-level change is the value of `ADK_BACKEND_URL`:
 
-| Environment | `ADK_BACKEND_URL` value                        |
-| ----------- | ---------------------------------------------- |
-| Local dev   | `http://localhost:8000`                        |
-| Production  | `https://your-service.run.app` (Cloud Run URL) |
+| Environment  | `ADK_BACKEND_URL` value                        |
+| ------------ | ---------------------------------------------- |
+| Local dev    | `http://localhost:8000`                        |
+| Local parity | local backend URL exposed by the parity stack  |
+| Remote dev   | `https://<dev-service>.run.app`                |
+| Production   | `https://your-service.run.app` (Cloud Run URL) |
 
-**No proxy architecture change is required** — the Next.js API route forwards requests to whatever URL `ADK_BACKEND_URL` points to. The frontend code is identical in both environments.
+**No proxy architecture change is required** — the Next.js API route forwards requests to whatever URL `ADK_BACKEND_URL` points to. The frontend code should stay identical across fast local dev, parity mode, remote dev, and production.
 
-**CORS:** The ADK backend must be configured to accept requests from the Vercel domain in production. In local dev, both processes are on localhost so CORS is not an issue. Configure allowed origins in the ADK server startup when deploying to Cloud Run.
+**CORS:** The ADK backend must be configured to accept requests from the Vercel domains used for preview and production. In parity mode and local dev, allow the local frontend origin as well. Configure allowed origins in the backend server startup rather than relying on infrastructure defaults.
 
-Cloud Run handles autoscaling and supports long-running requests (up to 3600 seconds), which is required for the 30–90 second generation window.
+**Runtime fit:** Cloud Run handles autoscaling and supports long-running requests (up to 3600 seconds), which is required for the 30–90 second generation window and PDF rendering path.
+
+**Operational rule:** deployment testing should happen in stages, not only at the end of the project. The recommended checkpoints are after backend orchestration is usable, after frontend proxy and streaming are usable, and again after end-to-end QA passes.
 
 ---
 
@@ -602,6 +640,20 @@ ADK 2.0 offers two workflow styles. Graph-based workflows (`Workflow` + `edges` 
 A plain `async def orchestrate()` function in Next.js resolves section dependencies and runs waves correctly, but has no durable state. A mid-run timeout discards all completed outputs and the entire guide must restart. ADK dynamic workflows checkpoint every `ctx.run_node()` call, so a timeout resumes from the last successful node.
 
 **Alternative considered:** Plain Next.js orchestrator with Redis for state persistence. Rejected because it replicates ADK's checkpointing in application code with no technical advantage.
+
+### Decision: Vercel for frontend and Cloud Run for backend
+
+The current recommended production topology is Vercel for the Next.js frontend and Google Cloud Run for the Python ADK backend.
+
+This split matches the existing architecture cleanly:
+
+- the frontend stays on a platform optimized for Next.js builds and preview environments
+- the backend stays on a platform that matches the Python container, ADK deployment path, and WeasyPrint runtime needs
+- local and remote environments can keep the same browser -> Next.js -> backend request flow, which is better for reproducibility than switching to a different transport in production
+
+**Alternative considered:** Cloud Run for both frontend and backend. Rejected for now because it increases operational burden on the Next.js side without solving a current product constraint better than Vercel. Revisit only if Vercel-specific runtime limits become a measured blocker for the proxy or streaming path.
+
+**Alternative considered:** Direct browser calls from the frontend to the Cloud Run backend in production. Rejected for now because the thin Next.js proxy keeps the frontend request surface stable across environments and avoids coupling browser clients to backend origin changes. Revisit only if the proxy route proves to be the actual bottleneck under deployed streaming tests.
 
 ### Decision: Single validation pass after all sections complete, not per-section inline validation
 

@@ -1,4 +1,5 @@
 # IFC — Issue, Facts, Criteria
+
 ## Study Guide Generation Web App
 
 ---
@@ -47,6 +48,8 @@ Teachers in K–12 markets (initially PH, JP, VN) spend disproportionate time ma
 - The study guide is long enough (17 sections) that a single LLM call cannot produce it reliably — multi-step generation with shared context is required.
 - Some sections have hard dependencies on prior sections (answer key depends on all question sections; check-in depends on the model passage) — naive parallelisation will produce incoherent output.
 - Validators must run programmatically after generation to catch constraint violations before the document is assembled, and must trigger targeted section retries automatically as part of the validation pass — not as a separate manual step.
+- Deployment should preserve the same two-runtime split in local and remote environments so production issues can be reproduced without changing request flow or prompt logic.
+- Local debugging needs a documented production-like mode where the backend runs with the same container/runtime assumptions intended for Cloud Run and the frontend uses the same `ADK_BACKEND_URL` contract it will use remotely.
 
 ---
 
@@ -63,6 +66,8 @@ Teachers in K–12 markets (initially PH, JP, VN) spend disproportionate time ma
 - **House style compliance.** Every generated section must follow tone, register, reading-level, and formatting rules without requiring post-generation editing by the teacher.
 - **Market-aware generation.** The system prompt must be parameterised by market (PH / JP / VN) so cultural references and examples are contextually appropriate.
 - **No answer leakage.** Body sections must not contain or imply correct answers to assessment questions. This must be checked programmatically as a soft validator with a warning surfaced to the user.
+- **Managed two-runtime deployment.** The frontend and backend must deploy independently to managed infrastructure without application-code changes between local and remote environments.
+- **Local-to-remote parity.** The repository must document and support a production-like local deployment mode that mirrors the remote topology as closely as practical: separate frontend and backend runtimes, environment-driven backend routing, and backend container/runtime behavior aligned with Cloud Run.
 
 ### Nice-to-haves
 
@@ -72,4 +77,4 @@ Teachers in K–12 markets (initially PH, JP, VN) spend disproportionate time ma
 - **Multi-market localisation beyond PH/JP/VN.** The market field is a free-text input so new markets can be added without code changes.
 - **Short / standard / long length presets.** A length_preset parameter that adjusts target word counts per section without changing the section structure.
 - **Optional input pre-population.** Vocabulary seeds and topic domain overrides let experienced writers guide generation without being required for basic use.
-- **Deployment to managed cloud infrastructure.** The backend is structured so it can be migrated from a Next.js API route to an ADK-managed agent server without changes to prompt logic, validators, or renderer.
+- **Automated CI/CD promotion.** Once the manual deployment path is stable, dev and production releases can be promoted from versioned configuration rather than ad hoc local commands.

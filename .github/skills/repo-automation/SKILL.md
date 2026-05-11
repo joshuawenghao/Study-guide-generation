@@ -17,6 +17,7 @@ Choose the correct starting path for a coding session without skipping the repos
 - Current repository state.
 - `IFC.md` when product scope or acceptance criteria might change.
 - `ARCHITECTURE.md` when the request changes design or contracts.
+- `DEPLOYMENT.md` when the request changes deployment topology, environment flow, parity expectations, or remote release workflow.
 - `TASKS.md` and `TASK_STATUS.md` before any implementation work.
 - `.github/copilot-instructions.md` for repo rules.
 

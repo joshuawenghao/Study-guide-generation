@@ -140,10 +140,21 @@ The old `backend/evals/` JSON files were not discarded; they now live under `tes
 
 ## Deployment
 
+The repo-level deployment source of truth is `DEPLOYMENT.md` in the repository root. Use this backend README only for the backend-specific command surface.
+
+Recommended target:
+
+- frontend on Vercel
+- backend on Google Cloud Run
+
+The backend should also be runnable locally in the same container/runtime shape intended for Cloud Run so production issues can be reproduced without changing backend code.
+
 ```bash
 gcloud config set project <your-project-id>
 ./agents-cli deploy
 ```
+
+Before standardizing on the deploy command above, finish the repo-specific deployment tasks in `TASKS.md` Phase 13 and record the actual validated path in `TASK_STATUS.md`.
 
 To add CI/CD and Terraform, run `./agents-cli scaffold enhance`.
 To set up your production infrastructure, run `./agents-cli infra cicd`.

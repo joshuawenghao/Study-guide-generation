@@ -21,6 +21,7 @@ Status legend:
 - Backend scaffold, environment files, core type contracts, and eval fixture preservation are in place
 - The backend now uses the project-local `backend/study-guide-agent/.venv` for ADK 2.0 beta work, with a narrow compatibility shim for the broken `google.adk.features` import surface in `google-adk==2.0.0b1`
 - The system prompt builder, blueprint prompt template, blueprint node, and focused blueprint unit test are now implemented, and Wave 1 through Wave 3 plus the answer-key path now exist with focused unit coverage; the json-schema hard validator now exists with focused unit coverage, while the rest of the validator layer, renderer, and frontend product UI are still largely unimplemented
+- Deployment planning is now documented around a recommended Vercel frontend plus Cloud Run backend topology, with a separate local parity mode planned so production issues can be reproduced without changing the app architecture
 
 ## Phase 0 — Repository and tooling setup
 
@@ -302,6 +303,38 @@ Notes: Scaffold test structure exists, but the real study-guide implementation d
 
 Status: `not started`
 Notes: Final IFC acceptance verification has not been completed.
+
+## Phase 13 — Deployment and parity
+
+### Task 13.1 — Document the deployment topology and environment matrix
+
+Status: `complete`
+Notes: `DEPLOYMENT.md` now exists at the repo root and aligns the deployment plan across `IFC.md`, `ARCHITECTURE.md`, `TASKS.md`, and the repo README files around fast local dev, local parity, remote dev, and production.
+
+### Task 13.2 — Containerize the backend for Cloud Run parity
+
+Status: `partial`
+Notes: The backend already includes a Dockerfile, but Cloud Run suitability and local parity expectations have not been validated end to end yet.
+
+### Task 13.3 — Add a local parity orchestration path
+
+Status: `not started`
+Notes: There is no documented single-command parity stack yet for a production-mode frontend plus Cloud Run-style backend runtime.
+
+### Task 13.4 — Configure the backend deployment for Cloud Run
+
+Status: `not started`
+Notes: The backend README mentions `agents-cli deploy`, but repo-specific Cloud Run environment, CORS, and service configuration are not implemented or verified yet.
+
+### Task 13.5 — Configure the frontend deployment for Vercel
+
+Status: `not started`
+Notes: The repo now recommends Vercel for the frontend, but preview and production environment configuration have not been set up or validated yet.
+
+### Task 13.6 — Run staged deployment checkpoints
+
+Status: `not started`
+Notes: No remote deployment checkpoints have been recorded yet after Phases 7, 10, or 12.
 
 ## Guidance for future chats
 

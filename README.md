@@ -13,4 +13,10 @@ Generate curriculum-aligned study guides from structured teacher input.
 - `frontend/` contains the Next.js application.
 - `backend/study-guide-agent/` is the canonical ADK backend project created with `agents-cli scaffold create`.
 
+## Deployment
+
+- The deployment source of truth is `DEPLOYMENT.md` at the repo root.
+- The current recommended managed topology is Vercel for the frontend and Cloud Run for the ADK backend.
+- The repo should support both a fast local dev loop and a production-like local parity mode so deployment bugs can be reproduced before and after remote releases.
+
 The older root-level backend implementation has been retired in favor of the scaffolded project structure.
