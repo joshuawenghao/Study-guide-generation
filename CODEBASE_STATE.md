@@ -9,7 +9,7 @@ It is intended to answer, in words, what currently exists in the repository with
 
 - The repository now includes a working Copilot automation loop with workspace-local skills, a repo-level validation script, and a live shipped-state document.
 - The backend now includes implemented Wave 1, Wave 2, Wave 3, and answer-key generation slices beyond blueprint generation.
-- The validation layer now has its first implemented hard validator: json-schema validation for generated section payloads against backend Pydantic models.
+- The validation layer now has two implemented hard validators: json-schema validation for generated section payloads against backend Pydantic models and vocab-presence validation across combined body-section text.
 - The ADK FastAPI loader now has a compatibility adapter so the server integration path can locate `study_guide_agent.root_agent` correctly.
 - The repo documentation now includes an explicit deployment plan and task phase covering Vercel, Cloud Run, and a production-like local parity mode.
 
@@ -37,6 +37,8 @@ It is intended to answer, in words, what currently exists in the repository with
 - Task 4.6 is now implemented: `tests/unit/test_section_generation.py` provides a dedicated representative section-generation module that covers a few Wave 1 node calls, a dependency-aware Wave 3 node, and answer-key output shape without testing the whole workflow.
 - Task 5.1 is now implemented: `app/validators/hard/json_schema.py` validates generated section payloads against backend Pydantic section models and reports failures through `ValidationResult` instead of raising hard-validation exceptions.
 - The backend now includes focused unit coverage for that validator in `tests/unit/test_json_schema_validator.py`, covering both a passing payload and a schema-failure payload.
+- Task 5.2 is now implemented: `app/validators/hard/vocab_presence.py` validates that every blueprint vocabulary word appears case-insensitively across combined body-section text, while excluding the vocabulary section and answer key from the search corpus.
+- The backend now includes focused unit coverage for that validator in `tests/unit/test_vocab_presence_validator.py`, covering both a passing body-section match and a failing case where excluded sections cannot satisfy the requirement.
 - The backend uses the scaffolded ADK project structure created by `agents-cli`.
 - Core typed contracts are implemented in `backend/study-guide-agent/app/types.py` and mirrored in `frontend/lib/types.ts`.
 - `backend/study-guide-agent/app/types.py` now also contains the backend-only section payload models that the validation layer uses as its schema source of truth.
@@ -71,7 +73,7 @@ It is intended to answer, in words, what currently exists in the repository with
 
 ## Current Product Gaps
 
-- Wave 1, Wave 2, Wave 3, and answer-key generation are implemented, and the first hard validator now exists, but the rest of the validator layer and the renderer are still incomplete.
+- Wave 1, Wave 2, Wave 3, and answer-key generation are implemented, and the first two hard validators now exist, but the rest of the validator layer and the renderer are still incomplete.
 - End-to-end workflow orchestration is still partial rather than complete.
 - Phase 4 onward remains mostly scaffolded or placeholder-only, including section generation nodes, validators, renderer implementation, and most frontend product experience work.
 - Deployment is now specified, but the parity stack, Cloud Run configuration, Vercel setup, and staged remote deployment checkpoints are still not implemented.

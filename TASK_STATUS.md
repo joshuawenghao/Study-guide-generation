@@ -20,7 +20,7 @@ Status legend:
 - Legacy root-level backend code has been removed
 - Backend scaffold, environment files, core type contracts, and eval fixture preservation are in place
 - The backend now uses the project-local `backend/study-guide-agent/.venv` for ADK 2.0 beta work, with a narrow compatibility shim for the broken `google.adk.features` import surface in `google-adk==2.0.0b1`
-- The system prompt builder, blueprint prompt template, blueprint node, and focused blueprint unit test are now implemented, and Wave 1 through Wave 3 plus the answer-key path now exist with focused unit coverage; the json-schema hard validator now exists with focused unit coverage, while the rest of the validator layer, renderer, and frontend product UI are still largely unimplemented
+- The system prompt builder, blueprint prompt template, blueprint node, and focused blueprint unit test are now implemented, and Wave 1 through Wave 3 plus the answer-key path now exist with focused unit coverage; the json-schema and vocab-presence hard validators now exist with focused unit coverage, while the rest of the validator layer, renderer, and frontend product UI are still largely unimplemented
 - Deployment planning is now documented around a recommended Vercel frontend plus Cloud Run backend topology, with a separate local parity mode planned so production issues can be reproduced without changing the app architecture
 
 ## Phase 0 — Repository and tooling setup
@@ -147,8 +147,8 @@ Notes: `backend/study-guide-agent/app/validators/hard/json_schema.py` now valida
 
 ### Task 5.2 — Implement hard validator: vocab_presence
 
-Status: `not started`
-Notes: `vocab_presence.py` is still a placeholder.
+Status: `complete`
+Notes: `backend/study-guide-agent/app/validators/hard/vocab_presence.py` now validates blueprint vocabulary coverage across combined body-section text, excludes the vocabulary section and answer key from the search corpus, and returns `ValidationResult` failures with per-section messages; focused coverage exists in `tests/unit/test_vocab_presence_validator.py`, and the repo done gate passed.
 
 ### Task 5.3 — Implement hard validator: self_assess_targets
 
