@@ -9,7 +9,7 @@ It is intended to answer, in words, what currently exists in the repository with
 
 - The repository now includes a working Copilot automation loop with workspace-local skills, a repo-level validation script, and a live shipped-state document.
 - The backend now includes implemented Wave 1, Wave 2, Wave 3, and answer-key generation slices beyond blueprint generation.
-- The validation layer now has two implemented hard validators: json-schema validation for generated section payloads against backend Pydantic models and vocab-presence validation across combined body-section text.
+- The validation layer now has three implemented hard validators: json-schema validation for generated section payloads against backend Pydantic models, vocab-presence validation across combined body-section text, and self-assessment-target validation against blueprint learning objectives.
 - The ADK FastAPI loader now has a compatibility adapter so the server integration path can locate `study_guide_agent.root_agent` correctly.
 - The repo documentation now includes an explicit deployment plan and task phase covering Vercel, Cloud Run, and a production-like local parity mode.
 
@@ -39,6 +39,8 @@ It is intended to answer, in words, what currently exists in the repository with
 - The backend now includes focused unit coverage for that validator in `tests/unit/test_json_schema_validator.py`, covering both a passing payload and a schema-failure payload.
 - Task 5.2 is now implemented: `app/validators/hard/vocab_presence.py` validates that every blueprint vocabulary word appears case-insensitively across combined body-section text, while excluding the vocabulary section and answer key from the search corpus.
 - The backend now includes focused unit coverage for that validator in `tests/unit/test_vocab_presence_validator.py`, covering both a passing body-section match and a failing case where excluded sections cannot satisfy the requirement.
+- Task 5.3 is now implemented: `app/validators/hard/self_assess_targets.py` validates that each self-assessment skill matches a blueprint learning-target objective verbatim and fails only the `self_assessment` slice when rows paraphrase or diverge.
+- The backend now includes focused unit coverage for that validator in `tests/unit/test_self_assess_targets_validator.py`, covering both exact verbatim matches and a failing non-verbatim skill row.
 - The backend uses the scaffolded ADK project structure created by `agents-cli`.
 - Core typed contracts are implemented in `backend/study-guide-agent/app/types.py` and mirrored in `frontend/lib/types.ts`.
 - `backend/study-guide-agent/app/types.py` now also contains the backend-only section payload models that the validation layer uses as its schema source of truth.
@@ -73,7 +75,7 @@ It is intended to answer, in words, what currently exists in the repository with
 
 ## Current Product Gaps
 
-- Wave 1, Wave 2, Wave 3, and answer-key generation are implemented, and the first two hard validators now exist, but the rest of the validator layer and the renderer are still incomplete.
+- Wave 1, Wave 2, Wave 3, and answer-key generation are implemented, and the first three hard validators now exist, but the rest of the validator layer and the renderer are still incomplete.
 - End-to-end workflow orchestration is still partial rather than complete.
 - Phase 4 onward remains mostly scaffolded or placeholder-only, including section generation nodes, validators, renderer implementation, and most frontend product experience work.
 - Deployment is now specified, but the parity stack, Cloud Run configuration, Vercel setup, and staged remote deployment checkpoints are still not implemented.
