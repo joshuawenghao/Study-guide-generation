@@ -1,6 +1,6 @@
 # Codebase State
 
-Last updated: 2026-05-08
+Last updated: 2026-05-11
 
 This document is the live plain-language summary of the shipped codebase.
 It is intended to answer, in words, what currently exists in the repository without requiring a reader to inspect source files directly.
@@ -9,6 +9,7 @@ It is intended to answer, in words, what currently exists in the repository with
 
 - The repository now includes a working Copilot automation loop with workspace-local skills, a repo-level validation script, and a live shipped-state document.
 - The backend now includes implemented Wave 1, Wave 2, Wave 3, and answer-key generation slices beyond blueprint generation.
+- The validation layer now has its first implemented hard validator: json-schema validation for generated section payloads against backend Pydantic models.
 - The ADK FastAPI loader now has a compatibility adapter so the server integration path can locate `study_guide_agent.root_agent` correctly.
 
 ## Repository Shape
@@ -32,8 +33,11 @@ It is intended to answer, in words, what currently exists in the repository with
 - Task 4.5 is now implemented: the answer-key prompt template and node now consume check-in, assessment passage, and assessment question payloads directly, use `TEMP_ANSWER_KEY`, and require quoted passage evidence in assessment answers.
 - The backend now includes a focused answer-key unit test covering both structured output shape and malformed JSON failure handling.
 - Task 4.6 is now implemented: `tests/unit/test_section_generation.py` provides a dedicated representative section-generation module that covers a few Wave 1 node calls, a dependency-aware Wave 3 node, and answer-key output shape without testing the whole workflow.
+- Task 5.1 is now implemented: `app/validators/hard/json_schema.py` validates generated section payloads against backend Pydantic section models and reports failures through `ValidationResult` instead of raising hard-validation exceptions.
+- The backend now includes focused unit coverage for that validator in `tests/unit/test_json_schema_validator.py`, covering both a passing payload and a schema-failure payload.
 - The backend uses the scaffolded ADK project structure created by `agents-cli`.
 - Core typed contracts are implemented in `backend/study-guide-agent/app/types.py` and mirrored in `frontend/lib/types.ts`.
+- `backend/study-guide-agent/app/types.py` now also contains the backend-only section payload models that the validation layer uses as its schema source of truth.
 - The repo includes a compatibility shim in `backend/study-guide-agent/app/app_utils/adk_compat.py` to smooth over current ADK beta import-surface issues before ADK imports are loaded.
 - The blueprint generation path is the most implemented backend slice at the moment.
 - The repo now includes `backend/study-guide-agent/study_guide_agent/agent.py` as an ADK loader adapter that re-exports the real agent from `app.agent` for CLI and FastAPI loading.
@@ -64,6 +68,6 @@ It is intended to answer, in words, what currently exists in the repository with
 
 ## Current Product Gaps
 
-- Wave 1, Wave 2, Wave 3, and answer-key generation are implemented, but validators and renderer files still exist only as placeholders.
+- Wave 1, Wave 2, Wave 3, and answer-key generation are implemented, and the first hard validator now exists, but the rest of the validator layer and the renderer are still incomplete.
 - End-to-end workflow orchestration is still partial rather than complete.
 - Phase 4 onward remains mostly scaffolded or placeholder-only, including section generation nodes, validators, renderer implementation, and most frontend product experience work.

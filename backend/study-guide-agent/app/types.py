@@ -116,6 +116,222 @@ class Blueprint(BaseModel):
     core_concept: str
 
 
+class IntroSection(BaseModel):
+    title: str
+    hook: str
+    essential_question: str
+    paragraphs: list[str]
+    bridge_to_lesson: str
+
+
+class LearningTargetsCompetencyFocus(BaseModel):
+    lesson_id: str
+    core_concept: str
+
+
+class LearningTargetsItem(BaseModel):
+    number: int
+    bloom_verb: str
+    objective: str
+    success_look_for: str
+
+
+class LearningTargetsSection(BaseModel):
+    title: str
+    competency_focus: LearningTargetsCompetencyFocus
+    targets: list[LearningTargetsItem]
+
+
+class WarmupSection(BaseModel):
+    title: str
+    activity_type: str
+    purpose: str
+    student_instructions: list[str]
+    teacher_tip: str
+    estimated_minutes: int
+
+
+class VocabularyEntrySectionItem(BaseModel):
+    word: str
+    part_of_speech: str
+    definition: str
+    example_sentence: str
+
+
+class VocabularySection(BaseModel):
+    title: str
+    entries: list[VocabularyEntrySectionItem]
+
+
+class KeyPointsItem(BaseModel):
+    number: int
+    sub_competency_id: str
+    sub_competency_label: str
+    statement: str
+
+
+class KeyPointsSection(BaseModel):
+    title: str
+    points: list[KeyPointsItem]
+
+
+class SelfAssessmentRow(BaseModel):
+    skill: str
+    reflection_prompt: str
+
+
+class SelfAssessmentSection(BaseModel):
+    title: str
+    confidence_levels: list[str]
+    rows: list[SelfAssessmentRow]
+
+
+class CoreExplainerPoint(BaseModel):
+    sub_competency_id: str
+    sub_competency_label: str
+    explanation: str
+    real_world_connection: str
+
+
+class CoreExplainerSection(BaseModel):
+    title: str
+    overview: str
+    explained_points: list[CoreExplainerPoint]
+    closing_summary: str
+
+
+class QuickCheck(BaseModel):
+    question: str
+    expected_answer: str
+
+
+class SubconceptSection(BaseModel):
+    title: str
+    sub_competency_id: str
+    sub_competency_label: str
+    explanation: str
+    worked_example: str
+    quick_check: QuickCheck
+
+
+class StrategyItem(BaseModel):
+    name: str
+    when_to_use: str
+    steps: list[str]
+
+
+class StrategyListSection(BaseModel):
+    title: str
+    strategies: list[StrategyItem]
+
+
+class DeepDiveExample(BaseModel):
+    mode: str
+    topic_domain: str
+    explanation: str
+    signal_words: list[str]
+
+
+class DeepDiveSection(BaseModel):
+    title: str
+    compare_focus: str
+    examples: list[DeepDiveExample]
+    takeaway: str
+
+
+class ModelPassageSection(BaseModel):
+    title: str
+    topic_domain: str
+    genre: str
+    passage: list[str]
+    text_features: list[str]
+    evidence_focus: str
+
+
+class AssessmentPassageSection(BaseModel):
+    title: str
+    topic_domain: str
+    genre: str
+    passage: list[str]
+    evidence_clues: list[str]
+    answerability_note: str
+
+
+class CheckInQuestion(BaseModel):
+    number: int
+    question: str
+    evidence_hint: str
+    expected_response_type: str
+
+
+class CheckInSection(BaseModel):
+    title: str
+    passage_title: str
+    questions: list[CheckInQuestion]
+
+
+class AssessmentQuestionItem(BaseModel):
+    number: int
+    question: str
+    question_type: str
+    answer_expectation: str
+    evidence_requirement: str
+
+
+class AssessmentQuestionsSection(BaseModel):
+    title: str
+    passage_title: str
+    questions: list[AssessmentQuestionItem]
+
+
+class StepUpSection(BaseModel):
+    title: str
+    challenge_prompt: str
+    required_evidence: list[str]
+    success_criteria: list[str]
+
+
+class AnswerKeyItem(BaseModel):
+    question_number: int
+    question: str
+    possible_answer: str
+    evidence_quote: str
+
+
+class StepUpAnswer(BaseModel):
+    challenge_response: str
+    required_evidence: list[str]
+
+
+class AnswerKeySection(BaseModel):
+    title: str
+    check_in_answers: list[AnswerKeyItem]
+    assessment_answers: list[AnswerKeyItem]
+    step_up_answer: StepUpAnswer
+    teacher_note: str
+
+
+SECTION_PAYLOAD_MODELS: dict[str, type[BaseModel]] = {
+    "blueprint": Blueprint,
+    "intro": IntroSection,
+    "learning_targets": LearningTargetsSection,
+    "warmup": WarmupSection,
+    "vocabulary": VocabularySection,
+    "key_points": KeyPointsSection,
+    "self_assessment": SelfAssessmentSection,
+    "core_explainer": CoreExplainerSection,
+    "subconcept": SubconceptSection,
+    "strategy_list": StrategyListSection,
+    "deep_dive": DeepDiveSection,
+    "model_passage": ModelPassageSection,
+    "assessment_passage": AssessmentPassageSection,
+    "check_in": CheckInSection,
+    "assessment_questions": AssessmentQuestionsSection,
+    "step_up": StepUpSection,
+    "answer_key": AnswerKeySection,
+}
+
+
 class PreviewSection(BaseModel):
     section_id: str
     section_type: str

@@ -1,6 +1,6 @@
 # Task Status
 
-Last updated: 2026-05-08
+Last updated: 2026-05-11
 
 This file mirrors the structure of `TASKS.md` and records the current repo state against each task directly.
 Use it together with `TASKS.md`:
@@ -20,7 +20,7 @@ Status legend:
 - Legacy root-level backend code has been removed
 - Backend scaffold, environment files, core type contracts, and eval fixture preservation are in place
 - The backend now uses the project-local `backend/study-guide-agent/.venv` for ADK 2.0 beta work, with a narrow compatibility shim for the broken `google.adk.features` import surface in `google-adk==2.0.0b1`
-- The system prompt builder, blueprint prompt template, blueprint node, and focused blueprint unit test are now implemented, and Wave 1 through Wave 3 plus the answer-key path now exist with focused unit coverage; validators, renderer, and frontend product UI are still largely unimplemented
+- The system prompt builder, blueprint prompt template, blueprint node, and focused blueprint unit test are now implemented, and Wave 1 through Wave 3 plus the answer-key path now exist with focused unit coverage; the json-schema hard validator now exists with focused unit coverage, while the rest of the validator layer, renderer, and frontend product UI are still largely unimplemented
 
 ## Phase 0 — Repository and tooling setup
 
@@ -141,8 +141,8 @@ Notes: `tests/unit/test_section_generation.py` now provides the dedicated repres
 
 ### Task 5.1 — Implement hard validator: json_schema
 
-Status: `not started`
-Notes: The hard validator file exists, but the implementation is still placeholder-only.
+Status: `complete`
+Notes: `backend/study-guide-agent/app/validators/hard/json_schema.py` now validates section payloads against backend Pydantic section models and returns `ValidationResult` failures instead of raising; focused unit coverage exists in `tests/unit/test_json_schema_validator.py`, and the repo done gate passed.
 
 ### Task 5.2 — Implement hard validator: vocab_presence
 
@@ -181,8 +181,8 @@ Notes: `backend/study-guide-agent/app/nodes/validator.py` is still a placeholder
 
 ### Task 5.9 — Add validator tests
 
-Status: `not started`
-Notes: No validator-focused test suite exists yet.
+Status: `partial`
+Notes: `tests/unit/test_json_schema_validator.py` now provides focused coverage for the json-schema hard validator, but broader validator-focused coverage for the remaining hard and soft validators does not exist yet.
 
 ## Phase 6 — Renderer and preview payload
 
