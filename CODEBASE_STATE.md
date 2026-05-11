@@ -9,7 +9,7 @@ It is intended to answer, in words, what currently exists in the repository with
 
 - The repository now includes a working Copilot automation loop with workspace-local skills, a repo-level validation script, and a live shipped-state document.
 - The backend now includes implemented Wave 1, Wave 2, Wave 3, and answer-key generation slices beyond blueprint generation.
-- The validation layer now has four implemented hard validators: json-schema validation for generated section payloads against backend Pydantic models, vocab-presence validation across combined body-section text, self-assessment-target validation against blueprint learning objectives, and answer-key quote validation against the assessment passage.
+- The validation layer now has five implemented hard validators: json-schema validation for generated section payloads against backend Pydantic models, vocab-presence validation across combined body-section text, self-assessment-target validation against blueprint learning objectives, answer-key quote validation against the assessment passage, and passage-domain difference validation inside the blueprint.
 - The ADK FastAPI loader now has a compatibility adapter so the server integration path can locate `study_guide_agent.root_agent` correctly.
 - The repo documentation now includes an explicit deployment plan and task phase covering Vercel, Cloud Run, and a production-like local parity mode.
 
@@ -43,6 +43,8 @@ It is intended to answer, in words, what currently exists in the repository with
 - The backend now includes focused unit coverage for that validator in `tests/unit/test_self_assess_targets_validator.py`, covering both exact verbatim matches and a failing non-verbatim skill row.
 - Task 5.4 is now implemented: `app/validators/hard/answer_key_quotes.py` validates that each assessment answer in the answer key contains a quoted phrase and that at least one quoted phrase appears verbatim in the assessment passage body.
 - The backend now includes focused unit coverage for that validator in `tests/unit/test_answer_key_quotes_validator.py`, covering a passing verbatim quote plus failures for missing quotes and non-verbatim quoted phrases.
+- Task 5.5 is now implemented: `app/validators/hard/passage_domain_diff.py` validates that the blueprint model-passage and assessment-passage topic domains are both present and differ case-insensitively, failing the `assessment_passage` slice when they collapse to the same domain.
+- The backend now includes focused unit coverage for that validator in `tests/unit/test_passage_domain_diff_validator.py`, covering distinct domains, case-insensitive equality failure, and blank-domain failure.
 - The backend uses the scaffolded ADK project structure created by `agents-cli`.
 - Core typed contracts are implemented in `backend/study-guide-agent/app/types.py` and mirrored in `frontend/lib/types.ts`.
 - `backend/study-guide-agent/app/types.py` now also contains the backend-only section payload models that the validation layer uses as its schema source of truth.
@@ -77,7 +79,7 @@ It is intended to answer, in words, what currently exists in the repository with
 
 ## Current Product Gaps
 
-- Wave 1, Wave 2, Wave 3, and answer-key generation are implemented, and the first four hard validators now exist, but the rest of the validator layer and the renderer are still incomplete.
+- Wave 1, Wave 2, Wave 3, and answer-key generation are implemented, and the first five hard validators now exist, but the rest of the validator layer and the renderer are still incomplete.
 - End-to-end workflow orchestration is still partial rather than complete.
 - Phase 4 onward remains mostly scaffolded or placeholder-only, including section generation nodes, validators, renderer implementation, and most frontend product experience work.
 - Deployment is now specified, but the parity stack, Cloud Run configuration, Vercel setup, and staged remote deployment checkpoints are still not implemented.
