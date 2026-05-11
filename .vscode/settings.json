@@ -1,10 +1,11 @@
 {
-  // ── Copilot behaviour ──────────────────────────────────────────────────────
+  // ── Copilot behaviour ─────────────────────────────────────────────────────
 
-  // Enable MCP servers for Copilot Chat
-  "chat.mcp.enabled": true,
+  // Allow MCP servers from any source in Copilot Chat.
+  // VS Code now uses chat.mcp.access instead of the older chat.mcp.enabled.
+  "chat.mcp.access": "all",
 
-  // ── Editor behaviour ───────────────────────────────────────────────────────
+  // ── Editor behaviour ──────────────────────────────────────────────────────
 
   // Use 2-space indentation for TypeScript/JavaScript
   "[typescript]": {
@@ -52,6 +53,5 @@
   //   GitHub.copilot               — Copilot completions
   //   GitHub.copilot-chat          — Copilot Chat
   //   samuelcolvin.jinjahtml        — Jinja2 template syntax highlighting
-
   "extensions.ignoreRecommendations": false
 }
