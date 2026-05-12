@@ -1,1 +1,625 @@
-{# Placeholder study guide HTML template migrated from the legacy backend. #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<title>{{ blueprint.title }} Study Guide</title>
+	<style>
+		@page {
+			size: A4;
+			margin: 18mm 16mm 18mm 16mm;
+		}
+
+		:root {
+			--ink: #1f2933;
+			--muted: #52606d;
+			--line: #d9e2ec;
+			--surface: #f7fafc;
+			--accent: #1d4d72;
+			--accent-soft: #e6eff5;
+			--success: #d9f2e3;
+			--warning: #fef3c7;
+		}
+
+		* {
+			box-sizing: border-box;
+		}
+
+		body {
+			margin: 0;
+			color: var(--ink);
+			font-family: "DejaVu Serif", Georgia, serif;
+			font-size: 11pt;
+			line-height: 1.45;
+		}
+
+		h1,
+		h2,
+		h3,
+		h4 {
+			margin: 0 0 0.35rem;
+			color: var(--accent);
+			font-family: "DejaVu Sans", "Trebuchet MS", sans-serif;
+			line-height: 1.2;
+		}
+
+		h1 {
+			font-size: 22pt;
+		}
+
+		h2 {
+			font-size: 16pt;
+			padding-bottom: 0.2rem;
+			border-bottom: 2px solid var(--line);
+			margin-bottom: 0.65rem;
+		}
+
+		h3 {
+			font-size: 12.5pt;
+			margin-top: 0.8rem;
+		}
+
+		h4 {
+			font-size: 10.5pt;
+			margin-top: 0.55rem;
+		}
+
+		p,
+		ul,
+		ol,
+		table,
+		blockquote {
+			margin: 0 0 0.7rem;
+		}
+
+		ul,
+		ol {
+			padding-left: 1.2rem;
+		}
+
+		li {
+			margin-bottom: 0.25rem;
+		}
+
+		.cover {
+			background: linear-gradient(180deg, #f9fbfc 0%, #eef4f7 100%);
+			border: 1px solid var(--line);
+			padding: 1.1rem 1.2rem;
+			margin-bottom: 1rem;
+		}
+
+		.cover-meta {
+			display: table;
+			width: 100%;
+			margin-top: 0.9rem;
+			border-collapse: separate;
+			border-spacing: 0.65rem;
+		}
+
+		.cover-meta-item {
+			display: table-cell;
+			background: white;
+			border: 1px solid var(--line);
+			padding: 0.6rem 0.7rem;
+			vertical-align: top;
+		}
+
+		.eyebrow {
+			color: var(--muted);
+			font-family: "DejaVu Sans", "Trebuchet MS", sans-serif;
+			font-size: 8.5pt;
+			font-weight: bold;
+			letter-spacing: 0.08em;
+			text-transform: uppercase;
+			margin-bottom: 0.25rem;
+		}
+
+		.section {
+			margin-bottom: 1rem;
+			page-break-inside: avoid;
+		}
+
+		.section-body {
+			background: white;
+		}
+
+		.callout {
+			background: var(--surface);
+			border-left: 4px solid var(--accent);
+			padding: 0.7rem 0.8rem;
+			margin-bottom: 0.8rem;
+		}
+
+		.callout.success {
+			background: var(--success);
+			border-left-color: #2f855a;
+		}
+
+		.callout.warning {
+			background: var(--warning);
+			border-left-color: #b7791f;
+		}
+
+		.two-col {
+			display: table;
+			width: 100%;
+			border-collapse: separate;
+			border-spacing: 0.75rem 0;
+		}
+
+		.two-col > div {
+			display: table-cell;
+			width: 50%;
+			vertical-align: top;
+		}
+
+		.boxed-list {
+			border: 1px solid var(--line);
+			background: var(--surface);
+			padding: 0.7rem 0.8rem;
+			margin-bottom: 0.8rem;
+		}
+
+		.target-item,
+		.question-card,
+		.strategy-card,
+		.point-card,
+		.example-card,
+		.answer-card,
+		.subconcept-card {
+			border: 1px solid var(--line);
+			padding: 0.8rem;
+			margin-bottom: 0.75rem;
+			break-inside: avoid;
+		}
+
+		.target-meta,
+		.small-meta {
+			color: var(--muted);
+			font-size: 9pt;
+			font-family: "DejaVu Sans", "Trebuchet MS", sans-serif;
+		}
+
+		.badge {
+			display: inline-block;
+			padding: 0.12rem 0.42rem;
+			border: 1px solid var(--line);
+			background: var(--surface);
+			color: var(--muted);
+			font-size: 8.5pt;
+			font-family: "DejaVu Sans", "Trebuchet MS", sans-serif;
+			text-transform: uppercase;
+			letter-spacing: 0.04em;
+			margin-right: 0.35rem;
+			margin-bottom: 0.2rem;
+		}
+
+		.page-break {
+			page-break-before: always;
+		}
+
+		table {
+			width: 100%;
+			border-collapse: collapse;
+			font-size: 10pt;
+		}
+
+		th,
+		td {
+			border: 1px solid var(--line);
+			padding: 0.45rem 0.5rem;
+			vertical-align: top;
+			text-align: left;
+		}
+
+		th {
+			background: var(--accent-soft);
+			color: var(--accent);
+			font-family: "DejaVu Sans", "Trebuchet MS", sans-serif;
+			font-size: 9pt;
+			letter-spacing: 0.03em;
+			text-transform: uppercase;
+		}
+
+		.passage {
+			border: 1px solid var(--line);
+			background: #fcfdff;
+			padding: 0.9rem;
+			margin-bottom: 0.8rem;
+		}
+
+		.passage p {
+			margin-bottom: 0.65rem;
+			text-indent: 1.2em;
+		}
+
+		.passage p:first-child {
+			text-indent: 0;
+		}
+
+		.quote {
+			font-style: italic;
+			color: var(--muted);
+		}
+	</style>
+</head>
+<body>
+	{% set section_map = sections|default({}, true) %}
+	{% set validation_result = validation|default(none, true) %}
+	{% set intro = section_map.intro|default(none, true) %}
+	{% set learning_targets = section_map.learning_targets|default(none, true) %}
+	{% set warmup = section_map.warmup|default(none, true) %}
+	{% set vocabulary = section_map.vocabulary|default(none, true) %}
+	{% set core_explainer = section_map.core_explainer|default(none, true) %}
+	{% set subconcepts = section_map.subconcept|default([], true) %}
+	{% set strategy_list = section_map.strategy_list|default(none, true) %}
+	{% set deep_dive = section_map.deep_dive|default(none, true) %}
+	{% set model_passage = section_map.model_passage|default(none, true) %}
+	{% set check_in = section_map.check_in|default(none, true) %}
+	{% set key_points = section_map.key_points|default(none, true) %}
+	{% set assessment_passage = section_map.assessment_passage|default(none, true) %}
+	{% set assessment_questions = section_map.assessment_questions|default(none, true) %}
+	{% set step_up = section_map.step_up|default(none, true) %}
+	{% set self_assessment = section_map.self_assessment|default(none, true) %}
+	{% set answer_key = section_map.answer_key|default(none, true) %}
+
+	<section class="cover">
+		<div class="eyebrow">Curriculum-Aligned Study Guide</div>
+		<h1>{{ blueprint.title }}</h1>
+		<p>{{ blueprint.core_concept }}</p>
+		<div class="callout">
+			<strong>Essential Question:</strong> {{ blueprint.essential_question }}
+		</div>
+		<div class="cover-meta">
+			<div class="cover-meta-item">
+				<div class="eyebrow">Lesson</div>
+				<div><strong>ID:</strong> {{ blueprint.lesson_id }}</div>
+				<div><strong>Sub-competencies:</strong> {{ blueprint.sub_competencies|length }}</div>
+			</div>
+			<div class="cover-meta-item">
+				<div class="eyebrow">Passage Domains</div>
+				<div><strong>Model:</strong> {{ blueprint.topic_domains.model_passage }}</div>
+				<div><strong>Assessment:</strong> {{ blueprint.topic_domains.assessment_passage }}</div>
+			</div>
+		</div>
+	</section>
+
+	{% if validation_result and validation_result.warnings %}
+		<section class="section">
+			<h2>Validation Notes</h2>
+			{% for warning in validation_result.warnings %}
+				<div class="callout warning">{{ warning }}</div>
+			{% endfor %}
+		</section>
+	{% endif %}
+
+	{% if intro %}
+		<section class="section" id="intro">
+			<h2>{{ intro.title }}</h2>
+			<div class="callout">{{ intro.hook }}</div>
+			<p><strong>Essential Question:</strong> {{ intro.essential_question }}</p>
+			{% for paragraph in intro.paragraphs %}
+				<p>{{ paragraph }}</p>
+			{% endfor %}
+			<p><strong>Bridge to the lesson:</strong> {{ intro.bridge_to_lesson }}</p>
+		</section>
+	{% endif %}
+
+	{% if learning_targets %}
+		<section class="section" id="learning-targets">
+			<h2>{{ learning_targets.title }}</h2>
+			<div class="callout success">
+				<strong>Competency Focus:</strong>
+				{{ learning_targets.competency_focus.core_concept }}
+			</div>
+			{% for target in learning_targets.targets %}
+				<div class="target-item">
+					<h3>Target {{ target.number }}</h3>
+					<div class="target-meta">{{ target.bloom_verb|upper }}</div>
+					<p>{{ target.objective }}</p>
+					<p><strong>Success looks like:</strong> {{ target.success_look_for }}</p>
+				</div>
+			{% endfor %}
+		</section>
+	{% endif %}
+
+	{% if warmup %}
+		<section class="section" id="warmup">
+			<h2>{{ warmup.title }}</h2>
+			<div class="two-col">
+				<div>
+					<div class="boxed-list">
+						<div class="eyebrow">Activity Type</div>
+						<p>{{ warmup.activity_type }}</p>
+						<div class="eyebrow">Purpose</div>
+						<p>{{ warmup.purpose }}</p>
+					</div>
+				</div>
+				<div>
+					<div class="boxed-list">
+						<div class="eyebrow">Estimated Minutes</div>
+						<p>{{ warmup.estimated_minutes }}</p>
+						<div class="eyebrow">Teacher Tip</div>
+						<p>{{ warmup.teacher_tip }}</p>
+					</div>
+				</div>
+			</div>
+			<h3>Student Instructions</h3>
+			<ol>
+				{% for instruction in warmup.student_instructions %}
+					<li>{{ instruction }}</li>
+				{% endfor %}
+			</ol>
+		</section>
+	{% endif %}
+
+	{% if vocabulary %}
+		<section class="section" id="vocabulary">
+			<h2>{{ vocabulary.title }}</h2>
+			<table>
+				<thead>
+					<tr>
+						<th>Word</th>
+						<th>Part of Speech</th>
+						<th>Definition</th>
+						<th>Example</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for entry in vocabulary.entries %}
+						<tr>
+							<td><strong>{{ entry.word }}</strong></td>
+							<td>{{ entry.part_of_speech }}</td>
+							<td>{{ entry.definition }}</td>
+							<td>{{ entry.example_sentence }}</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</section>
+	{% endif %}
+
+	{% if core_explainer %}
+		<section class="section" id="core-explainer">
+			<h2>{{ core_explainer.title }}</h2>
+			<p>{{ core_explainer.overview }}</p>
+			{% for point in core_explainer.explained_points %}
+				<div class="point-card">
+					<h3>{{ point.sub_competency_label }}</h3>
+					<div class="small-meta">{{ point.sub_competency_id }}</div>
+					<p>{{ point.explanation }}</p>
+					<p><strong>Real-world connection:</strong> {{ point.real_world_connection }}</p>
+				</div>
+			{% endfor %}
+			<div class="callout success">{{ core_explainer.closing_summary }}</div>
+		</section>
+	{% endif %}
+
+	{% for subconcept in subconcepts %}
+		<section class="section" id="subconcept-{{ loop.index }}">
+			<h2>{{ subconcept.title }}</h2>
+			<div class="subconcept-card">
+				<div class="small-meta">{{ subconcept.sub_competency_id }} | {{ subconcept.sub_competency_label }}</div>
+				<p>{{ subconcept.explanation }}</p>
+				<p><strong>Worked example:</strong> {{ subconcept.worked_example }}</p>
+				<div class="callout">
+					<strong>Quick Check:</strong> {{ subconcept.quick_check.question }}
+					<br />
+					<span class="quote">Expected answer: {{ subconcept.quick_check.expected_answer }}</span>
+				</div>
+			</div>
+		</section>
+	{% endfor %}
+
+	{% if strategy_list %}
+		<section class="section" id="strategy-list">
+			<h2>{{ strategy_list.title }}</h2>
+			{% for strategy in strategy_list.strategies %}
+				<div class="strategy-card">
+					<h3>{{ strategy.name }}</h3>
+					<p><strong>When to use:</strong> {{ strategy.when_to_use }}</p>
+					<ol>
+						{% for step in strategy.steps %}
+							<li>{{ step }}</li>
+						{% endfor %}
+					</ol>
+				</div>
+			{% endfor %}
+		</section>
+	{% endif %}
+
+	{% if deep_dive %}
+		<section class="section" id="deep-dive">
+			<h2>{{ deep_dive.title }}</h2>
+			<p><strong>Compare focus:</strong> {{ deep_dive.compare_focus }}</p>
+			{% for example in deep_dive.examples %}
+				<div class="example-card">
+					<h3>{{ example.mode|title }}</h3>
+					<div class="small-meta">Topic domain: {{ example.topic_domain }}</div>
+					<p>{{ example.explanation }}</p>
+					<p><strong>Signal words:</strong> {{ example.signal_words|join(', ') }}</p>
+				</div>
+			{% endfor %}
+			<div class="callout success">{{ deep_dive.takeaway }}</div>
+		</section>
+	{% endif %}
+
+	{% if model_passage %}
+		<section class="section" id="model-passage">
+			<h2>{{ model_passage.title }}</h2>
+			<p>
+				<span class="badge">{{ model_passage.genre }}</span>
+				<span class="badge">{{ model_passage.topic_domain }}</span>
+			</p>
+			<div class="passage">
+				{% for paragraph in model_passage.passage %}
+					<p>{{ paragraph }}</p>
+				{% endfor %}
+			</div>
+			<p><strong>Text features:</strong> {{ model_passage.text_features|join(', ') }}</p>
+			<p><strong>Evidence focus:</strong> {{ model_passage.evidence_focus }}</p>
+		</section>
+	{% endif %}
+
+	{% if check_in %}
+		<section class="section" id="check-in">
+			<h2>{{ check_in.title }}</h2>
+			{% if check_in.passage_title is defined %}
+				<p><strong>Passage:</strong> {{ check_in.passage_title }}</p>
+			{% endif %}
+			{% for question in check_in.questions %}
+				<div class="question-card">
+					<h3>Question {{ question.number }}</h3>
+					<p>{{ question.question }}</p>
+					<p><strong>Evidence hint:</strong> {{ question.evidence_hint }}</p>
+					<p><strong>Response type:</strong> {{ question.expected_response_type }}</p>
+				</div>
+			{% endfor %}
+		</section>
+	{% endif %}
+
+	{% if key_points %}
+		<section class="section" id="key-points">
+			<h2>{{ key_points.title }}</h2>
+			{% for point in key_points.points %}
+				<div class="point-card">
+					<h3>Key Point {{ point.number }}</h3>
+					<div class="small-meta">{{ point.sub_competency_label }} ({{ point.sub_competency_id }})</div>
+					<p>{{ point.statement }}</p>
+				</div>
+			{% endfor %}
+		</section>
+	{% endif %}
+
+	{% if assessment_passage %}
+		<section class="section page-break" id="assessment-passage">
+			<h2>{{ assessment_passage.title }}</h2>
+			{% if assessment_passage.genre is defined %}
+				<p>
+					<span class="badge">{{ assessment_passage.genre }}</span>
+					<span class="badge">{{ assessment_passage.topic_domain }}</span>
+				</p>
+			{% else %}
+				<p><span class="badge">{{ assessment_passage.topic_domain }}</span></p>
+			{% endif %}
+			<div class="passage">
+				{% for paragraph in assessment_passage.passage %}
+					<p>{{ paragraph }}</p>
+				{% endfor %}
+			</div>
+			<p><strong>Evidence clues:</strong> {{ assessment_passage.evidence_clues|join(', ') }}</p>
+			{% if assessment_passage.answerability_note is defined %}
+				<p><strong>Answerability note:</strong> {{ assessment_passage.answerability_note }}</p>
+			{% endif %}
+		</section>
+	{% endif %}
+
+	{% if assessment_questions %}
+		<section class="section" id="assessment-questions">
+			<h2>{{ assessment_questions.title }}</h2>
+			{% if assessment_questions.passage_title is defined %}
+				<p><strong>Passage:</strong> {{ assessment_questions.passage_title }}</p>
+			{% endif %}
+			{% for question in assessment_questions.questions %}
+				<div class="question-card">
+					<h3>Question {{ question.number }}</h3>
+					<p>{{ question.question }}</p>
+					<p><strong>Type:</strong> {{ question.question_type }}</p>
+					<p><strong>Answer expectation:</strong> {{ question.answer_expectation }}</p>
+					<p><strong>Evidence requirement:</strong> {{ question.evidence_requirement }}</p>
+				</div>
+			{% endfor %}
+		</section>
+	{% endif %}
+
+	{% if step_up %}
+		<section class="section" id="step-up">
+			<h2>{{ step_up.title }}</h2>
+			<div class="callout">
+				<strong>Challenge prompt:</strong> {{ step_up.challenge_prompt }}
+			</div>
+			<h3>Required Evidence</h3>
+			<ul>
+				{% for evidence in step_up.required_evidence %}
+					<li>{{ evidence }}</li>
+				{% endfor %}
+			</ul>
+			<h3>Success Criteria</h3>
+			<ul>
+				{% for criterion in step_up.success_criteria %}
+					<li>{{ criterion }}</li>
+				{% endfor %}
+			</ul>
+		</section>
+	{% endif %}
+
+	{% if self_assessment %}
+		<section class="section" id="self-assessment">
+			<h2>{{ self_assessment.title }}</h2>
+			<table>
+				<thead>
+					<tr>
+						<th>Skill</th>
+						{% for level in self_assessment.confidence_levels %}
+							<th>{{ level }}</th>
+						{% endfor %}
+						<th>Reflection Prompt</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for row in self_assessment.rows %}
+						<tr>
+							<td>{{ row.skill }}</td>
+							{% for _level in self_assessment.confidence_levels %}
+								<td></td>
+							{% endfor %}
+							<td>{{ row.reflection_prompt }}</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</section>
+	{% endif %}
+
+	{% if answer_key %}
+		<section class="section page-break" id="answer-key">
+			<h2>{{ answer_key.title }}</h2>
+
+			{% if answer_key.check_in_answers %}
+				<h3>Check-In Answers</h3>
+				{% for answer in answer_key.check_in_answers %}
+					<div class="answer-card">
+						<h4>Question {{ answer.question_number }}</h4>
+						<p>{{ answer.question }}</p>
+						<p><strong>Possible answer:</strong> {{ answer.possible_answer }}</p>
+						<p><strong>Evidence quote:</strong> {{ answer.evidence_quote }}</p>
+					</div>
+				{% endfor %}
+			{% endif %}
+
+			{% if answer_key.assessment_answers %}
+				<h3>Assessment Answers</h3>
+				{% for answer in answer_key.assessment_answers %}
+					<div class="answer-card">
+						<h4>Question {{ answer.question_number }}</h4>
+						<p>{{ answer.question }}</p>
+						<p><strong>Possible answer:</strong> {{ answer.possible_answer }}</p>
+						<p><strong>Evidence quote:</strong> {{ answer.evidence_quote }}</p>
+					</div>
+				{% endfor %}
+			{% endif %}
+
+			{% if answer_key.step_up_answer is defined %}
+				<div class="callout success">
+					<strong>Step-Up Response:</strong> {{ answer_key.step_up_answer.challenge_response }}
+					{% if answer_key.step_up_answer.required_evidence %}
+						<br />
+						<span class="quote">Required evidence: {{ answer_key.step_up_answer.required_evidence|join(', ') }}</span>
+					{% endif %}
+				</div>
+			{% endif %}
+
+			<p><strong>Teacher note:</strong> {{ answer_key.teacher_note }}</p>
+		</section>
+	{% endif %}
+</body>
+</html>

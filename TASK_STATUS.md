@@ -1,6 +1,6 @@
 # Task Status
 
-Last updated: 2026-05-11
+Last updated: 2026-05-12
 
 This file mirrors the structure of `TASKS.md` and records the current repo state against each task directly.
 Use it together with `TASKS.md`:
@@ -20,7 +20,7 @@ Status legend:
 - Legacy root-level backend code has been removed
 - Backend scaffold, environment files, core type contracts, and eval fixture preservation are in place
 - The backend now uses the project-local `backend/study-guide-agent/.venv` for ADK 2.0 beta work, with a narrow compatibility shim for the broken `google.adk.features` import surface in `google-adk==2.0.0b1`
-- The system prompt builder, blueprint prompt template, blueprint node, and focused blueprint unit test are now implemented, and Wave 1 through Wave 3 plus the answer-key path now exist with focused unit coverage; the validator node now aggregates the json-schema, vocab-presence, self-assessment-target, answer-key-quote, and passage-domain hard validators plus the answer-leakage and reading-level soft validators, and the broader validator test surface now exercises the planned hard- and soft-validator cases in isolation, while the renderer and frontend product UI are still largely unimplemented
+- The system prompt builder, blueprint prompt template, blueprint node, and focused blueprint unit test are now implemented, and Wave 1 through Wave 3 plus the answer-key path now exist with focused unit coverage; the validator node now aggregates the json-schema, vocab-presence, self-assessment-target, answer-key-quote, and passage-domain hard validators plus the answer-leakage and reading-level soft validators, the study-guide HTML template is now implemented in canonical section order for WeasyPrint, and the broader validator test surface now exercises the planned hard- and soft-validator cases in isolation while the renderer node and frontend product UI are still largely unimplemented
 - Deployment planning is now documented around a recommended Vercel frontend plus Cloud Run backend topology, with a separate local parity mode planned so production issues can be reproduced without changing the app architecture
 
 ## Phase 0 — Repository and tooling setup
@@ -189,8 +189,8 @@ Notes: Broader validator-focused coverage now exists across `tests/unit/test_jso
 
 ### Task 6.1 — Implement the study guide HTML template
 
-Status: `not started`
-Notes: `backend/study-guide-agent/app/templates/study_guide.html.j2` is still placeholder-only.
+Status: `complete`
+Notes: `backend/study-guide-agent/app/templates/study_guide.html.j2` now defines the canonical study-guide PDF layout in Jinja2 with explicit section ordering, vocabulary and self-assessment tables, validation warning callouts, and page breaks for the assessment passage and answer key; focused Jinja parse validation and `./scripts/validate-task.sh` both passed.
 
 ### Task 6.2 — Implement the renderer node
 

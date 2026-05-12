@@ -1,6 +1,6 @@
 # Codebase State
 
-Last updated: 2026-05-11
+Last updated: 2026-05-12
 
 This document is the live plain-language summary of the shipped codebase.
 It is intended to answer, in words, what currently exists in the repository without requiring a reader to inspect source files directly.
@@ -53,6 +53,7 @@ It is intended to answer, in words, what currently exists in the repository with
 - The backend now includes focused unit coverage for that node in `tests/unit/test_validator_node.py`, covering both repeated section schema iteration and aggregated failure-plus-warning behavior.
 - Task 5.9 is now effectively complete: the validator layer now has isolated pytest coverage across the hard validators, soft validators, and validator node, including the planned pass/fail coverage for `vocab_presence` and `answer_key_quotes`, a failing case for `self_assess_targets` and `passage_domain_diff`, and a warning-only case for `answer_leakage`.
 - The broader validator test surface now spans `tests/unit/test_json_schema_validator.py`, `tests/unit/test_vocab_presence_validator.py`, `tests/unit/test_self_assess_targets_validator.py`, `tests/unit/test_answer_key_quotes_validator.py`, `tests/unit/test_passage_domain_diff_validator.py`, `tests/unit/test_answer_leakage_validator.py`, `tests/unit/test_reading_level_validator.py`, and `tests/unit/test_validator_node.py`.
+- Task 6.1 is now implemented: `backend/study-guide-agent/app/templates/study_guide.html.j2` defines the canonical PDF layout in Jinja2 for WeasyPrint, including the fixed study-guide section order, vocabulary and self-assessment tables, validation warning callouts, and explicit page breaks for the assessment passage and answer key.
 - The backend uses the scaffolded ADK project structure created by `agents-cli`.
 - Core typed contracts are implemented in `backend/study-guide-agent/app/types.py` and mirrored in `frontend/lib/types.ts`.
 - `backend/study-guide-agent/app/types.py` now also contains the backend-only section payload models that the validation layer uses as its schema source of truth.
@@ -87,7 +88,7 @@ It is intended to answer, in words, what currently exists in the repository with
 
 ## Current Product Gaps
 
-- Wave 1, Wave 2, Wave 3, and answer-key generation are implemented; the validator layer now includes its aggregator node, five hard validators, two soft validators, and broad isolated test coverage, but the renderer is still incomplete.
+- Wave 1, Wave 2, Wave 3, and answer-key generation are implemented; the validator layer now includes its aggregator node, five hard validators, two soft validators, and broad isolated test coverage, and the PDF template now exists, but the renderer node and renderer test slice are still incomplete.
 - End-to-end workflow orchestration is still partial rather than complete.
-- Phase 4 onward remains mostly scaffolded or placeholder-only, including section generation nodes, validators, renderer implementation, and most frontend product experience work.
+- The remaining major gaps are the renderer node, renderer tests, workflow orchestration completion, backend workflow integration coverage, and most frontend product experience work.
 - Deployment is now specified, but the parity stack, Cloud Run configuration, Vercel setup, and staged remote deployment checkpoints are still not implemented.
