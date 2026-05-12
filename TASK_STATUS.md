@@ -314,7 +314,7 @@ Notes: `DEPLOYMENT.md` now exists at the repo root and aligns the deployment pla
 ### Task 13.2 — Containerize the backend for Cloud Run parity
 
 Status: `partial`
-Notes: The backend already includes a Dockerfile, but Cloud Run suitability and local parity expectations have not been validated end to end yet.
+Notes: The backend Dockerfile now installs the Linux runtime libraries WeasyPrint needs for PDF rendering, includes a build-time PDF smoke check, and successfully builds locally as a Docker image; Cloud Run suitability and local parity runtime expectations are still unvalidated end to end because the image has not yet been run as the full parity/backend service shape in this workflow.
 
 ### Task 13.3 — Add a local parity orchestration path
 

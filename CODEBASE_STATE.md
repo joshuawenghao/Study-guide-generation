@@ -57,6 +57,7 @@ It is intended to answer, in words, what currently exists in the repository with
 - Task 6.2 is now implemented: `backend/study-guide-agent/app/nodes/renderer.py` renders the study-guide template with explicit `blueprint`, `sections`, and `validation` inputs, converts the HTML to PDF through WeasyPrint, base64-encodes the PDF bytes, and returns a `GenerateResponse` that includes a canonical-order `WebPreviewPayload` for the frontend.
 - Task 6.3 is now implemented: `backend/study-guide-agent/tests/unit/test_renderer.py` exercises the renderer directly with a minimal valid blueprint and section payloads, checks that the emitted PDF artifact decodes to bytes beginning with a PDF header, and verifies that preview sections are returned in canonical order.
 - The backend project now declares `jinja2` and `weasyprint` as direct runtime dependencies in `backend/study-guide-agent/pyproject.toml` so the renderer path is available in the managed environment and the repo validation gate.
+- The backend Dockerfile now installs the Linux `glib` and `pango` runtime libraries WeasyPrint depends on, runs a build-time PDF smoke check so missing native dependencies should fail the image build early instead of surfacing only at request time, and has been verified to build successfully as a local Docker image.
 - The backend uses the scaffolded ADK project structure created by `agents-cli`.
 - Core typed contracts are implemented in `backend/study-guide-agent/app/types.py` and mirrored in `frontend/lib/types.ts`.
 - `backend/study-guide-agent/app/types.py` now also contains the backend-only section payload models that the validation layer uses as its schema source of truth.
@@ -94,4 +95,4 @@ It is intended to answer, in words, what currently exists in the repository with
 - Wave 1, Wave 2, Wave 3, and answer-key generation are implemented; the validator layer now includes its aggregator node, five hard validators, two soft validators, broad isolated test coverage, and the complete Phase 6 renderer slice including template, node, and focused renderer tests.
 - End-to-end workflow orchestration is still partial rather than complete.
 - The remaining major gaps are workflow orchestration completion, backend workflow integration coverage, and most frontend product experience work.
-- Deployment is now specified, but the parity stack, Cloud Run configuration, Vercel setup, and staged remote deployment checkpoints are still not implemented.
+- Deployment is now specified, and the backend image has a validated build path plus initial WeasyPrint runtime setup, but the parity stack, Cloud Run configuration, Vercel setup, and staged remote deployment checkpoints are still not implemented or validated end to end.

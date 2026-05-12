@@ -1,6 +1,6 @@
 # Deployment Guide
 
-Last updated: 2026-05-11
+Last updated: 2026-05-12
 
 This document is the deployment source of truth for the repository.
 Use it together with `IFC.md`, `ARCHITECTURE.md`, `TASKS.md`, and `TASK_STATUS.md`.
@@ -93,7 +93,7 @@ Backend deployment requirements:
 - request timeout is set for long-running generation requests
 - configuration comes from environment variables, not code edits
 
-The repo currently includes a backend Dockerfile and `agents-cli deploy`, but the exact validated project-specific path still needs to be completed under Phase 13.
+The repo currently includes a backend Dockerfile and `agents-cli deploy`, and the Dockerfile now installs the Linux runtime libraries WeasyPrint needs plus a build-time PDF smoke check. A local `docker build` now succeeds for that image definition in this workspace. However, the exact validated project-specific path still needs to be completed under Phase 13 because a real container run and Cloud Run-shaped parity check have not yet been verified here.
 
 ## Frontend deployment guidance
 

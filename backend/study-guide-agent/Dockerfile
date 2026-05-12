@@ -14,6 +14,15 @@
 
 FROM python:3.12-slim
 
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends \
+		fonts-dejavu-core \
+		libglib2.0-0 \
+		libharfbuzz-subset0 \
+		libpango-1.0-0 \
+		libpangoft2-1.0-0 \
+	&& rm -rf /var/lib/apt/lists/*
+
 RUN pip install --no-cache-dir uv==0.8.13
 
 WORKDIR /code
@@ -23,6 +32,8 @@ COPY ./pyproject.toml ./README.md ./uv.lock* ./
 COPY ./app ./app
 
 RUN uv sync --frozen
+
+RUN uv run python -c "from weasyprint import HTML; pdf = HTML(string='<h1>Smoke Test</h1>').write_pdf(); assert pdf and pdf.startswith(b'%PDF')"
 
 ARG COMMIT_SHA=""
 ENV COMMIT_SHA=${COMMIT_SHA}
