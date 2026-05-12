@@ -20,7 +20,7 @@ Status legend:
 - Legacy root-level backend code has been removed
 - Backend scaffold, environment files, core type contracts, and eval fixture preservation are in place
 - The backend now uses the project-local `backend/study-guide-agent/.venv` for ADK 2.0 beta work, with a narrow compatibility shim for the broken `google.adk.features` import surface in `google-adk==2.0.0b1`
-- The system prompt builder, blueprint prompt template, blueprint node, and focused blueprint unit test are now implemented, and Wave 1 through Wave 3 plus the answer-key path now exist with focused unit coverage; the json-schema, vocab-presence, self-assessment-target, answer-key-quote, and passage-domain hard validators plus the answer-leakage and reading-level soft validators now exist with focused unit coverage, while the rest of the validator layer, renderer, and frontend product UI are still largely unimplemented
+- The system prompt builder, blueprint prompt template, blueprint node, and focused blueprint unit test are now implemented, and Wave 1 through Wave 3 plus the answer-key path now exist with focused unit coverage; the validator node now aggregates the json-schema, vocab-presence, self-assessment-target, answer-key-quote, and passage-domain hard validators plus the answer-leakage and reading-level soft validators, while the renderer and frontend product UI are still largely unimplemented
 - Deployment planning is now documented around a recommended Vercel frontend plus Cloud Run backend topology, with a separate local parity mode planned so production issues can be reproduced without changing the app architecture
 
 ## Phase 0 — Repository and tooling setup
@@ -177,8 +177,8 @@ Notes: `backend/study-guide-agent/app/validators/soft/reading_level.py` now comp
 
 ### Task 5.8 — Implement the validator node
 
-Status: `not started`
-Notes: `backend/study-guide-agent/app/nodes/validator.py` is still a placeholder.
+Status: `complete`
+Notes: `backend/study-guide-agent/app/nodes/validator.py` now aggregates all implemented hard and soft validators into one `ValidationResult`, runs json-schema validation across all provided section payloads including repeated `subconcept` entries, skips content-model validators when schema validation already failed for that slice, and exposes an ADK node wrapper; focused coverage exists in `tests/unit/test_validator_node.py`, and the repo done gate passed.
 
 ### Task 5.9 — Add validator tests
 

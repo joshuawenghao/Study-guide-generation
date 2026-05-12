@@ -9,7 +9,7 @@ It is intended to answer, in words, what currently exists in the repository with
 
 - The repository now includes a working Copilot automation loop with workspace-local skills, a repo-level validation script, and a live shipped-state document.
 - The backend now includes implemented Wave 1, Wave 2, Wave 3, and answer-key generation slices beyond blueprint generation.
-- The validation layer now has five implemented hard validators plus two soft validators: answer leakage detection warns when quoted evidence phrases from assessment answer-key entries reappear outside the assessment passage, and reading-level validation warns when section text drifts outside the target grade band.
+- The validation layer now has a working validator node that aggregates five hard validators and two soft validators into a single `ValidationResult` for the orchestrator retry loop and preview warnings.
 - The ADK FastAPI loader now has a compatibility adapter so the server integration path can locate `study_guide_agent.root_agent` correctly.
 - The repo documentation now includes an explicit deployment plan and task phase covering Vercel, Cloud Run, and a production-like local parity mode.
 
@@ -49,6 +49,8 @@ It is intended to answer, in words, what currently exists in the repository with
 - The backend now includes focused unit coverage for that validator in `tests/unit/test_answer_leakage_validator.py`, covering both a clean case where the quote remains only in the assessment passage and a warning case where a body section repeats the quoted phrase.
 - Task 5.7 is now implemented: `app/validators/soft/reading_level.py` flattens section text, computes Flesch-Kincaid grade scores through `textstat`, and emits warnings when a section falls outside a ±1.0 band around the target grade level.
 - The backend now includes focused unit coverage for that validator in `tests/unit/test_reading_level_validator.py`, and `backend/study-guide-agent/pyproject.toml` plus `backend/study-guide-agent/uv.lock` now include the `textstat` dependency needed for runtime scoring.
+- Task 5.8 is now implemented: `app/nodes/validator.py` runs json-schema checks across all generated section payloads, aggregates the implemented hard and soft validator outputs into one `ValidationResult`, and skips downstream model-based validators when schema validation already failed for the same slice.
+- The backend now includes focused unit coverage for that node in `tests/unit/test_validator_node.py`, covering both repeated section schema iteration and aggregated failure-plus-warning behavior.
 - The backend uses the scaffolded ADK project structure created by `agents-cli`.
 - Core typed contracts are implemented in `backend/study-guide-agent/app/types.py` and mirrored in `frontend/lib/types.ts`.
 - `backend/study-guide-agent/app/types.py` now also contains the backend-only section payload models that the validation layer uses as its schema source of truth.
@@ -83,7 +85,7 @@ It is intended to answer, in words, what currently exists in the repository with
 
 ## Current Product Gaps
 
-- Wave 1, Wave 2, Wave 3, and answer-key generation are implemented, the first five hard validators now exist, and the first two soft validators now exist, but the rest of the validator layer and the renderer are still incomplete.
+- Wave 1, Wave 2, Wave 3, and answer-key generation are implemented; the validator layer now includes its aggregator node, five hard validators, and two soft validators, but the renderer is still incomplete.
 - End-to-end workflow orchestration is still partial rather than complete.
 - Phase 4 onward remains mostly scaffolded or placeholder-only, including section generation nodes, validators, renderer implementation, and most frontend product experience work.
 - Deployment is now specified, but the parity stack, Cloud Run configuration, Vercel setup, and staged remote deployment checkpoints are still not implemented.
