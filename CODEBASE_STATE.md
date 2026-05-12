@@ -54,6 +54,8 @@ It is intended to answer, in words, what currently exists in the repository with
 - Task 5.9 is now effectively complete: the validator layer now has isolated pytest coverage across the hard validators, soft validators, and validator node, including the planned pass/fail coverage for `vocab_presence` and `answer_key_quotes`, a failing case for `self_assess_targets` and `passage_domain_diff`, and a warning-only case for `answer_leakage`.
 - The broader validator test surface now spans `tests/unit/test_json_schema_validator.py`, `tests/unit/test_vocab_presence_validator.py`, `tests/unit/test_self_assess_targets_validator.py`, `tests/unit/test_answer_key_quotes_validator.py`, `tests/unit/test_passage_domain_diff_validator.py`, `tests/unit/test_answer_leakage_validator.py`, `tests/unit/test_reading_level_validator.py`, and `tests/unit/test_validator_node.py`.
 - Task 6.1 is now implemented: `backend/study-guide-agent/app/templates/study_guide.html.j2` defines the canonical PDF layout in Jinja2 for WeasyPrint, including the fixed study-guide section order, vocabulary and self-assessment tables, validation warning callouts, and explicit page breaks for the assessment passage and answer key.
+- Task 6.2 is now implemented: `backend/study-guide-agent/app/nodes/renderer.py` renders the study-guide template with explicit `blueprint`, `sections`, and `validation` inputs, converts the HTML to PDF through WeasyPrint, base64-encodes the PDF bytes, and returns a `GenerateResponse` that includes a canonical-order `WebPreviewPayload` for the frontend.
+- The backend project now declares `jinja2` and `weasyprint` as direct runtime dependencies in `backend/study-guide-agent/pyproject.toml` so the renderer path is available in the managed environment and the repo validation gate.
 - The backend uses the scaffolded ADK project structure created by `agents-cli`.
 - Core typed contracts are implemented in `backend/study-guide-agent/app/types.py` and mirrored in `frontend/lib/types.ts`.
 - `backend/study-guide-agent/app/types.py` now also contains the backend-only section payload models that the validation layer uses as its schema source of truth.
@@ -88,7 +90,7 @@ It is intended to answer, in words, what currently exists in the repository with
 
 ## Current Product Gaps
 
-- Wave 1, Wave 2, Wave 3, and answer-key generation are implemented; the validator layer now includes its aggregator node, five hard validators, two soft validators, and broad isolated test coverage, and the PDF template now exists, but the renderer node and renderer test slice are still incomplete.
+- Wave 1, Wave 2, Wave 3, and answer-key generation are implemented; the validator layer now includes its aggregator node, five hard validators, two soft validators, and broad isolated test coverage, and the PDF template plus renderer node now exist, but the renderer test slice is still incomplete.
 - End-to-end workflow orchestration is still partial rather than complete.
-- The remaining major gaps are the renderer node, renderer tests, workflow orchestration completion, backend workflow integration coverage, and most frontend product experience work.
+- The remaining major gaps are renderer tests, workflow orchestration completion, backend workflow integration coverage, and most frontend product experience work.
 - Deployment is now specified, but the parity stack, Cloud Run configuration, Vercel setup, and staged remote deployment checkpoints are still not implemented.

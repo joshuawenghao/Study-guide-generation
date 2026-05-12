@@ -20,7 +20,7 @@ Status legend:
 - Legacy root-level backend code has been removed
 - Backend scaffold, environment files, core type contracts, and eval fixture preservation are in place
 - The backend now uses the project-local `backend/study-guide-agent/.venv` for ADK 2.0 beta work, with a narrow compatibility shim for the broken `google.adk.features` import surface in `google-adk==2.0.0b1`
-- The system prompt builder, blueprint prompt template, blueprint node, and focused blueprint unit test are now implemented, and Wave 1 through Wave 3 plus the answer-key path now exist with focused unit coverage; the validator node now aggregates the json-schema, vocab-presence, self-assessment-target, answer-key-quote, and passage-domain hard validators plus the answer-leakage and reading-level soft validators, the study-guide HTML template is now implemented in canonical section order for WeasyPrint, and the broader validator test surface now exercises the planned hard- and soft-validator cases in isolation while the renderer node and frontend product UI are still largely unimplemented
+- The system prompt builder, blueprint prompt template, blueprint node, and focused blueprint unit test are now implemented, and Wave 1 through Wave 3 plus the answer-key path now exist with focused unit coverage; the validator node now aggregates the json-schema, vocab-presence, self-assessment-target, answer-key-quote, and passage-domain hard validators plus the answer-leakage and reading-level soft validators, the study-guide HTML template and renderer node now produce PDF and ordered preview artifacts for validated section payloads, and the broader validator test surface now exercises the planned hard- and soft-validator cases in isolation while renderer-specific tests, workflow orchestration, and frontend product UI remain incomplete
 - Deployment planning is now documented around a recommended Vercel frontend plus Cloud Run backend topology, with a separate local parity mode planned so production issues can be reproduced without changing the app architecture
 
 ## Phase 0 — Repository and tooling setup
@@ -194,8 +194,8 @@ Notes: `backend/study-guide-agent/app/templates/study_guide.html.j2` now defines
 
 ### Task 6.2 — Implement the renderer node
 
-Status: `not started`
-Notes: `backend/study-guide-agent/app/nodes/renderer.py` is still a placeholder.
+Status: `complete`
+Notes: `backend/study-guide-agent/app/nodes/renderer.py` now accepts explicit `blueprint`, `sections`, and `validation` inputs, renders `app/templates/study_guide.html.j2` through Jinja2, converts HTML to PDF with WeasyPrint, base64-encodes the PDF bytes, and returns a `GenerateResponse` with a canonical-order `WebPreviewPayload`; focused renderer smoke validation plus backend lint, backend Pyright, backend tests, and frontend lint all passed.
 
 ### Task 6.3 — Add renderer tests
 
