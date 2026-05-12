@@ -20,7 +20,7 @@ Status legend:
 - Legacy root-level backend code has been removed
 - Backend scaffold, environment files, core type contracts, and eval fixture preservation are in place
 - The backend now uses the project-local `backend/study-guide-agent/.venv` for ADK 2.0 beta work, with a narrow compatibility shim for the broken `google.adk.features` import surface in `google-adk==2.0.0b1`
-- The system prompt builder, blueprint prompt template, blueprint node, and focused blueprint unit test are now implemented, and Wave 1 through Wave 3 plus the answer-key path now exist with focused unit coverage; the validator node now aggregates the json-schema, vocab-presence, self-assessment-target, answer-key-quote, and passage-domain hard validators plus the answer-leakage and reading-level soft validators, Phase 6 now includes the study-guide HTML template, renderer node, and focused renderer tests for preview ordering and PDF artifact shape, and the broader validator and renderer test surface now exercises the planned isolated backend checks while workflow orchestration and frontend product UI remain incomplete
+- The system prompt builder, blueprint prompt template, blueprint node, and focused blueprint unit test are now implemented, and Wave 1 through Wave 3 plus the answer-key path now exist with focused unit coverage; the validator node now aggregates the json-schema, vocab-presence, self-assessment-target, answer-key-quote, and passage-domain hard validators plus the answer-leakage and reading-level soft validators, Phase 6 now includes the study-guide HTML template, renderer node, and focused renderer tests for preview ordering and PDF artifact shape, and Phase 7.1 now wires those slices together through the exported ADK workflow in `app/agent.py`; backend workflow behavior coverage and frontend product UI remain incomplete
 - Deployment planning is now documented around a recommended Vercel frontend plus Cloud Run backend topology, with a separate local parity mode planned so production issues can be reproduced without changing the app architecture
 
 ## Phase 0 — Repository and tooling setup
@@ -64,8 +64,8 @@ Notes: `backend/study-guide-agent/app/nodes/base.py` contains the shared Gemini 
 
 ### Task 1.3 — Align the scaffold entrypoint with the study-guide app identity
 
-Status: `partial`
-Notes: `app/agent.py` and `app/fast_api_app.py` have been aligned to the study-guide project identity, and now load the repo-local ADK beta compatibility shim before ADK imports; the real study-guide workflow is still not implemented yet.
+Status: `complete`
+Notes: `app/agent.py` and `app/fast_api_app.py` are aligned to the study-guide project identity, load the repo-local ADK beta compatibility shim before ADK imports, and now expose the real study-guide workflow entrypoint rather than the sample bootstrap.
 
 ## Phase 2 — Data contracts and type sync
 
@@ -206,8 +206,8 @@ Notes: `backend/study-guide-agent/tests/unit/test_renderer.py` now provides focu
 
 ### Task 7.1 — Implement the orchestrator workflow
 
-Status: `partial`
-Notes: `app/agent.py` exists, but it is still a minimal bootstrap rather than the full dynamic study-guide workflow.
+Status: `complete`
+Notes: `app/agent.py` now exports the real ADK workflow entrypoint: blueprint generation runs first, Wave 1 and Wave 2 use `asyncio.gather()`, Wave 3 uses explicit dependency inputs, answer-key generation runs last, validation triggers a one-pass retry loop with failure-specific retry prompts at `TEMP_RETRY`, and rendering returns the final `GenerateResponse`; the repo done gate passed after focused workflow import, Pyright, and backend integration smoke validation.
 
 ### Task 7.2 — Add a focused backend-only integration check
 

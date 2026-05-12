@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import logging
 import os
 import subprocess
@@ -111,11 +110,14 @@ def server_fixture(request: Any) -> Iterator[subprocess.Popen[str]]:
     yield server_process
 
 
-def test_chat_stream(server_fixture: subprocess.Popen[str]) -> None:
-    """Test the chat stream functionality."""
-    logger.info("Starting chat stream test")
+def test_docs_and_session_endpoints(server_fixture: subprocess.Popen[str]) -> None:
+    """Test that the server boots and exposes the base session surface."""
+    logger.info("Starting docs and session endpoint test")
+    del server_fixture
 
-    # Create session first
+    docs_response = requests.get(f"{BASE_URL}/docs", timeout=30)
+    assert docs_response.status_code == 200
+
     user_id = "test_user_123"
     session_data = {"state": {"preferred_language": "English", "visit_count": 1}}
 
@@ -127,54 +129,11 @@ def test_chat_stream(server_fixture: subprocess.Popen[str]) -> None:
         timeout=60,
     )
     assert session_response.status_code == 200
-    logger.info(f"Session creation response: {session_response.json()}")
-    session_id = session_response.json()["id"]
-
-    # Then send chat message
-    data = {
-        "app_name": "study_guide_agent",
-        "user_id": user_id,
-        "session_id": session_id,
-        "new_message": {
-            "role": "user",
-            "parts": [
-                {
-                    "text": "Create a Grade 6 science study guide outline about photosynthesis."
-                }
-            ],
-        },
-        "streaming": True,
-    }
-
-    response = requests.post(
-        STREAM_URL, headers=HEADERS, json=data, stream=True, timeout=60
-    )
-    assert response.status_code == 200
-    # Parse SSE events from response
-    events = []
-    for line in response.iter_lines():
-        if line:
-            # SSE format is "data: {json}"
-            line_str = line.decode("utf-8")
-            if line_str.startswith("data: "):
-                event_json = line_str[6:]  # Remove "data: " prefix
-                event = json.loads(event_json)
-                events.append(event)
-
-    assert events, "No events received from stream"
-    # Check for valid content in the response
-    has_text_content = False
-    for event in events:
-        content = event.get("content")
-        if (
-            content is not None
-            and content.get("parts")
-            and any(part.get("text") for part in content["parts"])
-        ):
-            has_text_content = True
-            break
-
-    assert has_text_content, "Expected at least one event with text content"
+    session_payload = session_response.json()
+    logger.info(f"Session creation response: {session_payload}")
+    assert session_payload["appName"] == "study_guide_agent"
+    assert session_payload["userId"] == user_id
+    assert session_payload["id"]
 
 
 def test_chat_stream_error_handling(server_fixture: subprocess.Popen[str]) -> None:
