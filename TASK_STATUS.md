@@ -20,7 +20,7 @@ Status legend:
 - Legacy root-level backend code has been removed
 - Backend scaffold, environment files, core type contracts, and eval fixture preservation are in place
 - The backend now uses the project-local `backend/study-guide-agent/.venv` for ADK 2.0 beta work, with a narrow compatibility shim for the broken `google.adk.features` import surface in `google-adk==2.0.0b1`
-- The system prompt builder, blueprint prompt template, blueprint node, and focused blueprint unit test are now implemented, and Wave 1 through Wave 3 plus the answer-key path now exist with focused unit coverage; the validator node now aggregates the json-schema, vocab-presence, self-assessment-target, answer-key-quote, and passage-domain hard validators plus the answer-leakage and reading-level soft validators, the study-guide HTML template and renderer node now produce PDF and ordered preview artifacts for validated section payloads, and the broader validator test surface now exercises the planned hard- and soft-validator cases in isolation while renderer-specific tests, workflow orchestration, and frontend product UI remain incomplete
+- The system prompt builder, blueprint prompt template, blueprint node, and focused blueprint unit test are now implemented, and Wave 1 through Wave 3 plus the answer-key path now exist with focused unit coverage; the validator node now aggregates the json-schema, vocab-presence, self-assessment-target, answer-key-quote, and passage-domain hard validators plus the answer-leakage and reading-level soft validators, Phase 6 now includes the study-guide HTML template, renderer node, and focused renderer tests for preview ordering and PDF artifact shape, and the broader validator and renderer test surface now exercises the planned isolated backend checks while workflow orchestration and frontend product UI remain incomplete
 - Deployment planning is now documented around a recommended Vercel frontend plus Cloud Run backend topology, with a separate local parity mode planned so production issues can be reproduced without changing the app architecture
 
 ## Phase 0 — Repository and tooling setup
@@ -199,8 +199,8 @@ Notes: `backend/study-guide-agent/app/nodes/renderer.py` now accepts explicit `b
 
 ### Task 6.3 — Add renderer tests
 
-Status: `not started`
-Notes: No renderer test suite exists yet.
+Status: `complete`
+Notes: `backend/study-guide-agent/tests/unit/test_renderer.py` now provides focused executable coverage for the renderer path, asserting that the rendered PDF payload decodes to bytes with a PDF header and that preview sections are emitted in canonical order; the focused renderer test module and `./scripts/validate-task.sh` both passed.
 
 ## Phase 7 — Workflow orchestration
 
