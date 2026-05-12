@@ -20,7 +20,7 @@ Status legend:
 - Legacy root-level backend code has been removed
 - Backend scaffold, environment files, core type contracts, and eval fixture preservation are in place
 - The backend now uses the project-local `backend/study-guide-agent/.venv` for ADK 2.0 beta work, with a narrow compatibility shim for the broken `google.adk.features` import surface in `google-adk==2.0.0b1`
-- The system prompt builder, blueprint prompt template, blueprint node, and focused blueprint unit test are now implemented, and Wave 1 through Wave 3 plus the answer-key path now exist with focused unit coverage; the validator node now aggregates the json-schema, vocab-presence, self-assessment-target, answer-key-quote, and passage-domain hard validators plus the answer-leakage and reading-level soft validators, while the renderer and frontend product UI are still largely unimplemented
+- The system prompt builder, blueprint prompt template, blueprint node, and focused blueprint unit test are now implemented, and Wave 1 through Wave 3 plus the answer-key path now exist with focused unit coverage; the validator node now aggregates the json-schema, vocab-presence, self-assessment-target, answer-key-quote, and passage-domain hard validators plus the answer-leakage and reading-level soft validators, and the broader validator test surface now exercises the planned hard- and soft-validator cases in isolation, while the renderer and frontend product UI are still largely unimplemented
 - Deployment planning is now documented around a recommended Vercel frontend plus Cloud Run backend topology, with a separate local parity mode planned so production issues can be reproduced without changing the app architecture
 
 ## Phase 0 — Repository and tooling setup
@@ -182,8 +182,8 @@ Notes: `backend/study-guide-agent/app/nodes/validator.py` now aggregates all imp
 
 ### Task 5.9 — Add validator tests
 
-Status: `partial`
-Notes: `tests/unit/test_json_schema_validator.py` now provides focused coverage for the json-schema hard validator, but broader validator-focused coverage for the remaining hard and soft validators does not exist yet.
+Status: `complete`
+Notes: Broader validator-focused coverage now exists across `tests/unit/test_json_schema_validator.py`, `tests/unit/test_vocab_presence_validator.py`, `tests/unit/test_self_assess_targets_validator.py`, `tests/unit/test_answer_key_quotes_validator.py`, `tests/unit/test_passage_domain_diff_validator.py`, `tests/unit/test_answer_leakage_validator.py`, `tests/unit/test_reading_level_validator.py`, and `tests/unit/test_validator_node.py`; the planned passing, failing, and warning-only validator cases are executable in isolation, and the repo done gate passed.
 
 ## Phase 6 — Renderer and preview payload
 
