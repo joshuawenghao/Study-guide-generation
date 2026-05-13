@@ -2,13 +2,42 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterable, Mapping, Sequence
+from pathlib import Path
 from typing import Any
 
+import nltk
 from pydantic import BaseModel
 from textstat import textstat
+from textstat.backend.utils._get_pyphen import get_pyphen
 
 from app.types import ValidationResult
+
+PROJECT_NLTK_DATA_DIR = Path(__file__).resolve().parents[3] / ".nltk_data"
+
+SECTION_EXCLUSIONS = {"answer_key"}
+FIELD_EXCLUSIONS = {
+    "title",
+    "teacher_note",
+    "lesson_id",
+    "number",
+    "question_number",
+    "sub_competency_id",
+    "topic_domain",
+    "genre",
+    "part_of_speech",
+    "passage_title",
+    "question_type",
+    "evidence_requirement",
+    "estimated_minutes",
+    "activity_type",
+}
+
+if PROJECT_NLTK_DATA_DIR.exists():
+    project_nltk_path = str(PROJECT_NLTK_DATA_DIR)
+    if project_nltk_path not in nltk.data.path:
+        nltk.data.path.insert(0, project_nltk_path)
 
 
 def _success_result(warnings: list[str]) -> ValidationResult:
@@ -31,13 +60,48 @@ def _iter_text_fragments(value: Any) -> Iterable[str]:
         return
 
     if isinstance(value, Mapping):
-        for item in value.values():
+        for key, item in value.items():
+            if str(key) in FIELD_EXCLUSIONS:
+                continue
             yield from _iter_text_fragments(item)
         return
 
     if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
         for item in value:
             yield from _iter_text_fragments(item)
+
+
+def _estimate_flesch_kincaid_grade_without_cmudict(text: str) -> float:
+    words = re.findall(r"[A-Za-z]+(?:'[A-Za-z]+)?", text)
+    if not words:
+        return 0.0
+
+    sentences = re.findall(r"\b[^.!?]+[.!?]*", text, re.UNICODE)
+    sentence_count = max(
+        1,
+        sum(
+            1
+            for sentence in sentences
+            if len(re.findall(r"[A-Za-z]+(?:'[A-Za-z]+)?", sentence)) > 2
+        ),
+    )
+
+    pyphen = get_pyphen("en_US")
+    syllable_count = sum(len(pyphen.positions(word.lower())) + 1 for word in words)
+
+    average_sentence_length = len(words) / sentence_count
+    average_syllables_per_word = syllable_count / len(words)
+    return (
+        (0.39 * average_sentence_length) + (11.8 * average_syllables_per_word) - 15.59
+    )
+
+
+def _has_local_cmudict() -> bool:
+    try:
+        nltk.data.find("corpora/cmudict")
+    except LookupError:
+        return False
+    return True
 
 
 def validate_reading_level(
@@ -49,18 +113,28 @@ def validate_reading_level(
 
     warnings: list[str] = []
     for section_key, payload in section_payloads.items():
+        if section_key in SECTION_EXCLUSIONS:
+            continue
+
         section_text = "\n".join(_iter_text_fragments(payload)).strip()
         if not section_text:
             continue
 
-        try:
-            grade_score = float(textstat.flesch_kincaid_grade(section_text))
-        except Exception as error:
-            warnings.append(
-                "Reading level warning: reading-level analysis was skipped "
-                f"because the dependency data is unavailable ({error.__class__.__name__})."
-            )
-            break
+        if not _has_local_cmudict():
+            grade_score = _estimate_flesch_kincaid_grade_without_cmudict(section_text)
+        else:
+            try:
+                grade_score = float(textstat.flesch_kincaid_grade(section_text))
+            except LookupError:
+                grade_score = _estimate_flesch_kincaid_grade_without_cmudict(
+                    section_text
+                )
+            except Exception as error:
+                warnings.append(
+                    "Reading level warning: reading-level analysis was skipped "
+                    f"because the dependency data is unavailable ({error.__class__.__name__})."
+                )
+                break
 
         if abs(grade_score - target_grade_level) <= 1.0:
             continue

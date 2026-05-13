@@ -103,6 +103,45 @@ def build_sections() -> dict[str, object]:
     }
 
 
+def build_sections_missing_evidence_quote() -> dict[str, object]:
+    sections = build_sections()
+    sections["answer_key"] = {
+        "title": "Answer Key",
+        "check_in_answers": [
+            {
+                "question_number": 1,
+                "question": "What is the clue?",
+                "possible_answer": "The command shows persuasion.",
+            }
+        ],
+        "assessment_answers": [
+            {
+                "question_number": 2,
+                "question": "Why does the passage inform?",
+                "possible_answer": 'It informs because "protect coastlines" explains the idea.',
+            }
+        ],
+        "step_up_answer": {
+            "challenge_response": "Use passage evidence to explain the purpose.",
+            "required_evidence": ["quoted phrase"],
+        },
+        "teacher_note": "Accept equivalent answers with evidence.",
+    }
+    return sections
+
+
+def build_sections_string_step_up_answer() -> dict[str, object]:
+    sections = build_sections()
+    sections["answer_key"] = {
+        "title": "Answer Key",
+        "check_in_answers": [],
+        "assessment_answers": [],
+        "step_up_answer": "Use passage evidence to explain the purpose.",
+        "teacher_note": "Accept equivalent answers with evidence.",
+    }
+    return sections
+
+
 @pytest.mark.asyncio
 async def test_generate_rendered_response_returns_pdf_bytes(
     monkeypatch: pytest.MonkeyPatch,
@@ -147,3 +186,47 @@ async def test_generate_rendered_response_orders_preview_sections_canonically(
         "subconcept-2",
         "answer_key",
     ]
+
+
+@pytest.mark.asyncio
+async def test_generate_rendered_response_tolerates_missing_answer_key_evidence_quote(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        renderer_module,
+        "_render_pdf_bytes",
+        lambda _html: b"%PDF-1.7\nrenderer-test\n",
+    )
+
+    response = await renderer_module.generate_rendered_response(
+        blueprint=build_blueprint(),
+        sections=build_sections_missing_evidence_quote(),
+        validation=build_validation(),
+    )
+
+    pdf_bytes = base64.b64decode(response.pdf_base64)
+
+    assert response.success is True
+    assert pdf_bytes.startswith(b"%PDF")
+
+
+@pytest.mark.asyncio
+async def test_generate_rendered_response_tolerates_string_step_up_answer(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        renderer_module,
+        "_render_pdf_bytes",
+        lambda _html: b"%PDF-1.7\nrenderer-test\n",
+    )
+
+    response = await renderer_module.generate_rendered_response(
+        blueprint=build_blueprint(),
+        sections=build_sections_string_step_up_answer(),
+        validation=build_validation(),
+    )
+
+    pdf_bytes = base64.b64decode(response.pdf_base64)
+
+    assert response.success is True
+    assert pdf_bytes.startswith(b"%PDF")

@@ -79,6 +79,15 @@ cp .env.example .env
 
 The backend runtime reads `backend/study-guide-agent/.env`. At minimum set `GOOGLE_API_KEY`; `MARKET_DEFAULT=PH` is included as the default market.
 
+To enable the primary English reading-level path locally, install the NLTK `cmudict` corpus into a project-local data directory:
+
+```bash
+mkdir -p .nltk_data
+NLTK_DATA=$PWD/.nltk_data uv run python -c "import nltk; nltk.download('cmudict', download_dir='$PWD/.nltk_data')"
+```
+
+The reading-level validator will auto-detect `backend/study-guide-agent/.nltk_data/` when it exists. If the corpus is missing, the validator falls back to a local Pyphen-based estimate instead of skipping analysis.
+
 Test the agent with a local web server:
 
 ```bash

@@ -591,7 +591,7 @@
 						<h4>Question {{ answer.question_number }}</h4>
 						<p>{{ answer.question }}</p>
 						<p><strong>Possible answer:</strong> {{ answer.possible_answer }}</p>
-						<p><strong>Evidence quote:</strong> {{ answer.evidence_quote }}</p>
+						<p><strong>Evidence quote:</strong> {{ answer.evidence_quote if answer.evidence_quote is defined else "Not provided." }}</p>
 					</div>
 				{% endfor %}
 			{% endif %}
@@ -603,15 +603,20 @@
 						<h4>Question {{ answer.question_number }}</h4>
 						<p>{{ answer.question }}</p>
 						<p><strong>Possible answer:</strong> {{ answer.possible_answer }}</p>
-						<p><strong>Evidence quote:</strong> {{ answer.evidence_quote }}</p>
+						<p><strong>Evidence quote:</strong> {{ answer.evidence_quote if answer.evidence_quote is defined else "Not provided." }}</p>
 					</div>
 				{% endfor %}
 			{% endif %}
 
 			{% if answer_key.step_up_answer is defined %}
 				<div class="callout success">
-					<strong>Step-Up Response:</strong> {{ answer_key.step_up_answer.challenge_response }}
-					{% if answer_key.step_up_answer.required_evidence %}
+					<strong>Step-Up Response:</strong>
+					{% if answer_key.step_up_answer.challenge_response is defined %}
+						{{ answer_key.step_up_answer.challenge_response }}
+					{% else %}
+						{{ answer_key.step_up_answer }}
+					{% endif %}
+					{% if answer_key.step_up_answer.required_evidence is defined and answer_key.step_up_answer.required_evidence %}
 						<br />
 						<span class="quote">Required evidence: {{ answer_key.step_up_answer.required_evidence|join(', ') }}</span>
 					{% endif %}

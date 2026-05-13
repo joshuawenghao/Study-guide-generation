@@ -64,6 +64,17 @@ def build_system_prompt(request: GenerateRequest) -> str:
             "code fences. Do not add commentary, headings, or prose outside the JSON object."
         ),
         (
+            "Readability target: Aim for a Flesch-Kincaid reading level close to "
+            f"Grade {metadata.grade_level}. Prefer common everyday words when possible, "
+            "keep most sentences to one clear idea, and avoid extra clauses or abstract "
+            "academic phrasing unless a lesson term requires it."
+        ),
+        (
+            "Sentence discipline: Keep sentences concise. For upper elementary and middle "
+            "school outputs, default to short-to-medium sentences and define new academic "
+            "terms in plain language immediately when they first appear."
+        ),
+        (
             "Output discipline: Follow the requested structure exactly, keep every field "
             "machine-parseable, and do not invent extra top-level keys, side notes, or "
             "explanatory text outside the required JSON schema."
