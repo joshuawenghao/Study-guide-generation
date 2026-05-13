@@ -95,6 +95,51 @@ Backend deployment requirements:
 
 The repo currently includes a backend Dockerfile and `agents-cli deploy`, and the Dockerfile now installs the Linux runtime libraries WeasyPrint needs plus a build-time PDF smoke check. A local `docker build` now succeeds for that image definition in this workspace. However, the exact validated project-specific path still needs to be completed under Phase 13 because a real container run and Cloud Run-shaped parity check have not yet been verified here.
 
+### Backend container commands
+
+Use the same image definition for both local parity and Cloud Run.
+
+Local build:
+
+```bash
+cd backend/study-guide-agent
+docker build -t study-guide-agent-backend:local .
+```
+
+Local run with the Cloud Run-style runtime contract:
+
+```bash
+docker run --rm \
+  -p 8080:8080 \
+  -e PORT=8080 \
+  -e GOOGLE_API_KEY="$GOOGLE_API_KEY" \
+  -e MARKET_DEFAULT=PH \
+  study-guide-agent-backend:local
+```
+
+The container entrypoint reads `PORT` from the environment, so the same image can also be run on a different local port when needed:
+
+```bash
+docker run --rm \
+  -p 8090:8090 \
+  -e PORT=8090 \
+  -e GOOGLE_API_KEY="$GOOGLE_API_KEY" \
+  -e MARKET_DEFAULT=PH \
+  study-guide-agent-backend:local
+```
+
+Cloud Run deploy shape:
+
+```bash
+gcloud run deploy study-guide-agent-dev \
+  --source backend/study-guide-agent \
+  --region <region> \
+  --set-env-vars MARKET_DEFAULT=PH \
+  --set-secrets GOOGLE_API_KEY=GOOGLE_API_KEY:latest
+```
+
+If the repo standardizes on a prebuilt image flow instead of `--source`, keep the same runtime contract: Cloud Run injects `PORT`, and the container must boot `app.fast_api_app:app` without code edits.
+
 ## Frontend deployment guidance
 
 Deploy the frontend to Vercel with separate preview and production environments.
