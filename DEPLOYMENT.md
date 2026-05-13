@@ -140,6 +140,78 @@ gcloud run deploy study-guide-agent-dev \
 
 If the repo standardizes on a prebuilt image flow instead of `--source`, keep the same runtime contract: Cloud Run injects `PORT`, and the container must boot `app.fast_api_app:app` without code edits.
 
+### Standard backend deploy entrypoint
+
+The repo-standardized backend deploy command is:
+
+```bash
+./scripts/deploy-backend-cloud-run.sh <dev|prod>
+```
+
+Required environment variables for that command:
+
+- `GCP_PROJECT_ID`
+- `CLOUD_RUN_REGION`
+- `BACKEND_CORS_ALLOW_ORIGINS`
+
+Optional environment variables supported by the script:
+
+- `CLOUD_RUN_SERVICE`
+- `GOOGLE_API_KEY_SECRET_NAME`
+- `MARKET_DEFAULT`
+- `CLOUD_RUN_TIMEOUT`
+- `CLOUD_RUN_CONCURRENCY`
+- `CLOUD_RUN_MEMORY`
+- `CLOUD_RUN_CPU`
+- `TRACE_TO_CLOUD`
+- `OTEL_TO_CLOUD`
+- `SESSION_SERVICE_URI`
+- `ARTIFACT_SERVICE_URI`
+
+The backend runtime now reads these deployment-facing environment variables directly:
+
+- `BACKEND_CORS_ALLOW_ORIGINS` as a comma-separated list for FastAPI CORS allow-origins
+- `SESSION_SERVICE_URI` and `ARTIFACT_SERVICE_URI` for optional remote service wiring
+- `TRACE_TO_CLOUD` and `OTEL_TO_CLOUD` for telemetry export toggles
+- `PORT` for the Cloud Run runtime port injected at startup
+
+### Cloud Run service assumptions
+
+The current repo default assumptions for long-running generation requests are:
+
+- timeout: `900` seconds
+- concurrency: `1` request per instance
+- unauthenticated access: enabled for the prototype backend, with browser traffic still expected to arrive through the frontend proxy
+
+These values are intentionally conservative because study-guide generation can involve multiple model calls plus PDF rendering in one request.
+
+### CORS origin guidance
+
+For the dev Cloud Run service, `BACKEND_CORS_ALLOW_ORIGINS` should include only the origins that need to call the backend directly in that environment, typically:
+
+- local frontend development origin, e.g. `http://localhost:3000`
+- the active Vercel preview or dev frontend origin once Phase 13.5 is in place
+
+For the production Cloud Run service, `BACKEND_CORS_ALLOW_ORIGINS` should include only the production frontend origin or custom domains.
+
+Example dev deployment:
+
+```bash
+GCP_PROJECT_ID=<project-id> \
+CLOUD_RUN_REGION=<region> \
+BACKEND_CORS_ALLOW_ORIGINS=http://localhost:3000,https://<preview-domain> \
+./scripts/deploy-backend-cloud-run.sh dev
+```
+
+Example production deployment:
+
+```bash
+GCP_PROJECT_ID=<project-id> \
+CLOUD_RUN_REGION=<region> \
+BACKEND_CORS_ALLOW_ORIGINS=https://<production-domain> \
+./scripts/deploy-backend-cloud-run.sh prod
+```
+
 ## Frontend deployment guidance
 
 Deploy the frontend to Vercel with separate preview and production environments.

@@ -21,7 +21,7 @@ Status legend:
 - Backend scaffold, environment files, core type contracts, and eval fixture preservation are in place
 - The backend now uses the project-local `backend/study-guide-agent/.venv` for ADK 2.0 beta work, with a narrow compatibility shim for the broken `google.adk.features` import surface in `google-adk==2.0.0b1`
 - The system prompt builder, blueprint prompt template, blueprint node, and focused blueprint unit test are now implemented, and Wave 1 through Wave 3 plus the answer-key path now exist with focused unit coverage; the validator node now aggregates the json-schema, vocab-presence, self-assessment-target, answer-key-quote, and passage-domain hard validators plus the answer-leakage and reading-level soft validators, Phase 6 now includes the study-guide HTML template, renderer node, and focused renderer tests for preview ordering and PDF artifact shape, and Phase 7 now includes both the exported ADK workflow in `app/agent.py` and a focused backend-only integration test that exercises orchestration, dependency wiring, retry, and render handoff; frontend product UI remains incomplete
-- Deployment planning is now documented around a recommended Vercel frontend plus Cloud Run backend topology, with a separate local parity mode planned so production issues can be reproduced without changing the app architecture; the backend container now honors the runtime `PORT` environment variable, serves `app.fast_api_app:app` in the same image shape intended for Cloud Run, and has documented local and Cloud Run commands in `DEPLOYMENT.md`
+- Deployment planning is now documented around a recommended Vercel frontend plus Cloud Run backend topology, with a separate local parity mode planned so production issues can be reproduced without changing the app architecture; the backend container now honors the runtime `PORT` environment variable, serves `app.fast_api_app:app` in the same image shape intended for Cloud Run, and now includes environment-driven CORS/runtime config plus a standardized Cloud Run deploy entrypoint in `DEPLOYMENT.md` and `scripts/deploy-backend-cloud-run.sh`
 
 ## Phase 0 — Repository and tooling setup
 
@@ -323,8 +323,8 @@ Notes: There is no documented single-command parity stack yet for a production-m
 
 ### Task 13.4 — Configure the backend deployment for Cloud Run
 
-Status: `not started`
-Notes: The backend README mentions `agents-cli deploy`, but repo-specific Cloud Run environment, CORS, and service configuration are not implemented or verified yet.
+Status: `complete`
+Notes: `app/fast_api_app.py` now reads deployment-facing runtime configuration from environment variables, including comma-separated `BACKEND_CORS_ALLOW_ORIGINS`, optional service URIs, telemetry toggles, and `PORT`; `scripts/deploy-backend-cloud-run.sh` now standardizes the dev/prod `gcloud run deploy` entrypoint with timeout, concurrency, memory, CPU, env-var, and secret flags; `DEPLOYMENT.md` and the backend README now document required environment variables, preview/production CORS guidance, and the standardized deploy path, and the repo done gate passed.
 
 ### Task 13.5 — Configure the frontend deployment for Vercel
 

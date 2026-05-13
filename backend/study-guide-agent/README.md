@@ -150,11 +150,15 @@ Recommended target:
 The backend should also be runnable locally in the same container/runtime shape intended for Cloud Run so production issues can be reproduced without changing backend code.
 
 ```bash
-gcloud config set project <your-project-id>
-./agents-cli deploy
+GCP_PROJECT_ID=<your-project-id> \
+CLOUD_RUN_REGION=<your-region> \
+BACKEND_CORS_ALLOW_ORIGINS=http://localhost:3000 \
+./scripts/deploy-backend-cloud-run.sh dev --dry-run
 ```
 
-Before standardizing on the deploy command above, finish the repo-specific deployment tasks in `TASKS.md` Phase 13 and record the actual validated path in `TASK_STATUS.md`.
+The backend runtime reads deployment configuration from environment variables rather than code edits. The deployment-facing variables are documented in the repo-level `DEPLOYMENT.md`, including `BACKEND_CORS_ALLOW_ORIGINS`, the Cloud Run timeout and concurrency defaults, and the script-supported secret/env overrides.
+
+The standardized backend deploy entrypoint is `./scripts/deploy-backend-cloud-run.sh <dev|prod>`. Use `--dry-run` to print the exact `gcloud run deploy` command without executing it.
 
 To add CI/CD and Terraform, run `./agents-cli scaffold enhance`.
 To set up your production infrastructure, run `./agents-cli infra cicd`.

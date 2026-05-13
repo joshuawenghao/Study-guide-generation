@@ -11,6 +11,7 @@ It is intended to answer, in words, what currently exists in the repository with
 - The backend now includes implemented Wave 1, Wave 2, Wave 3, and answer-key generation slices beyond blueprint generation.
 - The backend now exports the real ADK workflow entrypoint from `app/agent.py`, wiring blueprint generation, parallel section waves, validator retry, and rendering into one `Workflow` root agent.
 - The backend container now honors the runtime `PORT` environment variable and has been validated to boot the FastAPI app from the same image shape intended for Cloud Run.
+- The backend deployment path now has a repo-standardized Cloud Run entrypoint and environment-driven CORS/runtime configuration, so dev and production services can be configured without code edits.
 - The validation layer now has a working validator node that aggregates five hard validators and two soft validators into a single `ValidationResult` for the orchestrator retry loop and preview warnings.
 - The ADK FastAPI loader now has a compatibility adapter so the server integration path can locate `study_guide_agent.root_agent` correctly.
 - The repo documentation now includes an explicit deployment plan and task phase covering Vercel, Cloud Run, and a production-like local parity mode.
@@ -63,6 +64,7 @@ It is intended to answer, in words, what currently exists in the repository with
 - Because ADK `ctx.run_node()` accepts a single node input rather than unpacking multiple function parameters, `app/agent.py` now owns workflow-local adapter nodes that translate composite workflow inputs into the existing section, validator, and renderer generator functions without introducing session-state dictionaries.
 - The backend project now declares `jinja2` and `weasyprint` as direct runtime dependencies in `backend/study-guide-agent/pyproject.toml` so the renderer path is available in the managed environment and the repo validation gate.
 - Task 13.2 is now implemented: the backend Dockerfile installs the Linux `glib` and `pango` runtime libraries WeasyPrint depends on, runs a build-time PDF smoke check, reads `PORT` from the runtime environment for Cloud Run parity, and has been validated by building locally and serving `app.fast_api_app:app` from the same image on a non-default port.
+- Task 13.4 is now implemented: `backend/study-guide-agent/app/fast_api_app.py` reads `BACKEND_CORS_ALLOW_ORIGINS`, optional service URIs, telemetry toggles, and `PORT` from the runtime environment, and `scripts/deploy-backend-cloud-run.sh` standardizes the `gcloud run deploy` entrypoint for `dev` and `prod` with the repo's current timeout, concurrency, resource, env-var, and secret assumptions.
 - The backend uses the scaffolded ADK project structure created by `agents-cli`.
 - Core typed contracts are implemented in `backend/study-guide-agent/app/types.py` and mirrored in `frontend/lib/types.ts`.
 - `backend/study-guide-agent/app/types.py` now also contains the backend-only section payload models that the validation layer uses as its schema source of truth.
@@ -70,6 +72,7 @@ It is intended to answer, in words, what currently exists in the repository with
 - The repo now includes focused backend integration coverage for both the exported workflow surface and the orchestrator behavior: one integration test validates the `Workflow` export and retry-capable orchestration path, and another validates FastAPI boot plus session creation.
 - The repo now includes `backend/study-guide-agent/study_guide_agent/agent.py` as an ADK loader adapter that re-exports the real agent from `app.agent` for CLI and FastAPI loading.
 - `DEPLOYMENT.md` now includes concrete backend container commands for local build, local run, alternate-port parity runs, and the intended Cloud Run deploy shape.
+- `DEPLOYMENT.md` and `backend/study-guide-agent/README.md` now also document the standardized backend Cloud Run deploy command, required env vars and secret sources, CORS origin guidance for preview versus production, and the current timeout/concurrency assumptions for long-running generation requests.
 
 ## Shipped Frontend
 
@@ -101,4 +104,4 @@ It is intended to answer, in words, what currently exists in the repository with
 - Wave 1, Wave 2, Wave 3, and answer-key generation are implemented; the validator layer now includes its aggregator node, five hard validators, two soft validators, broad isolated test coverage, and the complete Phase 6 renderer slice including template, node, and focused renderer tests.
 - Workflow orchestration and focused backend integration coverage are now implemented.
 - The remaining major gaps are most frontend product experience work plus the unfinished Phase 13 parity and remote deployment tasks.
-- Deployment is now specified, and the backend image has a validated build path plus initial WeasyPrint runtime setup, but the parity stack, Cloud Run configuration, Vercel setup, and staged remote deployment checkpoints are still not implemented or validated end to end.
+- Deployment is now specified, and the backend image plus Cloud Run backend configuration path are in place, but the parity stack, Vercel setup, and staged remote deployment checkpoints are still not implemented or validated end to end.
