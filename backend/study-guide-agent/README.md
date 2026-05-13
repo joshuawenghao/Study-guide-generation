@@ -85,6 +85,28 @@ Test the agent with a local web server:
 uv run uvicorn app.fast_api_app:app --reload --host 0.0.0.0 --port 8000
 ```
 
+Generate local demo PDFs without starting the server:
+
+```bash
+uv run python run_demo.py --mode renderer-only
+uv run python run_demo.py --mode full-workflow
+open demo-output/study-guide-full-demo.pdf
+```
+
+By default, generated PDFs are written under `backend/study-guide-agent/demo-output/`, which makes them easy to find in the workspace and open from Finder or VS Code.
+
+Customize the full-workflow demo with teacher-style input values while keeping a default when no custom file is provided:
+
+```bash
+uv run python run_demo.py --print-default-input
+uv run python run_demo.py --mode full-workflow --input path/to/custom-input.json
+uv run python run_demo.py --mode full-workflow --open
+```
+
+The custom input file may contain either the full `GenerateRequest` JSON object or a partial override that only includes the fields you want to change. Partial overrides are merged onto the default fixture so you can vary a lesson title, grade level, curriculum, or optional hints without rebuilding the whole payload.
+
+The `renderer-only` mode proves Jinja2 plus WeasyPrint PDF rendering without calling Gemini. The `full-workflow` mode runs the real workflow against `tests/fixtures/legacy_evals/english_grade6_ph.json` and requires `GOOGLE_API_KEY` to be available in the environment or `backend/study-guide-agent/.env`.
+
 You can also use features from the [ADK](https://adk.dev/) CLI with `uv run adk`, or use `agents-cli playground` for the scaffolded agent playground.
 
 ## Commands

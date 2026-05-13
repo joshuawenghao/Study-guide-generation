@@ -11,6 +11,8 @@ from google.genai import types
 
 logger = logging.getLogger(__name__)
 
+_client: genai.Client | None = None
+
 TEMP_BLUEPRINT = 0.3
 TEMP_SECTION = 0.7
 TEMP_ANSWER_KEY = 0.3
@@ -21,13 +23,18 @@ MODEL_NAME = "gemini-2.0-flash"
 
 
 def _get_client() -> genai.Client:
+    global _client
+    if _client is not None:
+        return _client
+
     api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
         raise RuntimeError(
             "GOOGLE_API_KEY is not set. Expected it in the shell environment or "
             "in backend/study-guide-agent/.env."
         )
-    return genai.Client(api_key=api_key)
+    _client = genai.Client(api_key=api_key)
+    return _client
 
 
 async def call_gemini(

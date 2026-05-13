@@ -318,8 +318,8 @@ Notes: The backend Dockerfile now installs the Linux runtime libraries WeasyPrin
 
 ### Task 13.3 — Add a local parity orchestration path
 
-Status: `not started`
-Notes: There is no documented single-command parity stack yet for a production-mode frontend plus Cloud Run-style backend runtime.
+Status: `partial`
+Notes: The backend now includes a documented local demo runner at `backend/study-guide-agent/run_demo.py` for renderer-only and full-workflow PDF generation, with default outputs written under `backend/study-guide-agent/demo-output/`, optional teacher-style input overrides, and an `--open` flag for quick local inspection; this supports local backend-side parity and demo prep, but there is still no documented single-command stack that runs the production frontend against the Cloud Run-style backend runtime.
 
 ### Task 13.4 — Configure the backend deployment for Cloud Run
 

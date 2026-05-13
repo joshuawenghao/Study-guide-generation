@@ -53,7 +53,15 @@ def validate_reading_level(
         if not section_text:
             continue
 
-        grade_score = float(textstat.flesch_kincaid_grade(section_text))
+        try:
+            grade_score = float(textstat.flesch_kincaid_grade(section_text))
+        except Exception as error:
+            warnings.append(
+                "Reading level warning: reading-level analysis was skipped "
+                f"because the dependency data is unavailable ({error.__class__.__name__})."
+            )
+            break
+
         if abs(grade_score - target_grade_level) <= 1.0:
             continue
 

@@ -61,3 +61,36 @@ def test_validate_reading_level_warns_for_section_outside_target_band(
     assert result.failures == {}
     assert any("intro" in warning for warning in result.warnings)
     assert any("9.4" in warning for warning in result.warnings)
+
+
+def test_validate_reading_level_warns_when_dependency_data_is_unavailable(
+    monkeypatch,
+) -> None:
+    def raise_lookup_error(_text: str) -> float:
+        raise LookupError("cmudict missing")
+
+    monkeypatch.setattr(
+        reading_level_module.textstat,
+        "flesch_kincaid_grade",
+        raise_lookup_error,
+    )
+
+    result = reading_level_module.validate_reading_level(
+        target_grade_level=6,
+        section_payloads={
+            "intro": IntroSection(
+                title="Introduction",
+                hook="Think about how authors choose details.",
+                essential_question="Why does author purpose matter?",
+                paragraphs=["Authors choose details to guide the reader clearly."],
+                bridge_to_lesson="You will study those choices today.",
+            )
+        },
+    )
+
+    assert result.passed is True
+    assert result.failed_sections == []
+    assert result.failures == {}
+    assert any(
+        "dependency data is unavailable" in warning for warning in result.warnings
+    )
