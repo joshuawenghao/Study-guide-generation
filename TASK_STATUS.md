@@ -228,8 +228,8 @@ Notes: `frontend/app/layout.tsx` now defines study-guide product metadata plus a
 
 ### Task 8.3 — Create empty component stubs
 
-Status: `not started`
-Notes: The expected frontend component stub files have not been created yet.
+Status: `complete`
+Notes: The frontend component structure now exists with stub exports for `InputForm`, `ProgressTracker`, `WebPreview`, `DownloadButton`, and `PreviewSection` under `frontend/components/`; `cd frontend && npm run lint` and `./scripts/validate-task.sh` both passed.
 
 ## Phase 9 — Teacher input form
 
