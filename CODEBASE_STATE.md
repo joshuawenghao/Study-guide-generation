@@ -83,9 +83,10 @@ It is intended to answer, in words, what currently exists in the repository with
 
 ## Shipped Frontend
 
-- The frontend runtime now has the default Create Next App landing page removed from `frontend/app/page.tsx`, replacing it with a minimal study-guide placeholder screen that is ready for the teacher-facing UI tasks.
+- The frontend runtime now has a teacher-facing shell: `frontend/app/layout.tsx` sets study-guide product metadata and a persistent header, while `frontend/app/globals.css` defines the shared canvas, typography, and surface styling for the app.
+- `frontend/app/page.tsx` no longer uses the default Create Next App scaffold and is now aligned to that shell with a minimal study-guide placeholder screen.
 - The frontend now also includes `frontend/components/` as the intended home for upcoming UI components, while shared type definitions remain in place.
-- Product-facing frontend experience work is still limited compared with the backend blueprint slice; the full layout, form, streaming progress, and preview flows are still ahead.
+- Product-facing frontend experience work is still limited compared with the backend blueprint slice; the teacher input form, streaming progress flow, and preview experience are still ahead.
 
 ## Automation Workflow
 

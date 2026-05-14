@@ -3,25 +3,55 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --canvas: #f3f0e8;
+  --surface: #fffdf8;
+  --surface-strong: #ffffff;
+  --ink: #172033;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--canvas);
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--ink);
+  background:
+    linear-gradient(180deg, rgba(255, 253, 248, 0.82), rgba(243, 240, 232, 0.96)),
+    repeating-linear-gradient(
+      135deg,
+      rgba(148, 163, 184, 0.08) 0,
+      rgba(148, 163, 184, 0.08) 1px,
+      transparent 1px,
+      transparent 18px
+    ),
+    var(--canvas);
+  font-family: var(--font-geist-sans), sans-serif;
+}
+
+@layer base {
+  * {
+    border-color: rgb(226 232 240);
+  }
+
+  ::selection {
+    background: rgba(14, 116, 144, 0.18);
+  }
 }
 
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
+  .bg-canvas {
+    background-color: var(--canvas);
+  }
+
+  .bg-surface {
+    background-color: var(--surface);
+  }
+
+  .bg-surface-strong {
+    background-color: var(--surface-strong);
+  }
+
+  .text-ink {
+    color: var(--ink);
   }
 }

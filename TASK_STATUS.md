@@ -223,8 +223,8 @@ Notes: `frontend/app/page.tsx` now removes the default Create Next App landing p
 
 ### Task 8.2 — Implement global styles and app layout
 
-Status: `partial`
-Notes: `frontend/app/layout.tsx` and `frontend/app/globals.css` exist, but they have not been aligned to the intended product experience.
+Status: `complete`
+Notes: `frontend/app/layout.tsx` now defines study-guide product metadata plus a teacher-facing top shell, `frontend/app/globals.css` now sets the shared canvas, typography, and surface tokens for the app, and `frontend/app/page.tsx` was aligned to that shell; `cd frontend && npm run lint` and `./scripts/validate-task.sh` both passed.
 
 ### Task 8.3 — Create empty component stubs
 
