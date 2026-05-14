@@ -102,7 +102,7 @@ It is intended to answer, in words, what currently exists in the repository with
 
 - The repository now has a repo-level validation script at `scripts/validate-task.sh`.
 - That script is intended to run backend lint, backend unit tests, backend integration tests, frontend lint, frontend typecheck, and a frontend production build when those checks exist.
-- Backend lint passes under the repo-level validation script.
+- Backend lint passes under the repo-level validation script, and the current baseline is clean without unresolved `ty` advisory warnings.
 - The backend integration smoke surface now validates that the exported root agent is a constructible `Workflow` and that the FastAPI server boots and supports session creation without relying on the removed scaffold chat-bootstrap behavior.
 - Python analysis for backend files is now pinned through `pyrightconfig.json` so the backend venv is used for import resolution in editor diagnostics.
 - The full repo-level validation script now passes end to end, including backend lint, backend tests, frontend lint, frontend typecheck, and a frontend production build.

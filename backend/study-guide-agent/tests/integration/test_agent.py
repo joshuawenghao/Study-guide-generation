@@ -92,10 +92,12 @@ class FakeContext:
         self.node_calls: list[str] = []
 
     async def run_node(self, node: Any, node_input: Any = None) -> Any:
-        node_like = cast(Any, node)
-        node_name = cast(str, getattr(node_like, "name", type(node_like).__name__))
+        node_name_like = getattr(node, "name", type(node).__name__)
+        node_name = (
+            node_name_like if isinstance(node_name_like, str) else type(node).__name__
+        )
         self.node_calls.append(node_name)
-        return await node_like._func(node_input)
+        return await node._func(node_input)
 
 
 def test_root_workflow_is_constructible() -> None:
