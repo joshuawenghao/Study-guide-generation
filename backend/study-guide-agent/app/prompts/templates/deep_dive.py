@@ -4,7 +4,7 @@ from app.types import Blueprint, GenerateRequest
 
 
 def build_prompt(spec, blueprint: Blueprint, request: GenerateRequest) -> str:
-    del spec, request
+    del spec
 
     deep_dive_schema = """{
     "title": "Deep Dive",
@@ -34,6 +34,10 @@ def build_prompt(spec, blueprint: Blueprint, request: GenerateRequest) -> str:
         "- Compare how entertain, inform, and persuade differ in purpose.",
         "- Use the blueprint example domains directly so the examples stay distinct.",
         "- Include signal_words lists that help students notice clues in texts.",
+        f"- Keep the reading level close to Grade {request.lesson_metadata.grade_level}.",
+        "- Keep compare_focus brief and write each explanation in 1 or 2 short sentences.",
+        "- Use plain language to contrast the three purposes.",
+        "- Keep the takeaway to one short summary sentence.",
         "Expected JSON schema:",
         deep_dive_schema,
         "Return only JSON.",

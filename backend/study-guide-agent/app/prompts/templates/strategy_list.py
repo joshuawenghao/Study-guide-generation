@@ -4,7 +4,7 @@ from app.types import Blueprint, GenerateRequest
 
 
 def build_prompt(spec, blueprint: Blueprint, request: GenerateRequest) -> str:
-    del spec, request
+    del spec
 
     strategy_list_schema = """{
     "title": "Strategy List",
@@ -28,6 +28,7 @@ def build_prompt(spec, blueprint: Blueprint, request: GenerateRequest) -> str:
         "- Provide 3 practical reading or thinking strategies that help students succeed with this lesson.",
         "- Each strategy must include when_to_use and a short ordered steps list.",
         "- Keep the strategies directly tied to the lesson's core concept and purpose-identification work.",
+        f"- Keep the reading level close to Grade {request.lesson_metadata.grade_level}.",
         "Expected JSON schema:",
         strategy_list_schema,
         "Return only JSON.",

@@ -4,7 +4,7 @@ from app.types import Blueprint, GenerateRequest
 
 
 def build_prompt(spec, blueprint: Blueprint, request: GenerateRequest) -> str:
-    del spec, request
+    del spec
 
     core_explainer_schema = """{
     "title": "Core Explainer",
@@ -36,6 +36,10 @@ def build_prompt(spec, blueprint: Blueprint, request: GenerateRequest) -> str:
         "- Include one explained point per sub-competency in the same order as the blueprint.",
         "- Connect each explanation to a concrete real-world or classroom-relevant example.",
         "- Keep the section explanatory rather than quiz-like.",
+        f"- Keep the reading level close to Grade {request.lesson_metadata.grade_level}.",
+        "- Use short-to-medium sentences and plain classroom vocabulary.",
+        "- Keep the overview to 2 or 3 short sentences, and keep each explanation focused on one main idea.",
+        "- Avoid stacked clauses or abstract wording when a simpler sentence will do.",
         "Expected JSON schema:",
         core_explainer_schema,
         "Return only JSON.",

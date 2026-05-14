@@ -16,7 +16,15 @@ from app.types import ValidationResult
 
 PROJECT_NLTK_DATA_DIR = Path(__file__).resolve().parents[3] / ".nltk_data"
 
-SECTION_EXCLUSIONS = {"answer_key"}
+PROSE_SECTION_KEYS = {
+    "intro",
+    "core_explainer",
+    "subconcept",
+    "deep_dive",
+    "model_passage",
+    "assessment_passage",
+}
+MIN_RELIABLE_WORD_COUNT = 30
 FIELD_EXCLUSIONS = {
     "title",
     "teacher_note",
@@ -96,6 +104,10 @@ def _estimate_flesch_kincaid_grade_without_cmudict(text: str) -> float:
     )
 
 
+def _count_words(text: str) -> int:
+    return len(re.findall(r"[A-Za-z]+(?:'[A-Za-z]+)?", text))
+
+
 def _has_local_cmudict() -> bool:
     try:
         nltk.data.find("corpora/cmudict")
@@ -113,11 +125,13 @@ def validate_reading_level(
 
     warnings: list[str] = []
     for section_key, payload in section_payloads.items():
-        if section_key in SECTION_EXCLUSIONS:
+        if section_key not in PROSE_SECTION_KEYS:
             continue
 
         section_text = "\n".join(_iter_text_fragments(payload)).strip()
         if not section_text:
+            continue
+        if _count_words(section_text) < MIN_RELIABLE_WORD_COUNT:
             continue
 
         if not _has_local_cmudict():

@@ -8,8 +8,6 @@ from app.types import Blueprint, GenerateRequest
 def build_prompt(
     spec: dict[str, Any], blueprint: Blueprint, request: GenerateRequest
 ) -> str:
-    del request
-
     assessment_passage = spec.get("assessment_passage", {})
     assessment_questions = spec.get("assessment_questions", {})
 
@@ -43,6 +41,7 @@ def build_prompt(
         "- Write one higher-order challenge_prompt that builds on the assessment questions.",
         "- Make the prompt require evidence from the assessment passage rather than opinion alone.",
         "- Include required_evidence and success_criteria lists that make expectations explicit.",
+        f"- Keep the reading demand close to Grade {request.lesson_metadata.grade_level}.",
         "Expected JSON schema:",
         step_up_schema,
         "Return only JSON.",

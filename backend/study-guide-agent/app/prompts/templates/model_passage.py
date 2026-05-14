@@ -1,10 +1,21 @@
 from __future__ import annotations
 
-from app.types import Blueprint, GenerateRequest
+from app.types import Blueprint, GenerateRequest, LengthPreset
+
+
+def _passage_length_guidance(request: GenerateRequest) -> str:
+    grade_level = request.lesson_metadata.grade_level
+    length_preset = request.optional.length_preset
+
+    if length_preset is LengthPreset.SHORT or grade_level <= 4:
+        return "Write 2 short paragraphs with mostly simple sentence structures."
+    if length_preset is LengthPreset.LONG or grade_level >= 9:
+        return "Write 3 concise paragraphs with clear sentence variety, while keeping the passage readable for the target grade."
+    return "Write 2 or 3 concise paragraphs with clear, readable sentence structures."
 
 
 def build_prompt(spec, blueprint: Blueprint, request: GenerateRequest) -> str:
-    del spec, request
+    del spec
 
     model_passage_schema = """{
     "title": "Model Passage",
@@ -30,6 +41,10 @@ def build_prompt(spec, blueprint: Blueprint, request: GenerateRequest) -> str:
         "- Write an evidence-friendly passage that makes the author's purpose inferable from the text.",
         "- Return the passage as an ordered list of paragraphs.",
         "- Include text_features students can notice while reading.",
+        f"- Keep the passage readable for Grade {request.lesson_metadata.grade_level} students.",
+        f"- {_passage_length_guidance(request)}",
+        "- Prefer familiar words and concrete details over descriptive flourish.",
+        "- Keep most sentences to one clear idea and avoid long dependent clauses.",
         "Expected JSON schema:",
         model_passage_schema,
         "Return only JSON.",

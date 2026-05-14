@@ -8,8 +8,6 @@ from app.types import Blueprint, GenerateRequest
 def build_prompt(
     spec: dict[str, Any], blueprint: Blueprint, request: GenerateRequest
 ) -> str:
-    del request
-
     passage_title = spec.get("title", "Model Passage")
     passage_text = "\n".join(spec.get("passage", []))
     evidence_focus = spec.get("evidence_focus", "")
@@ -42,6 +40,7 @@ def build_prompt(
         "- Write 3 short questions that require evidence from the provided passage text.",
         "- Make each evidence_hint point students toward a specific clue or phrase in the passage.",
         "- Keep the questions aligned to the lesson's core concept and author-purpose analysis.",
+        f"- Keep the reading demand close to Grade {request.lesson_metadata.grade_level}.",
         "Expected JSON schema:",
         check_in_schema,
         "Return only JSON.",

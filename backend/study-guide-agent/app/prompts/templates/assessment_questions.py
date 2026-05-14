@@ -8,8 +8,6 @@ from app.types import Blueprint, GenerateRequest
 def build_prompt(
     spec: dict[str, Any], blueprint: Blueprint, request: GenerateRequest
 ) -> str:
-    del request
-
     passage_title = spec.get("title", "Assessment Passage")
     passage_text = "\n".join(spec.get("passage", []))
     evidence_clues = "\n".join(f"- {item}" for item in spec.get("evidence_clues", []))
@@ -42,6 +40,7 @@ def build_prompt(
         "- Make the questions answerable from the passage alone, not outside knowledge.",
         "- Use evidence_requirement to state what kind of quotation or clue the student should cite.",
         "- Keep the set suitable for downstream step-up and answer-key generation.",
+        f"- Keep the reading demand close to Grade {request.lesson_metadata.grade_level}.",
         "Expected JSON schema:",
         assessment_questions_schema,
         "Return only JSON.",

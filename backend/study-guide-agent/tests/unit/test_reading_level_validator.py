@@ -21,7 +21,9 @@ def test_validate_reading_level_ignores_sections_within_target_band(
                 title="Introduction",
                 hook="Think about how authors choose details.",
                 essential_question="Why does author purpose matter?",
-                paragraphs=["Authors choose details to guide the reader clearly."],
+                paragraphs=[
+                    "Authors choose details to guide the reader clearly. Readers can study those details, compare the clues, and explain the writer's purpose with confidence during class discussion and independent practice."
+                ],
                 bridge_to_lesson="You will study those choices today.",
             )
         },
@@ -51,7 +53,7 @@ def test_validate_reading_level_warns_for_section_outside_target_band(
                 hook="Think about how authors choose details.",
                 essential_question="Why does author purpose matter?",
                 paragraphs=[
-                    "Authors sometimes construct elaborately layered explanations that increase sentence complexity."
+                    "Authors sometimes construct elaborately layered explanations that increase sentence complexity and require readers to process several linked ideas before they can identify the writer's message or purpose in the passage."
                 ],
                 bridge_to_lesson="You will study those choices today.",
             )
@@ -82,7 +84,9 @@ def test_validate_reading_level_warns_when_dependency_data_is_unavailable(
                 title="Introduction",
                 hook="Think about how authors choose details.",
                 essential_question="Why does author purpose matter?",
-                paragraphs=["Authors choose details to guide the reader clearly."],
+                paragraphs=[
+                    "Authors choose details to guide the reader clearly. Readers can study those details, compare the clues, and explain the writer's purpose with confidence during class discussion and independent practice."
+                ],
                 bridge_to_lesson="You will study those choices today.",
             )
         },
@@ -144,11 +148,41 @@ def test_validate_reading_level_excludes_metadata_fields_from_scoring(
                 "title": "Subconcept One",
                 "sub_competency_id": "sc-1",
                 "sub_competency_label": "Purpose clues",
-                "explanation": "Clues in a text reveal purpose.",
+                "explanation": "Clues in a text reveal purpose. Students can look at word choice, tone, and details to decide whether the writer wants to entertain, inform, or persuade the reader.",
             }
         },
     )
 
     assert result.passed is True
     assert result.warnings == []
-    assert captured_texts == ["Purpose clues\nClues in a text reveal purpose."]
+    assert captured_texts == [
+        "Purpose clues\nClues in a text reveal purpose. Students can look at word choice, tone, and details to decide whether the writer wants to entertain, inform, or persuade the reader."
+    ]
+
+
+def test_validate_reading_level_skips_short_sections(monkeypatch) -> None:
+    def fail_if_called(_text: str) -> float:
+        raise AssertionError("short sections should be skipped")
+
+    monkeypatch.setattr(reading_level_module, "_has_local_cmudict", lambda: True)
+    monkeypatch.setattr(
+        reading_level_module.textstat,
+        "flesch_kincaid_grade",
+        fail_if_called,
+    )
+
+    result = reading_level_module.validate_reading_level(
+        target_grade_level=6,
+        section_payloads={
+            "intro": IntroSection(
+                title="Introduction",
+                hook="Think about how authors choose details.",
+                essential_question="Why does author purpose matter?",
+                paragraphs=["Authors choose details clearly."],
+                bridge_to_lesson="You will study those choices today.",
+            )
+        },
+    )
+
+    assert result.passed is True
+    assert result.warnings == []
