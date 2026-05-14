@@ -1,6 +1,6 @@
 # Codebase State
 
-Last updated: 2026-05-13
+Last updated: 2026-05-14
 
 This document is the live plain-language summary of the shipped codebase.
 It is intended to answer, in words, what currently exists in the repository without requiring a reader to inspect source files directly.
@@ -69,6 +69,8 @@ It is intended to answer, in words, what currently exists in the repository with
 - The local reading-level path now auto-detects a project-local `backend/study-guide-agent/.nltk_data/cmudict` install when it exists, uses the primary `textstat` path in that case, and otherwise falls back to a local Pyphen-based estimate instead of surfacing a dependency warning or noisy NLTK download attempt.
 - The renderer template now tolerates best-effort answer-key payload drift during local full-workflow demos, so missing `evidence_quote` fields or string-shaped `step_up_answer` values no longer abort PDF generation.
 - The reading-level validator now focuses on longer prose-heavy sections rather than short structured scaffolds, and the main prose prompts now include stricter plain-language guidance. Passage prompts also adapt paragraph-count guidance by grade level and `length_preset`, reducing Grade 6 warning noise without hardcoding the same short-passage requirement for all grades.
+- The shared section parser now hardens full-workflow generation against LLM JSON escape issues by repairing lone backslashes before `json.loads(...)` and normalizing accidental control-escape sequences like `\frac`, so math-style outputs no longer intermittently derail local PDF rendering.
+- The lower-grade readability path is now stricter in prompts but slightly more realistic in scoring: the system prompt adds plain-text math-notation guidance for mathematics requests, the intro and deep-dive prompts add stronger elementary-grade brevity guidance, and the reading-level validator uses a modestly wider tolerance band for lower grades so local demos surface fewer borderline warnings without hiding clearly off-target prose.
 - The backend uses the scaffolded ADK project structure created by `agents-cli`.
 - Core typed contracts are implemented in `backend/study-guide-agent/app/types.py` and mirrored in `frontend/lib/types.ts`.
 - `backend/study-guide-agent/app/types.py` now also contains the backend-only section payload models that the validation layer uses as its schema source of truth.

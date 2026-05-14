@@ -3,8 +3,19 @@ from __future__ import annotations
 from app.types import Blueprint, GenerateRequest
 
 
+def _intro_length_guidance(request: GenerateRequest) -> str:
+    grade_level = request.lesson_metadata.grade_level
+
+    if grade_level <= 5:
+        return (
+            "Keep each paragraph to 1 or 2 short sentences, and use everyday classroom "
+            "words before academic phrasing."
+        )
+    return "Keep both paragraphs concise and focused on one main idea each."
+
+
 def build_prompt(spec, blueprint: Blueprint, request: GenerateRequest) -> str:
-    del spec, request
+    del spec
 
     intro_schema = """{
     "title": "Introduction",
@@ -33,7 +44,8 @@ def build_prompt(spec, blueprint: Blueprint, request: GenerateRequest) -> str:
         "Requirements:",
         "- Write a warm, student-facing opening linked directly to the essential question.",
         "- Use the hook as the first attention-grabbing idea, but rewrite it as polished study-guide prose.",
-        "- Provide exactly 2 short paragraphs that prepare students for the lesson.",
+        "- Provide exactly 2 concise paragraphs that prepare students for the lesson.",
+        f"- {_intro_length_guidance(request)}",
         "- Make the bridge_to_lesson explain how the opening connects to the study guide work ahead.",
         "Expected JSON schema:",
         intro_schema,

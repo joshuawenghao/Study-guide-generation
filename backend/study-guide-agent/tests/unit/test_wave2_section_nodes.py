@@ -179,3 +179,32 @@ async def test_wave2_section_nodes_raise_on_malformed_json(
         RuntimeError, match="Failed to parse model_passage response as JSON"
     ):
         await model_passage_module.generate_model_passage(request, blueprint)
+
+
+@pytest.mark.asyncio
+async def test_wave2_section_nodes_repair_lone_backslashes_in_json_strings(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = _load_request_from_fixture()
+    blueprint = _build_blueprint(request)
+
+    async def fake_call_gemini(**_: object) -> str:
+        valid_payload = json.dumps(
+            {
+                "title": "Model Passage",
+                "topic_domain": "fraction tiles",
+                "genre": "explanation",
+                "passage": ["Compare 1/2 and \\frac{3}{4} using a common denominator."],
+                "text_features": ["comparison words"],
+                "evidence_focus": "The comparison sentence.",
+            }
+        )
+        return valid_payload.replace("\\\\frac", "\\frac")
+
+    monkeypatch.setattr(sections_module, "call_gemini", fake_call_gemini)
+
+    result = await model_passage_module.generate_model_passage(request, blueprint)
+
+    assert result["passage"] == [
+        "Compare 1/2 and \\frac{3}{4} using a common denominator."
+    ]

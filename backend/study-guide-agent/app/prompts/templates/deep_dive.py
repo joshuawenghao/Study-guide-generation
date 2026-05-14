@@ -3,6 +3,20 @@ from __future__ import annotations
 from app.types import Blueprint, GenerateRequest
 
 
+def _deep_dive_length_guidance(request: GenerateRequest) -> str:
+    grade_level = request.lesson_metadata.grade_level
+
+    if grade_level <= 5:
+        return (
+            "Keep compare_focus and takeaway to one short sentence each, and keep every "
+            "example explanation to one short sentence followed by simple signal words."
+        )
+    return (
+        "Keep compare_focus brief, write each explanation in 1 or 2 short sentences, "
+        "and keep the takeaway to one short summary sentence."
+    )
+
+
 def build_prompt(spec, blueprint: Blueprint, request: GenerateRequest) -> str:
     del spec
 
@@ -35,9 +49,8 @@ def build_prompt(spec, blueprint: Blueprint, request: GenerateRequest) -> str:
         "- Use the blueprint example domains directly so the examples stay distinct.",
         "- Include signal_words lists that help students notice clues in texts.",
         f"- Keep the reading level close to Grade {request.lesson_metadata.grade_level}.",
-        "- Keep compare_focus brief and write each explanation in 1 or 2 short sentences.",
+        f"- {_deep_dive_length_guidance(request)}",
         "- Use plain language to contrast the three purposes.",
-        "- Keep the takeaway to one short summary sentence.",
         "Expected JSON schema:",
         deep_dive_schema,
         "Return only JSON.",

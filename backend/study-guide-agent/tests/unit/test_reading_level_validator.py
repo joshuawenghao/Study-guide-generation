@@ -186,3 +186,66 @@ def test_validate_reading_level_skips_short_sections(monkeypatch) -> None:
 
     assert result.passed is True
     assert result.warnings == []
+
+
+def test_validate_reading_level_uses_wider_band_for_lower_grades(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(reading_level_module, "_has_local_cmudict", lambda: True)
+    monkeypatch.setattr(
+        reading_level_module.textstat,
+        "flesch_kincaid_grade",
+        lambda _text: 5.4,
+    )
+
+    result = reading_level_module.validate_reading_level(
+        target_grade_level=4,
+        section_payloads={
+            "core_explainer": {
+                "overview": (
+                    "Fractions can be compared by naming equal parts and checking which "
+                    "fraction covers more of the same whole before students explain the "
+                    "result in class discussion."
+                )
+            }
+        },
+    )
+
+    assert result.passed is True
+    assert result.warnings == []
+
+
+def test_validate_reading_level_still_warns_for_large_lower_grade_gap(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(reading_level_module, "_has_local_cmudict", lambda: True)
+    monkeypatch.setattr(
+        reading_level_module.textstat,
+        "flesch_kincaid_grade",
+        lambda _text: 6.7,
+    )
+
+    result = reading_level_module.validate_reading_level(
+        target_grade_level=4,
+        section_payloads={
+            "deep_dive": {
+                "compare_focus": (
+                    "Writers can shape reader interpretation through several layers of "
+                    "purpose and evidence."
+                ),
+                "examples": [
+                    {
+                        "explanation": (
+                            "An explanatory article often presents linked ideas, abstract "
+                            "signals, and several details that ask readers to compare and "
+                            "synthesize information before they can identify the author's "
+                            "goal."
+                        )
+                    }
+                ],
+            }
+        },
+    )
+
+    assert result.passed is True
+    assert any("deep_dive" in warning for warning in result.warnings)

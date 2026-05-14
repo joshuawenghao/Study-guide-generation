@@ -32,11 +32,23 @@ def _reading_level_guidance(grade_level: int) -> str:
     )
 
 
+def _subject_notation_guidance(subject: str) -> str | None:
+    normalized_subject = subject.lower()
+    if "math" not in normalized_subject:
+        return None
+    return (
+        "Math notation rule: Use plain-text math notation such as 3/4, 1/2, 4 x 6, "
+        "or x + 3. Do not use LaTeX commands, backslashes, or escaped control "
+        "sequences in the JSON output."
+    )
+
+
 def build_system_prompt(request: GenerateRequest) -> str:
     """Build the shared system prompt for structured study guide generation."""
 
     metadata = request.lesson_metadata
     reading_level_guidance = _reading_level_guidance(metadata.grade_level)
+    subject_notation_guidance = _subject_notation_guidance(metadata.subject)
 
     prompt_lines = [
         (
@@ -80,5 +92,8 @@ def build_system_prompt(request: GenerateRequest) -> str:
             "explanatory text outside the required JSON schema."
         ),
     ]
+
+    if subject_notation_guidance is not None:
+        prompt_lines.append(subject_notation_guidance)
 
     return "\n".join(prompt_lines)

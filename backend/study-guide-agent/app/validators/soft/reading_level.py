@@ -116,6 +116,20 @@ def _has_local_cmudict() -> bool:
     return True
 
 
+def _warning_tolerance(target_grade_level: int, section_key: str) -> float:
+    if target_grade_level <= 4:
+        tolerance = 1.5
+    elif target_grade_level <= 6:
+        tolerance = 1.25
+    else:
+        tolerance = 1.0
+
+    if section_key == "intro" and target_grade_level <= 6:
+        tolerance += 0.5
+
+    return tolerance
+
+
 def validate_reading_level(
     *,
     target_grade_level: int,
@@ -150,7 +164,9 @@ def validate_reading_level(
                 )
                 break
 
-        if abs(grade_score - target_grade_level) <= 1.0:
+        if abs(grade_score - target_grade_level) <= _warning_tolerance(
+            target_grade_level, section_key
+        ):
             continue
 
         warnings.append(
