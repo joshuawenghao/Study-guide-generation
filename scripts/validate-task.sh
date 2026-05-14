@@ -47,8 +47,21 @@ run_frontend_lint() {
   fi
 }
 
+run_frontend_typecheck() {
+  if [[ -f "$FRONTEND_DIR/package.json" ]] && grep -q '"typecheck"' "$FRONTEND_DIR/package.json"; then
+    echo "==> Running frontend typecheck"
+    (
+      cd "$FRONTEND_DIR"
+      npm run typecheck
+    )
+  else
+    echo "==> Skipping frontend typecheck: no typecheck script found"
+  fi
+}
+
 echo "==> Validating repository task slice"
 run_backend_lint
 run_if_backend_tests_exist
 run_frontend_lint
+run_frontend_typecheck
 echo "==> Validation completed successfully"

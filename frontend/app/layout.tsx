@@ -43,7 +43,8 @@ export default function RootLayout({
                 </h1>
               </div>
               <p className="hidden max-w-sm text-sm leading-6 text-slate-600 md:block">
-                Plan lessons, generate aligned materials, and review output in one focused workflow.
+                Plan lessons, generate aligned materials, and review output in
+                one focused workflow.
               </p>
             </div>
           </header>

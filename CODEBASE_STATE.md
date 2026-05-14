@@ -101,12 +101,13 @@ It is intended to answer, in words, what currently exists in the repository with
 ## Validation And Quality Gates
 
 - The repository now has a repo-level validation script at `scripts/validate-task.sh`.
-- That script is intended to run backend lint, backend unit tests, backend integration tests, and frontend lint when those checks exist.
+- That script is intended to run backend lint, backend unit tests, backend integration tests, frontend lint, and frontend typecheck when those checks exist.
 - Backend lint passes under the repo-level validation script.
 - The backend integration smoke surface now validates that the exported root agent is a constructible `Workflow` and that the FastAPI server boots and supports session creation without relying on the removed scaffold chat-bootstrap behavior.
 - Python analysis for backend files is now pinned through `pyrightconfig.json` so the backend venv is used for import resolution in editor diagnostics.
-- The full repo-level validation script now passes end to end, including backend lint, backend tests, and frontend lint.
+- The full repo-level validation script now passes end to end, including backend lint, backend tests, frontend lint, and frontend typecheck.
 - The repo-level validation script now also runs backend Pyright against the shared repo `pyrightconfig.json`, so editor-visible backend type errors can fail the done gate before a task is marked complete.
+- The frontend now also declares CSS imports for TypeScript through `frontend/global.d.ts`, so App Router files like `frontend/app/layout.tsx` no longer depend on editor-local suppression behavior for `globals.css` side-effect imports.
 
 ## Current Product Gaps
 
