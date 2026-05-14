@@ -59,9 +59,22 @@ run_frontend_typecheck() {
   fi
 }
 
+run_frontend_build() {
+  if [[ -f "$FRONTEND_DIR/package.json" ]] && grep -q '"build"' "$FRONTEND_DIR/package.json"; then
+    echo "==> Running frontend build"
+    (
+      cd "$FRONTEND_DIR"
+      npm run build
+    )
+  else
+    echo "==> Skipping frontend build: no build script found"
+  fi
+}
+
 echo "==> Validating repository task slice"
 run_backend_lint
 run_if_backend_tests_exist
 run_frontend_lint
 run_frontend_typecheck
+run_frontend_build
 echo "==> Validation completed successfully"
