@@ -218,8 +218,8 @@ Notes: `backend/study-guide-agent/tests/integration/test_agent.py` now includes 
 
 ### Task 8.1 — Remove default Next.js boilerplate
 
-Status: `partial`
-Notes: The frontend exists, but `frontend/app/page.tsx` is still default boilerplate rather than product UI.
+Status: `complete`
+Notes: `frontend/app/page.tsx` now removes the default Create Next App landing page in favor of a minimal study-guide product placeholder, and `frontend/components/` now exists so subsequent UI tasks have a stable home; `cd frontend && npm run lint` and `./scripts/validate-task.sh` both passed.
 
 ### Task 8.2 — Implement global styles and app layout
 

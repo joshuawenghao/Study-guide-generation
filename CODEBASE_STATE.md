@@ -83,8 +83,9 @@ It is intended to answer, in words, what currently exists in the repository with
 
 ## Shipped Frontend
 
-- The frontend runtime exists as a Next.js 14 scaffold with shared type definitions.
-- Product-facing frontend experience work is still limited compared with the backend blueprint slice.
+- The frontend runtime now has the default Create Next App landing page removed from `frontend/app/page.tsx`, replacing it with a minimal study-guide placeholder screen that is ready for the teacher-facing UI tasks.
+- The frontend now also includes `frontend/components/` as the intended home for upcoming UI components, while shared type definitions remain in place.
+- Product-facing frontend experience work is still limited compared with the backend blueprint slice; the full layout, form, streaming progress, and preview flows are still ahead.
 
 ## Automation Workflow
 
