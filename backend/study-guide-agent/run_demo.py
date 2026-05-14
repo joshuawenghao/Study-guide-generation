@@ -198,6 +198,7 @@ async def _run_full_workflow(
         "preview_sections": len(response.preview.sections),
         "validation_warning_count": len(response.validation.warnings),
         "request_lesson_code": request.lesson_metadata.lesson_code,
+        "validation_warnings": response.validation.warnings,
     }
 
 

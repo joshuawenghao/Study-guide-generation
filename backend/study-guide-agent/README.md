@@ -116,6 +116,8 @@ The custom input file may contain either the full `GenerateRequest` JSON object 
 
 The `renderer-only` mode proves Jinja2 plus WeasyPrint PDF rendering without calling Gemini. The `full-workflow` mode runs the real workflow against `tests/fixtures/legacy_evals/english_grade6_ph.json` and requires `GOOGLE_API_KEY` to be available in the environment or `backend/study-guide-agent/.env`.
 
+The `full-workflow` JSON summary now includes both `validation_warning_count` and `validation_warnings`, which makes it easier to inspect remaining soft-validator output from the terminal without opening the PDF first.
+
 You can also use features from the [ADK](https://adk.dev/) CLI with `uv run adk`, or use `agents-cli playground` for the scaffolded agent playground.
 
 ## Commands
