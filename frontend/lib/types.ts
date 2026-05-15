@@ -109,6 +109,11 @@ export interface WebPreviewProps {
   validation: ValidationResult;
 }
 
+export interface DownloadButtonProps {
+  pdfBase64: string;
+  filename: string;
+}
+
 export interface ValidationResult {
   passed: boolean;
   failed_sections: string[];

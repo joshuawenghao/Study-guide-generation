@@ -274,8 +274,8 @@ Notes: `frontend/components/WebPreview.tsx` now accepts `WebPreviewPayload` and 
 
 ### Task 11.3 — Implement DownloadButton.tsx
 
-Status: `not started`
-Notes: `DownloadButton.tsx` does not exist yet.
+Status: `complete`
+Notes: `frontend/components/DownloadButton.tsx` now accepts base64 PDF data and a filename, decodes the PDF in the browser, and triggers a reliable client-side file download with simple error feedback when the payload is missing or invalid; `cd frontend && npm run typecheck`, `cd frontend && npm run lint`, and `./scripts/validate-task.sh` passed.
 
 ### Task 11.4 — Finish the results layout in page.tsx
 
