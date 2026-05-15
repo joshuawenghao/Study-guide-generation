@@ -8,6 +8,12 @@ Generate curriculum-aligned study guides from structured teacher input.
 - The repo-level validation command for an implementation slice is `./scripts/validate-task.sh`.
 - The live plain-language summary of shipped code lives in `CODEBASE_STATE.md` and should be refreshed by the `docs-drift` workflow.
 
+## Validation Notes
+
+- The backend currently pins `google-adk>=2.0.0b1,<2.1.0`, so parts of the upstream library surface are still beta or experimental.
+- Backend pytest output intentionally filters two known Google ADK credential-service experimental `UserWarning`s so repeated upstream noise does not obscure real test failures.
+- That filter is narrow: unrelated pytest warnings still surface and should be treated as actionable until reviewed.
+
 ## Workspace Layout
 
 - `frontend/` contains the Next.js application.

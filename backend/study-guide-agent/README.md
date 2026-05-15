@@ -129,6 +129,17 @@ You can also use features from the [ADK](https://adk.dev/) CLI with `uv run adk`
 | `./agents-cli lint`                          | Run code quality checks              |
 | `uv run pytest tests/unit tests/integration` | Run unit and integration tests       |
 
+## Test Warning Policy
+
+This backend currently depends on `google-adk>=2.0.0b1,<2.1.0`, so some upstream classes still emit experimental `UserWarning`s during pytest collection and execution.
+
+The repo config filters the two known Google ADK credential-service warnings:
+
+- `[EXPERIMENTAL] InMemoryCredentialService`
+- `[EXPERIMENTAL] BaseCredentialService`
+
+This is only to keep routine test output readable. It does not suppress unrelated warnings, and it should be revisited when the ADK dependency is upgraded.
+
 ## 🛠️ Project Management
 
 | Command                         | What It Does                                                   |
