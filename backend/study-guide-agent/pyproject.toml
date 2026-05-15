@@ -94,6 +94,10 @@ build-backend = "hatchling.build"
 [tool.pytest.ini_options]
 pythonpath = "."
 asyncio_default_fixture_loop_scope = "function"
+filterwarnings = [
+    "ignore:\\[EXPERIMENTAL\\] InMemoryCredentialService.*:UserWarning",
+    "ignore:\\[EXPERIMENTAL\\] BaseCredentialService.*:UserWarning",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["app"]

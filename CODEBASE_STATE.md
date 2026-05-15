@@ -117,6 +117,7 @@ It is intended to answer, in words, what currently exists in the repository with
 - The repo-level validation script now also fails the done gate when frontend files are not Prettier-clean, preventing committed files from picking up additional TS or TSX formatting changes on the next save.
 - The repo-level validation script now also boots the built Next.js app on a temporary local port and checks that the home route renders expected page text, so the done gate can catch production-start or top-level route-render failures that lint, typecheck, and build alone would miss.
 - The repo-level validation script now also runs backend Pyright against the shared repo `pyrightconfig.json`, so editor-visible backend type errors can fail the done gate before a task is marked complete.
+- Backend pytest output is now filtered for the two known upstream Google ADK experimental credential-service `UserWarning`s, so the done gate stays clean without suppressing unrelated test warnings.
 - The frontend now also declares CSS imports for TypeScript through `frontend/global.d.ts`, so App Router files like `frontend/app/layout.tsx` no longer depend on editor-local suppression behavior for `globals.css` side-effect imports.
 - The repo now includes a root `.editorconfig` to standardize LF endings and final newlines, reducing formatter-only post-commit diffs across frontend and backend files.
 
