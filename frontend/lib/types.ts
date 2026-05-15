@@ -53,6 +53,11 @@ export interface GenerateRequest {
   optional: OptionalInputs;
 }
 
+export interface InputFormProps {
+  onSubmit: (request: GenerateRequest) => void;
+  isLoading: boolean;
+}
+
 export interface LearningTarget {
   number: number;
   bloom_verb: string;

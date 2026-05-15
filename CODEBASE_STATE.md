@@ -1,6 +1,6 @@
 # Codebase State
 
-Last updated: 2026-05-14
+Last updated: 2026-05-15
 
 This document is the live plain-language summary of the shipped codebase.
 It is intended to answer, in words, what currently exists in the repository without requiring a reader to inspect source files directly.
@@ -85,8 +85,9 @@ It is intended to answer, in words, what currently exists in the repository with
 
 - The frontend runtime now has a teacher-facing shell: `frontend/app/layout.tsx` sets study-guide product metadata and a persistent header, while `frontend/app/globals.css` defines the shared canvas, typography, and surface styling for the app.
 - `frontend/app/page.tsx` no longer uses the default Create Next App scaffold and is now aligned to that shell with a minimal study-guide placeholder screen.
-- The frontend now also includes the initial component structure under `frontend/components/`, with stub exports for `InputForm`, `ProgressTracker`, `WebPreview`, `DownloadButton`, and `PreviewSection`, while shared type definitions remain in place.
-- Product-facing frontend experience work is still limited compared with the backend blueprint slice; the teacher input form, streaming progress flow, and preview experience are still ahead.
+- Task 9.1 is now implemented: `frontend/components/InputForm.tsx` is a fully controlled client component that collects the full `GenerateRequest` shape, groups the teacher workflow into lesson details, curriculum, instructional design, and optional inputs, supports dynamic sub-competency rows, validates required inputs before submission, and emits a typed request payload through its `onSubmit` prop.
+- `frontend/lib/types.ts` now also exports the shared `InputFormProps` contract used by the teacher input form component, keeping frontend component typing aligned with the repo rule that shared types live in the central frontend types module.
+- Product-facing frontend experience work is still limited compared with the backend blueprint slice; page-level form wiring, streaming progress flow, and the preview experience are still ahead.
 
 ## Automation Workflow
 
