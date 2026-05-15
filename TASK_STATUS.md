@@ -269,8 +269,8 @@ Notes: `frontend/components/PreviewSection.tsx` now renders typed preview payloa
 
 ### Task 11.2 — Implement WebPreview.tsx
 
-Status: `not started`
-Notes: `WebPreview.tsx` does not exist yet.
+Status: `complete`
+Notes: `frontend/components/WebPreview.tsx` now accepts `WebPreviewPayload` and `ValidationResult`, renders preview sections in backend-provided order through `PreviewSection`, and surfaces a clear validation summary plus warning callouts; `cd frontend && npm run typecheck`, `cd frontend && npm run lint`, and `./scripts/validate-task.sh` passed.
 
 ### Task 11.3 — Implement DownloadButton.tsx
 

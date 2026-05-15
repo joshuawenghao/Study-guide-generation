@@ -104,6 +104,11 @@ export interface PreviewSectionProps {
   validation: ValidationResult;
 }
 
+export interface WebPreviewProps {
+  preview: WebPreviewPayload;
+  validation: ValidationResult;
+}
+
 export interface ValidationResult {
   passed: boolean;
   failed_sections: string[];
