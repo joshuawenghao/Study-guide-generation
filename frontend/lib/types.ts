@@ -99,6 +99,11 @@ export interface WebPreviewPayload {
   sections: PreviewSection[];
 }
 
+export interface PreviewSectionProps {
+  section: PreviewSection;
+  validation: ValidationResult;
+}
+
 export interface ValidationResult {
   passed: boolean;
   failed_sections: string[];

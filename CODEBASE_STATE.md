@@ -91,10 +91,12 @@ It is intended to answer, in words, what currently exists in the repository with
 - Task 10.1 is now implemented: `frontend/app/api/generate/route.ts` proxies `GenerateRequest` submissions to the backend `POST /generate` SSE endpoint, preserves streamed progress and result events, and converts backend transport failures into SSE `error` events for the browser consumer.
 - Task 10.2 is now implemented: `frontend/components/ProgressTracker.tsx` renders a dedicated step-based tracker from `GenerationStage`, streamed `ProgressEvent[]`, and elapsed time, separating blueprint, section generation, validation, retry, render, and completion into clear UI steps for the upcoming page-level streaming flow.
 - Task 10.3 is now implemented: `frontend/app/page.tsx` posts the staged request to `/api/generate`, parses streamed SSE `progress`, `result`, and `error` events from the backend proxy, tracks elapsed time plus the final `GenerateResponse`, updates stage transitions across generation, validation, render, done, and error states, and renders the live `ProgressTracker` plus response summary cards around the existing form flow.
+- Task 11.1 is now implemented: `frontend/components/PreviewSection.tsx` renders individual preview sections from the backend `WebPreviewPayload`, using tailored layouts for learning targets, vocabulary, passages, self-assessment, and answer-key content while surfacing per-section validation failures and best-effort status badges.
 - `frontend/lib/types.ts` now also exports the shared `InputFormProps` contract used by the teacher input form component, keeping frontend component typing aligned with the repo rule that shared types live in the central frontend types module.
 - `frontend/lib/types.ts` now also exports the shared `ProgressTrackerProps` contract used by the streamed progress UI.
+- `frontend/lib/types.ts` now also exports the shared `PreviewSectionProps` contract so preview UI components can stay aligned with the backend preview payload and validation metadata.
 - Frontend formatting is now codified in a checked-in Prettier configuration at the repo root, with `frontend/.prettierignore` covering generated output paths so TypeScript and TSX save-time formatting matches the committed repository style.
-- Product-facing frontend experience work is still limited compared with the backend blueprint slice; the next major gaps are the preview and download experience.
+- Product-facing frontend experience work is still incomplete compared with the backend blueprint slice; the next major gaps are wiring the full preview container, the PDF download interaction, and the final results layout.
 
 ## Automation Workflow
 

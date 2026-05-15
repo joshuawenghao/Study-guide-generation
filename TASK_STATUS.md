@@ -264,8 +264,8 @@ Notes: `frontend/app/page.tsx` now posts the staged `GenerateRequest` to `/api/g
 
 ### Task 11.1 — Implement PreviewSection.tsx
 
-Status: `not started`
-Notes: `PreviewSection.tsx` does not exist yet.
+Status: `complete`
+Notes: `frontend/components/PreviewSection.tsx` now renders typed preview payloads with tailored layouts for learning targets, vocabulary, model and assessment passages, self-assessment, and answer-key sections, while also surfacing per-section validation failures and best-effort indicators; `cd frontend && npm run typecheck`, `cd frontend && npm run lint`, and `./scripts/validate-task.sh` passed.
 
 ### Task 11.2 — Implement WebPreview.tsx
 
