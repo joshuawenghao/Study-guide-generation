@@ -2,14 +2,18 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import DownloadButton from "@/components/DownloadButton";
 import InputForm from "@/components/InputForm";
 import ProgressTracker from "@/components/ProgressTracker";
+import WebPreview from "@/components/WebPreview";
 import type {
   GenerateRequest,
   GenerateResponse,
   GenerationStage,
   ProgressEvent,
 } from "@/lib/types";
+
+type ResultsView = "preview" | "download";
 
 function parseEventStage(event: ProgressEvent): GenerationStage | null {
   if (event.type === "error") {
@@ -75,6 +79,18 @@ function formatList(items: string[] | undefined): string {
   return items.join(", ");
 }
 
+function buildPdfFilename(request: GenerateRequest | null): string {
+  if (!request) {
+    return "study-guide.pdf";
+  }
+
+  const lessonTitle = request.lesson_metadata.lesson_title.trim();
+  const subject = request.lesson_metadata.subject.trim();
+  const gradeLevel = request.lesson_metadata.grade_level;
+
+  return `${subject}-grade-${gradeLevel}-${lessonTitle}-study-guide.pdf`;
+}
+
 export default function Home() {
   const [stage, setStage] = useState<GenerationStage>("idle");
   const [pageError, setPageError] = useState<string | null>(null);
@@ -84,6 +100,7 @@ export default function Home() {
   const [progressEvents, setProgressEvents] = useState<ProgressEvent[]>([]);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [result, setResult] = useState<GenerateResponse | null>(null);
+  const [resultsView, setResultsView] = useState<ResultsView>("preview");
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const generationStartedAtRef = useRef<number | null>(null);
@@ -254,6 +271,7 @@ export default function Home() {
       setProgressEvents([]);
       setElapsedSeconds(0);
       setResult(null);
+      setResultsView("preview");
       setPageError(null);
       setStage("planning");
     } catch {
@@ -269,6 +287,7 @@ export default function Home() {
     setProgressEvents([]);
     setElapsedSeconds(0);
     setResult(null);
+    setResultsView("preview");
     setPageError(null);
     setStage("idle");
   }
@@ -296,6 +315,7 @@ export default function Home() {
         pendingRequest.curriculum.competency_code,
       ]
     : [];
+  const resultFilename = buildPdfFilename(pendingRequest);
 
   return (
     <main className="px-6 py-12 sm:px-10 sm:py-16 lg:px-16 lg:py-20">
@@ -314,9 +334,9 @@ export default function Home() {
                 Build a complete lesson request before generation begins.
               </h1>
               <p className="max-w-3xl text-base leading-7 text-slate-600 sm:text-lg">
-                This page now owns the teacher input flow. It tracks form-stage
-                state, captures the next `GenerateRequest`, and leaves the API
-                submission path ready for the next task.
+                Build the request, follow live generation progress, then review
+                the rendered study guide and download the finished PDF from the
+                same workspace.
               </p>
             </div>
 
@@ -337,12 +357,13 @@ export default function Home() {
                         Generation run
                       </p>
                       <h2 className="text-2xl font-semibold tracking-tight text-slate-950">
-                        The page is now consuming the streamed generate route.
+                        Generation progress and results stay in one place.
                       </h2>
                       <p className="max-w-2xl text-sm leading-6 text-slate-600">
-                        Progress events, elapsed time, and the final response
-                        are all tracked locally so the preview flow can land on
-                        top of a stable streaming surface next.
+                        The page tracks the streamed workflow, keeps the
+                        progress timeline visible after completion, and now
+                        turns the final response into a full review and download
+                        workspace.
                       </p>
                     </div>
 
@@ -414,57 +435,170 @@ export default function Home() {
                 />
 
                 {result ? (
-                  <section className="grid gap-6 rounded-3xl border border-emerald-200 bg-emerald-50/70 p-8 shadow-sm lg:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)]">
-                    <div className="space-y-3">
-                      <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-700">
-                        Final response captured
-                      </p>
-                      <h2 className="text-2xl font-semibold tracking-tight text-slate-950">
-                        Generation completed and the payload is ready for
-                        preview wiring.
-                      </h2>
-                      <p className="max-w-2xl text-sm leading-6 text-slate-700">
-                        The page now retains the backend result in local state,
-                        including preview sections, PDF bytes, and validation
-                        metadata for the next UI slice.
-                      </p>
-                    </div>
+                  <div className="space-y-6">
+                    <section className="grid gap-6 rounded-3xl border border-emerald-200 bg-emerald-50/70 p-8 shadow-sm lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)]">
+                      <div className="space-y-3">
+                        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-700">
+                          Results ready
+                        </p>
+                        <h2 className="text-2xl font-semibold tracking-tight text-slate-950">
+                          Review the generated guide and download the finished
+                          PDF.
+                        </h2>
+                        <p className="max-w-2xl text-sm leading-6 text-slate-700">
+                          The completed response now stays attached to this run,
+                          so teachers can inspect the web preview, review any
+                          validation warnings, and save the PDF without losing
+                          the streamed progress history above.
+                        </p>
+                      </div>
 
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-                      <div className="rounded-2xl border border-emerald-200 bg-white px-4 py-4">
-                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                          Preview sections
-                        </p>
-                        <p className="mt-2 text-2xl font-semibold text-slate-950">
-                          {responseSummary?.previewSections}
-                        </p>
+                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                        <div className="rounded-2xl border border-emerald-200 bg-white px-4 py-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                            Preview sections
+                          </p>
+                          <p className="mt-2 text-2xl font-semibold text-slate-950">
+                            {responseSummary?.previewSections}
+                          </p>
+                        </div>
+                        <div className="rounded-2xl border border-emerald-200 bg-white px-4 py-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                            Warnings
+                          </p>
+                          <p className="mt-2 text-2xl font-semibold text-slate-950">
+                            {responseSummary?.warningCount}
+                          </p>
+                        </div>
+                        <div className="rounded-2xl border border-emerald-200 bg-white px-4 py-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                            Failed sections
+                          </p>
+                          <p className="mt-2 text-2xl font-semibold text-slate-950">
+                            {responseSummary?.failedSectionCount}
+                          </p>
+                        </div>
+                        <div className="rounded-2xl border border-emerald-200 bg-white px-4 py-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                            Best-effort sections
+                          </p>
+                          <p className="mt-2 text-2xl font-semibold text-slate-950">
+                            {responseSummary?.bestEffortCount}
+                          </p>
+                        </div>
                       </div>
-                      <div className="rounded-2xl border border-emerald-200 bg-white px-4 py-4">
-                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                          Warnings
-                        </p>
-                        <p className="mt-2 text-2xl font-semibold text-slate-950">
-                          {responseSummary?.warningCount}
-                        </p>
+                    </section>
+
+                    {result.validation.warnings.length > 0 ? (
+                      <section className="rounded-3xl border border-amber-200 bg-amber-50 px-5 py-5 shadow-sm">
+                        <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-amber-900">
+                          Validation warnings
+                        </h3>
+                        <ul className="mt-4 grid gap-3 text-sm leading-6 text-amber-950">
+                          {result.validation.warnings.map((warning) => (
+                            <li
+                              key={warning}
+                              className="rounded-2xl border border-amber-200 bg-white/70 px-4 py-3"
+                            >
+                              {warning}
+                            </li>
+                          ))}
+                        </ul>
+                      </section>
+                    ) : null}
+
+                    <section className="space-y-6 rounded-3xl border border-slate-200 bg-surface-strong p-6 shadow-sm sm:p-8">
+                      <div className="flex flex-col gap-4 border-b border-slate-200 pb-6 lg:flex-row lg:items-end lg:justify-between">
+                        <div className="space-y-2">
+                          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+                            Result workspace
+                          </p>
+                          <h3 className="text-2xl font-semibold tracking-tight text-slate-950">
+                            Switch between the web preview and the PDF download.
+                          </h3>
+                        </div>
+
+                        <div className="inline-flex rounded-full border border-slate-200 bg-white p-1 shadow-sm">
+                          <button
+                            type="button"
+                            onClick={() => setResultsView("preview")}
+                            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                              resultsView === "preview"
+                                ? "bg-slate-950 text-white"
+                                : "text-slate-600 hover:text-slate-950"
+                            }`}
+                          >
+                            Web Preview
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setResultsView("download")}
+                            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                              resultsView === "download"
+                                ? "bg-slate-950 text-white"
+                                : "text-slate-600 hover:text-slate-950"
+                            }`}
+                          >
+                            Download PDF
+                          </button>
+                        </div>
                       </div>
-                      <div className="rounded-2xl border border-emerald-200 bg-white px-4 py-4">
-                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                          Failed sections
-                        </p>
-                        <p className="mt-2 text-2xl font-semibold text-slate-950">
-                          {responseSummary?.failedSectionCount}
-                        </p>
-                      </div>
-                      <div className="rounded-2xl border border-emerald-200 bg-white px-4 py-4">
-                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                          Best-effort sections
-                        </p>
-                        <p className="mt-2 text-2xl font-semibold text-slate-950">
-                          {responseSummary?.bestEffortCount}
-                        </p>
-                      </div>
-                    </div>
-                  </section>
+
+                      {resultsView === "preview" ? (
+                        <WebPreview
+                          preview={result.preview}
+                          validation={result.validation}
+                        />
+                      ) : (
+                        <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.8fr)] lg:items-start">
+                          <div className="space-y-4 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+                            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+                              PDF download
+                            </p>
+                            <h4 className="text-2xl font-semibold tracking-tight text-slate-950">
+                              Save the generated study guide.
+                            </h4>
+                            <p className="text-sm leading-6 text-slate-600">
+                              The download uses the exact PDF bytes returned by
+                              the backend renderer. Keep the web preview open in
+                              the other tab if you want to cross-check a section
+                              before saving the file.
+                            </p>
+                            <DownloadButton
+                              pdfBase64={result.pdf_base64}
+                              filename={resultFilename}
+                            />
+                          </div>
+
+                          <div className="space-y-4 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+                            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+                              File details
+                            </p>
+                            <dl className="space-y-3 text-sm leading-6 text-slate-700">
+                              <div>
+                                <dt className="font-medium text-slate-900">
+                                  Suggested filename
+                                </dt>
+                                <dd>{resultFilename}</dd>
+                              </div>
+                              <div>
+                                <dt className="font-medium text-slate-900">
+                                  Included preview sections
+                                </dt>
+                                <dd>{responseSummary?.previewSections}</dd>
+                              </div>
+                              <div>
+                                <dt className="font-medium text-slate-900">
+                                  Validation warnings
+                                </dt>
+                                <dd>{responseSummary?.warningCount}</dd>
+                              </div>
+                            </dl>
+                          </div>
+                        </section>
+                      )}
+                    </section>
+                  </div>
                 ) : null}
               </div>
             ) : null}
@@ -514,8 +648,8 @@ export default function Home() {
                 streamed progress events.
               </p>
               <p>
-                This completes the page-level streaming boundary so the next
-                frontend slice can focus on preview rendering and download UX.
+                Completed runs now keep the tracker visible and open a results
+                workspace for preview review and PDF download.
               </p>
             </div>
           </aside>
