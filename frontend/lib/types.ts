@@ -58,6 +58,12 @@ export interface InputFormProps {
   isLoading: boolean;
 }
 
+export interface ProgressTrackerProps {
+  stage: GenerationStage;
+  events: ProgressEvent[];
+  elapsedSeconds: number;
+}
+
 export interface LearningTarget {
   number: number;
   bloom_verb: string;
