@@ -84,11 +84,11 @@ It is intended to answer, in words, what currently exists in the repository with
 ## Shipped Frontend
 
 - The frontend runtime now has a teacher-facing shell: `frontend/app/layout.tsx` sets study-guide product metadata and a persistent header, while `frontend/app/globals.css` defines the shared canvas, typography, and surface styling for the app.
-- `frontend/app/page.tsx` no longer uses the default Create Next App scaffold and is now aligned to that shell with a minimal study-guide placeholder screen.
+- Task 9.2 is now implemented: `frontend/app/page.tsx` is a client-side page that owns `GenerationStage`, basic page-level error state, and staged `GenerateRequest` storage, rendering `InputForm` in the idle state and a request-summary handoff state that is ready for API integration.
 - Task 9.1 is now implemented: `frontend/components/InputForm.tsx` is a fully controlled client component that collects the full `GenerateRequest` shape, groups the teacher workflow into lesson details, curriculum, instructional design, and optional inputs, supports dynamic sub-competency rows, validates required inputs before submission, and emits a typed request payload through its `onSubmit` prop.
 - `frontend/lib/types.ts` now also exports the shared `InputFormProps` contract used by the teacher input form component, keeping frontend component typing aligned with the repo rule that shared types live in the central frontend types module.
 - Frontend formatting is now codified in a checked-in Prettier configuration at the repo root, with `frontend/.prettierignore` covering generated output paths so TypeScript and TSX save-time formatting matches the committed repository style.
-- Product-facing frontend experience work is still limited compared with the backend blueprint slice; page-level form wiring, streaming progress flow, and the preview experience are still ahead.
+- Product-facing frontend experience work is still limited compared with the backend blueprint slice; the next major gaps are the generate route, streaming progress flow, and preview experience.
 
 ## Automation Workflow
 
