@@ -14,9 +14,16 @@
 
 # ruff: noqa: E402
 
+import asyncio
+import json
 import os
+from collections.abc import AsyncIterator, Awaitable, Callable
+from contextlib import suppress
+from datetime import UTC, datetime
+from typing import Any, Protocol, cast
 
 from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
 
 from app.app_utils.adk_compat import ensure_google_adk_beta_compat
 
@@ -24,7 +31,9 @@ ensure_google_adk_beta_compat()
 
 from google.adk.cli.fast_api import get_fast_api_app
 
+from app.agent import study_guide_workflow
 from app.app_utils.telemetry import setup_telemetry
+from app.types import GenerateRequest, GenerateResponse, ProgressEvent
 
 setup_telemetry()
 
@@ -68,6 +77,136 @@ app: FastAPI = get_fast_api_app(
 )
 app.title = "study-guide-agent"
 app.description = "API for interacting with the study guide generation agent"
+
+
+def _timestamp() -> str:
+    return datetime.now(UTC).isoformat().replace("+00:00", "Z")
+
+
+def _normalize_node_name(node_name: str) -> str:
+    if node_name in {"blueprint_node", "generate_blueprint"}:
+        return "blueprint"
+    if node_name.startswith("_generate_") and node_name.endswith("_node"):
+        return node_name[len("_generate_") : -len("_node")]
+    if node_name.endswith("_workflow_node"):
+        return node_name[: -len("_workflow_node")]
+    if node_name.startswith("retry_"):
+        suffix = node_name[len("retry_") :]
+        retry_parts = suffix.rsplit("_", maxsplit=1)
+        return retry_parts[0] if len(retry_parts) == 2 else suffix
+    return node_name
+
+
+class _StreamingWorkflowContext:
+    def __init__(self, emit_event: Any) -> None:
+        self._emit_event = emit_event
+
+    async def run_node(self, node: Any, node_input: Any = None) -> Any:
+        raw_name_like = getattr(node, "name", type(node).__name__)
+        raw_name = (
+            raw_name_like if isinstance(raw_name_like, str) else type(node).__name__
+        )
+        node_name = _normalize_node_name(raw_name)
+
+        event_type = "node_started"
+        if raw_name.startswith("retry_"):
+            event_type = "retry_started"
+        elif node_name == "validation":
+            event_type = "validation_started"
+        elif node_name == "render":
+            event_type = "render_started"
+
+        await self._emit_event(
+            "progress",
+            ProgressEvent(
+                type=event_type,
+                node=node_name,
+                timestamp=_timestamp(),
+            ).model_dump(mode="json"),
+        )
+
+        node_func = cast(_SingleInputNodeProtocol, node)._func
+        result = await node_func(node_input)
+
+        await self._emit_event(
+            "progress",
+            ProgressEvent(
+                type="node_complete",
+                node=node_name,
+                timestamp=_timestamp(),
+            ).model_dump(mode="json"),
+        )
+        return result
+
+
+@app.post("/generate")
+async def generate(request: GenerateRequest) -> StreamingResponse:
+    event_queue: asyncio.Queue[tuple[str, dict[str, Any]] | None] = asyncio.Queue()
+
+    async def emit_event(event_name: str, payload: dict[str, Any]) -> None:
+        await event_queue.put((event_name, payload))
+
+    async def run_workflow() -> None:
+        try:
+            workflow_context = _StreamingWorkflowContext(emit_event)
+            workflow_func = cast(_WorkflowNodeProtocol, study_guide_workflow)._func
+            result = await workflow_func(workflow_context, request)
+            await emit_event(
+                "progress",
+                ProgressEvent(
+                    type="done",
+                    node="workflow",
+                    timestamp=_timestamp(),
+                ).model_dump(mode="json"),
+            )
+            await emit_event("result", result.model_dump(mode="json"))
+        except Exception as exc:  # pragma: no cover - exercised via streaming test
+            await emit_event(
+                "progress",
+                ProgressEvent(
+                    type="error",
+                    node="workflow",
+                    message=str(exc),
+                    timestamp=_timestamp(),
+                ).model_dump(mode="json"),
+            )
+            await emit_event("error", {"error": str(exc)})
+        finally:
+            await event_queue.put(None)
+
+    workflow_task = asyncio.create_task(run_workflow())
+
+    async def event_generator() -> AsyncIterator[str]:
+        try:
+            while True:
+                event = await event_queue.get()
+                if event is None:
+                    break
+
+                event_name, payload = event
+                yield f"event: {event_name}\ndata: {json.dumps(payload)}\n\n"
+        finally:
+            if not workflow_task.done():
+                workflow_task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await workflow_task
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache, no-transform",
+            "Connection": "keep-alive",
+        },
+    )
+
+
+class _SingleInputNodeProtocol(Protocol):
+    _func: Callable[[Any], Awaitable[Any]]
+
+
+class _WorkflowNodeProtocol(Protocol):
+    _func: Callable[[Any, GenerateRequest], Awaitable[GenerateResponse]]
 
 
 # Main execution

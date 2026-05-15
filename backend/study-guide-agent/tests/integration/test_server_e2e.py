@@ -19,11 +19,15 @@ import sys
 import threading
 import time
 from collections.abc import Iterator
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
 import requests
 from requests.exceptions import RequestException
+
+import app.fast_api_app as fast_api_module
+from app.types import GenerateResponse
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -150,3 +154,82 @@ def test_chat_stream_error_handling(server_fixture: subprocess.Popen[str]) -> No
         f"Expected status code 422, got {response.status_code}"
     )
     logger.info("Error handling test completed successfully")
+
+
+def test_generate_route_streams_progress_and_result(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request_payload = {
+        "lesson_metadata": {
+            "subject": "English",
+            "grade_level": 6,
+            "market": "PH",
+            "language": "en",
+            "unit_number": 2,
+            "unit_title": "Reading with Purpose",
+            "lesson_number": 1,
+            "lesson_title": "Identifying Author's Purpose",
+            "lesson_code": "E6_Q1_0201",
+        },
+        "curriculum": {
+            "competency_code": "EN6RC-Ia-2.2",
+            "competency_description": "Identify the author's purpose for writing a text.",
+            "sub_competencies": [
+                {"id": "sc1", "label": "Identify purpose to entertain"}
+            ],
+        },
+        "instructional_design": {
+            "core_concept": "Authors write with a specific purpose.",
+            "bloom_targets": [
+                "Remember",
+                "Understand",
+                "Apply",
+            ],
+            "essential_question_seed": "Why does purpose matter?",
+        },
+        "optional": {
+            "vocabulary_seeds": [],
+            "topic_domains": {},
+            "tone_register": "supportive",
+            "length_preset": "standard",
+        },
+    }
+
+    async def fake_blueprint(_request: Any) -> dict[str, Any]:
+        return {"title": "Blueprint"}
+
+    async def fake_workflow(ctx: Any, request: Any) -> Any:
+        await ctx.run_node(
+            SimpleNamespace(name="blueprint_node", _func=fake_blueprint), request
+        )
+        return GenerateResponse.model_validate(
+            {
+                "success": True,
+                "pdf_base64": "cGRm",
+                "preview": {"sections": []},
+                "validation": {
+                    "passed": True,
+                    "failed_sections": [],
+                    "failures": {},
+                    "warnings": [],
+                    "best_effort_sections": [],
+                },
+                "error": None,
+            }
+        )
+
+    monkeypatch.setattr(fast_api_module.study_guide_workflow, "_func", fake_workflow)
+
+    from fastapi.testclient import TestClient
+
+    with TestClient(fast_api_module.app) as client:
+        with client.stream("POST", "/generate", json=request_payload) as response:
+            assert response.status_code == 200
+            assert response.headers["content-type"].startswith("text/event-stream")
+            lines = [line for line in response.iter_lines() if line]
+
+    assert "event: progress" in lines
+    assert any('"type": "node_started"' in line for line in lines)
+    assert any('"node": "blueprint"' in line for line in lines)
+    assert "event: result" in lines
+    assert any('"success": true' in line for line in lines)

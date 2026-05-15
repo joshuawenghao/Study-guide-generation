@@ -12,6 +12,7 @@ It is intended to answer, in words, what currently exists in the repository with
 - The backend now exports the real ADK workflow entrypoint from `app/agent.py`, wiring blueprint generation, parallel section waves, validator retry, and rendering into one `Workflow` root agent.
 - The backend container now honors the runtime `PORT` environment variable and has been validated to boot the FastAPI app from the same image shape intended for Cloud Run.
 - The backend deployment path now has a repo-standardized Cloud Run entrypoint and environment-driven CORS/runtime configuration, so dev and production services can be configured without code edits.
+- The backend now also exposes a typed `POST /generate` SSE endpoint that runs the study-guide workflow directly from a `GenerateRequest`, emits coarse-grained progress events, and streams the final `GenerateResponse` for the frontend proxy path.
 - The validation layer now has a working validator node that aggregates five hard validators and two soft validators into a single `ValidationResult` for the orchestrator retry loop and preview warnings.
 - The ADK FastAPI loader now has a compatibility adapter so the server integration path can locate `study_guide_agent.root_agent` correctly.
 - The repo documentation now includes an explicit deployment plan and task phase covering Vercel, Cloud Run, and a production-like local parity mode.
@@ -80,15 +81,17 @@ It is intended to answer, in words, what currently exists in the repository with
 - The repo now includes `backend/study-guide-agent/study_guide_agent/agent.py` as an ADK loader adapter that re-exports the real agent from `app.agent` for CLI and FastAPI loading.
 - `DEPLOYMENT.md` now includes concrete backend container commands for local build, local run, alternate-port parity runs, and the intended Cloud Run deploy shape.
 - `DEPLOYMENT.md` and `backend/study-guide-agent/README.md` now also document the standardized backend Cloud Run deploy command, required env vars and secret sources, CORS origin guidance for preview versus production, and the current timeout/concurrency assumptions for long-running generation requests.
+- `backend/study-guide-agent/app/fast_api_app.py` now also provides a backend-facing SSE compatibility route for the frontend, because the scaffolded ADK `/run_sse` surface only accepts chat-style `Content` input while the shipped study-guide workflow expects a typed `GenerateRequest`.
 
 ## Shipped Frontend
 
 - The frontend runtime now has a teacher-facing shell: `frontend/app/layout.tsx` sets study-guide product metadata and a persistent header, while `frontend/app/globals.css` defines the shared canvas, typography, and surface styling for the app.
 - Task 9.2 is now implemented: `frontend/app/page.tsx` is a client-side page that owns `GenerationStage`, basic page-level error state, and staged `GenerateRequest` storage, rendering `InputForm` in the idle state and a request-summary handoff state that is ready for API integration.
 - Task 9.1 is now implemented: `frontend/components/InputForm.tsx` is a fully controlled client component that collects the full `GenerateRequest` shape, groups the teacher workflow into lesson details, curriculum, instructional design, and optional inputs, supports dynamic sub-competency rows, validates required inputs before submission, and emits a typed request payload through its `onSubmit` prop.
+- Task 10.1 is now implemented: `frontend/app/api/generate/route.ts` proxies `GenerateRequest` submissions to the backend `POST /generate` SSE endpoint, preserves streamed progress and result events, and converts backend transport failures into SSE `error` events for the browser consumer.
 - `frontend/lib/types.ts` now also exports the shared `InputFormProps` contract used by the teacher input form component, keeping frontend component typing aligned with the repo rule that shared types live in the central frontend types module.
 - Frontend formatting is now codified in a checked-in Prettier configuration at the repo root, with `frontend/.prettierignore` covering generated output paths so TypeScript and TSX save-time formatting matches the committed repository style.
-- Product-facing frontend experience work is still limited compared with the backend blueprint slice; the next major gaps are the generate route, streaming progress flow, and preview experience.
+- Product-facing frontend experience work is still limited compared with the backend blueprint slice; the next major gaps are the progress tracker, page-level streaming state, and preview experience.
 
 ## Automation Workflow
 
@@ -118,5 +121,5 @@ It is intended to answer, in words, what currently exists in the repository with
 
 - Wave 1, Wave 2, Wave 3, and answer-key generation are implemented; the validator layer now includes its aggregator node, five hard validators, two soft validators, broad isolated test coverage, and the complete Phase 6 renderer slice including template, node, and focused renderer tests.
 - Workflow orchestration and focused backend integration coverage are now implemented.
-- The remaining major gaps are most frontend product experience work plus the unfinished Phase 13 parity and remote deployment tasks.
+- The remaining major gaps are the unfinished frontend streaming/results slices plus the unfinished Phase 13 parity and remote deployment tasks.
 - Deployment is now specified, and the backend image plus Cloud Run backend configuration path are in place, but the parity stack, Vercel setup, and staged remote deployment checkpoints are still not implemented or validated end to end.
