@@ -20,7 +20,7 @@ Status legend:
 - Legacy root-level backend code has been removed
 - Backend scaffold, environment files, core type contracts, and eval fixture preservation are in place
 - The backend now uses the project-local `backend/study-guide-agent/.venv` for ADK 2.0 beta work, with a narrow compatibility shim for the broken `google.adk.features` import surface in `google-adk==2.0.0b1`
-- The system prompt builder, blueprint prompt template, blueprint node, and focused blueprint unit test are now implemented, and Wave 1 through Wave 3 plus the answer-key path now exist with focused unit coverage; the validator node now aggregates the json-schema, vocab-presence, self-assessment-target, answer-key-quote, and passage-domain hard validators plus the answer-leakage and reading-level soft validators, Phase 6 now includes the study-guide HTML template, renderer node, and focused renderer tests for preview ordering and PDF artifact shape, and Phase 7 now includes both the exported ADK workflow in `app/agent.py` and a focused backend-only integration test that exercises orchestration, dependency wiring, retry, and render handoff; Phase 9 is now in place with a controlled teacher input form and page-level form-stage state, and Phase 10 now includes a backend `/generate` SSE surface, a thin Next.js `/api/generate` proxy, and a dedicated `ProgressTracker` component, while page-level streaming state and the preview experience remain incomplete
+- The system prompt builder, blueprint prompt template, blueprint node, and focused blueprint unit test are now implemented, and Wave 1 through Wave 3 plus the answer-key path now exist with focused unit coverage; the validator node now aggregates the json-schema, vocab-presence, self-assessment-target, answer-key-quote, and passage-domain hard validators plus the answer-leakage and reading-level soft validators, Phase 6 now includes the study-guide HTML template, renderer node, and focused renderer tests for preview ordering and PDF artifact shape, and Phase 7 now includes both the exported ADK workflow in `app/agent.py` and a focused backend-only integration test that exercises orchestration, dependency wiring, retry, and render handoff; Phase 9 is now in place with a controlled teacher input form and page-level form-stage state, and Phase 10 now includes a backend `/generate` SSE surface, a thin Next.js `/api/generate` proxy, a dedicated `ProgressTracker` component, and page-level SSE handling in `frontend/app/page.tsx`, while the preview experience remains incomplete
 - Deployment planning is now documented around a recommended Vercel frontend plus Cloud Run backend topology, with a separate local parity mode planned so production issues can be reproduced without changing the app architecture; the backend container now honors the runtime `PORT` environment variable, serves `app.fast_api_app:app` in the same image shape intended for Cloud Run, and now includes environment-driven CORS/runtime config plus a standardized Cloud Run deploy entrypoint in `DEPLOYMENT.md` and `scripts/deploy-backend-cloud-run.sh`
 
 ## Phase 0 — Repository and tooling setup
@@ -257,8 +257,8 @@ Notes: `frontend/components/ProgressTracker.tsx` now renders a dedicated step-ba
 
 ### Task 10.3 — Wire streaming into page.tsx
 
-Status: `not started`
-Notes: Page-level SSE handling is not implemented.
+Status: `complete`
+Notes: `frontend/app/page.tsx` now posts the staged `GenerateRequest` to `/api/generate`, parses streamed SSE `progress`, `result`, and `error` events, tracks `ProgressEvent[]`, elapsed time, and the final `GenerateResponse`, drives `GenerationStage` transitions for generating, validating, rendering, done, and error states, and integrates `ProgressTracker` into the live page flow; `./scripts/validate-task.sh` passed.
 
 ## Phase 11 — Results experience
 

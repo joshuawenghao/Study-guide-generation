@@ -86,14 +86,15 @@ It is intended to answer, in words, what currently exists in the repository with
 ## Shipped Frontend
 
 - The frontend runtime now has a teacher-facing shell: `frontend/app/layout.tsx` sets study-guide product metadata and a persistent header, while `frontend/app/globals.css` defines the shared canvas, typography, and surface styling for the app.
-- Task 9.2 is now implemented: `frontend/app/page.tsx` is a client-side page that owns `GenerationStage`, basic page-level error state, and staged `GenerateRequest` storage, rendering `InputForm` in the idle state and a request-summary handoff state that is ready for API integration.
+- Task 9.2 is now implemented: `frontend/app/page.tsx` is a client-side page that owns `GenerationStage`, basic page-level error state, and staged `GenerateRequest` storage, rendering `InputForm` in the idle state and now serving as the page-level streaming boundary for generation runs.
 - Task 9.1 is now implemented: `frontend/components/InputForm.tsx` is a fully controlled client component that collects the full `GenerateRequest` shape, groups the teacher workflow into lesson details, curriculum, instructional design, and optional inputs, supports dynamic sub-competency rows, validates required inputs before submission, and emits a typed request payload through its `onSubmit` prop.
 - Task 10.1 is now implemented: `frontend/app/api/generate/route.ts` proxies `GenerateRequest` submissions to the backend `POST /generate` SSE endpoint, preserves streamed progress and result events, and converts backend transport failures into SSE `error` events for the browser consumer.
 - Task 10.2 is now implemented: `frontend/components/ProgressTracker.tsx` renders a dedicated step-based tracker from `GenerationStage`, streamed `ProgressEvent[]`, and elapsed time, separating blueprint, section generation, validation, retry, render, and completion into clear UI steps for the upcoming page-level streaming flow.
+- Task 10.3 is now implemented: `frontend/app/page.tsx` posts the staged request to `/api/generate`, parses streamed SSE `progress`, `result`, and `error` events from the backend proxy, tracks elapsed time plus the final `GenerateResponse`, updates stage transitions across generation, validation, render, done, and error states, and renders the live `ProgressTracker` plus response summary cards around the existing form flow.
 - `frontend/lib/types.ts` now also exports the shared `InputFormProps` contract used by the teacher input form component, keeping frontend component typing aligned with the repo rule that shared types live in the central frontend types module.
 - `frontend/lib/types.ts` now also exports the shared `ProgressTrackerProps` contract used by the streamed progress UI.
 - Frontend formatting is now codified in a checked-in Prettier configuration at the repo root, with `frontend/.prettierignore` covering generated output paths so TypeScript and TSX save-time formatting matches the committed repository style.
-- Product-facing frontend experience work is still limited compared with the backend blueprint slice; the next major gaps are page-level streaming state and the preview experience.
+- Product-facing frontend experience work is still limited compared with the backend blueprint slice; the next major gaps are the preview and download experience.
 
 ## Automation Workflow
 
@@ -123,5 +124,5 @@ It is intended to answer, in words, what currently exists in the repository with
 
 - Wave 1, Wave 2, Wave 3, and answer-key generation are implemented; the validator layer now includes its aggregator node, five hard validators, two soft validators, broad isolated test coverage, and the complete Phase 6 renderer slice including template, node, and focused renderer tests.
 - Workflow orchestration and focused backend integration coverage are now implemented.
-- The remaining major gaps are the unfinished page-level streaming/results slices plus the unfinished Phase 13 parity and remote deployment tasks.
+- The remaining major gaps are the unfinished preview/results UX slices plus the unfinished Phase 13 parity and remote deployment tasks.
 - Deployment is now specified, and the backend image plus Cloud Run backend configuration path are in place, but the parity stack, Vercel setup, and staged remote deployment checkpoints are still not implemented or validated end to end.
