@@ -16,7 +16,11 @@ html {
 body {
   color: var(--ink);
   background:
-    linear-gradient(180deg, rgba(255, 253, 248, 0.82), rgba(243, 240, 232, 0.96)),
+    linear-gradient(
+      180deg,
+      rgba(255, 253, 248, 0.82),
+      rgba(243, 240, 232, 0.96)
+    ),
     repeating-linear-gradient(
       135deg,
       rgba(148, 163, 184, 0.08) 0,

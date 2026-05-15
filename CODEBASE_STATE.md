@@ -87,6 +87,7 @@ It is intended to answer, in words, what currently exists in the repository with
 - `frontend/app/page.tsx` no longer uses the default Create Next App scaffold and is now aligned to that shell with a minimal study-guide placeholder screen.
 - Task 9.1 is now implemented: `frontend/components/InputForm.tsx` is a fully controlled client component that collects the full `GenerateRequest` shape, groups the teacher workflow into lesson details, curriculum, instructional design, and optional inputs, supports dynamic sub-competency rows, validates required inputs before submission, and emits a typed request payload through its `onSubmit` prop.
 - `frontend/lib/types.ts` now also exports the shared `InputFormProps` contract used by the teacher input form component, keeping frontend component typing aligned with the repo rule that shared types live in the central frontend types module.
+- Frontend formatting is now codified in a checked-in Prettier configuration at the repo root, with `frontend/.prettierignore` covering generated output paths so TypeScript and TSX save-time formatting matches the committed repository style.
 - Product-facing frontend experience work is still limited compared with the backend blueprint slice; page-level form wiring, streaming progress flow, and the preview experience are still ahead.
 
 ## Automation Workflow
@@ -102,11 +103,12 @@ It is intended to answer, in words, what currently exists in the repository with
 ## Validation And Quality Gates
 
 - The repository now has a repo-level validation script at `scripts/validate-task.sh`.
-- That script is intended to run backend lint, backend unit tests, backend integration tests, frontend lint, frontend typecheck, and a frontend production build when those checks exist.
+- That script is intended to run backend lint, backend unit tests, backend integration tests, frontend format checks, frontend lint, frontend typecheck, and a frontend production build when those checks exist.
 - Backend lint passes under the repo-level validation script, and the current baseline is clean without unresolved `ty` advisory warnings.
 - The backend integration smoke surface now validates that the exported root agent is a constructible `Workflow` and that the FastAPI server boots and supports session creation without relying on the removed scaffold chat-bootstrap behavior.
 - Python analysis for backend files is now pinned through `pyrightconfig.json` so the backend venv is used for import resolution in editor diagnostics.
 - The full repo-level validation script now passes end to end, including backend lint, backend tests, frontend lint, frontend typecheck, and a frontend production build.
+- The repo-level validation script now also fails the done gate when frontend files are not Prettier-clean, preventing committed files from picking up additional TS or TSX formatting changes on the next save.
 - The repo-level validation script now also runs backend Pyright against the shared repo `pyrightconfig.json`, so editor-visible backend type errors can fail the done gate before a task is marked complete.
 - The frontend now also declares CSS imports for TypeScript through `frontend/global.d.ts`, so App Router files like `frontend/app/layout.tsx` no longer depend on editor-local suppression behavior for `globals.css` side-effect imports.
 - The repo now includes a root `.editorconfig` to standardize LF endings and final newlines, reducing formatter-only post-commit diffs across frontend and backend files.

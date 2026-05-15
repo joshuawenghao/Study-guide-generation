@@ -47,6 +47,18 @@ run_frontend_lint() {
   fi
 }
 
+run_frontend_format_check() {
+  if [[ -f "$FRONTEND_DIR/package.json" ]] && grep -q '"format:check"' "$FRONTEND_DIR/package.json"; then
+    echo "==> Running frontend format check"
+    (
+      cd "$FRONTEND_DIR"
+      npm run format:check
+    )
+  else
+    echo "==> Skipping frontend format check: no format:check script found"
+  fi
+}
+
 run_frontend_typecheck() {
   if [[ -f "$FRONTEND_DIR/package.json" ]] && grep -q '"typecheck"' "$FRONTEND_DIR/package.json"; then
     echo "==> Running frontend typecheck"
@@ -74,6 +86,7 @@ run_frontend_build() {
 echo "==> Validating repository task slice"
 run_backend_lint
 run_if_backend_tests_exist
+run_frontend_format_check
 run_frontend_lint
 run_frontend_typecheck
 run_frontend_build

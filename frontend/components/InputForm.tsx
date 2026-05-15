@@ -15,12 +15,7 @@ const lengthOptions: { value: LengthPreset; label: string }[] = [
   { value: "long", label: "Long" },
 ];
 
-const toneOptions = [
-  "warm-formal",
-  "encouraging",
-  "academic",
-  "direct",
-];
+const toneOptions = ["warm-formal", "encouraging", "academic", "direct"];
 
 const initialSubCompetency: SubCompetency = {
   id: "SC-1",
@@ -54,10 +49,7 @@ function parseTopicDomains(
   return entries.length > 0 ? Object.fromEntries(entries) : undefined;
 }
 
-export default function InputForm({
-  onSubmit,
-  isLoading,
-}: InputFormProps) {
+export default function InputForm({ onSubmit, isLoading }: InputFormProps) {
   const [subject, setSubject] = useState("");
   const [gradeLevel, setGradeLevel] = useState("6");
   const [market, setMarket] = useState("PH");
@@ -154,7 +146,9 @@ export default function InputForm({
       !trimmedEssentialQuestionSeed ||
       !trimmedToneRegister
     ) {
-      setErrorMessage("Complete every required field before generating a study guide.");
+      setErrorMessage(
+        "Complete every required field before generating a study guide.",
+      );
       return null;
     }
 
@@ -167,7 +161,9 @@ export default function InputForm({
       Number.isNaN(parsedLessonNumber) ||
       parsedLessonNumber < 1
     ) {
-      setErrorMessage("Grade, unit number, and lesson number must be valid positive numbers.");
+      setErrorMessage(
+        "Grade, unit number, and lesson number must be valid positive numbers.",
+      );
       return null;
     }
 
@@ -180,7 +176,9 @@ export default function InputForm({
       normalizedSubCompetencies.length === 0 ||
       normalizedSubCompetencies.some((entry) => !entry.id || !entry.label)
     ) {
-      setErrorMessage("Add at least one sub-competency and complete both its code and label.");
+      setErrorMessage(
+        "Add at least one sub-competency and complete both its code and label.",
+      );
       return null;
     }
 
@@ -274,7 +272,9 @@ export default function InputForm({
         </label>
 
         <label className="space-y-2">
-          <span className="text-sm font-medium text-slate-800">Grade level</span>
+          <span className="text-sm font-medium text-slate-800">
+            Grade level
+          </span>
           <input
             className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
             value={gradeLevel}
@@ -305,7 +305,9 @@ export default function InputForm({
         </label>
 
         <label className="space-y-2">
-          <span className="text-sm font-medium text-slate-800">Unit number</span>
+          <span className="text-sm font-medium text-slate-800">
+            Unit number
+          </span>
           <input
             className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
             value={unitNumber}
@@ -326,7 +328,9 @@ export default function InputForm({
         </label>
 
         <label className="space-y-2">
-          <span className="text-sm font-medium text-slate-800">Lesson number</span>
+          <span className="text-sm font-medium text-slate-800">
+            Lesson number
+          </span>
           <input
             className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
             value={lessonNumber}
@@ -337,7 +341,9 @@ export default function InputForm({
         </label>
 
         <label className="space-y-2">
-          <span className="text-sm font-medium text-slate-800">Lesson title</span>
+          <span className="text-sm font-medium text-slate-800">
+            Lesson title
+          </span>
           <input
             className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
             value={lessonTitle}
@@ -347,7 +353,9 @@ export default function InputForm({
         </label>
 
         <label className="space-y-2 md:col-span-2">
-          <span className="text-sm font-medium text-slate-800">Lesson code</span>
+          <span className="text-sm font-medium text-slate-800">
+            Lesson code
+          </span>
           <input
             className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
             value={lessonCode}
@@ -366,7 +374,9 @@ export default function InputForm({
 
         <div className="grid gap-4 md:grid-cols-2">
           <label className="space-y-2">
-            <span className="text-sm font-medium text-slate-800">Competency code</span>
+            <span className="text-sm font-medium text-slate-800">
+              Competency code
+            </span>
             <input
               className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
               value={competencyCode}
@@ -376,7 +386,9 @@ export default function InputForm({
           </label>
 
           <label className="space-y-2 md:col-span-1">
-            <span className="text-sm font-medium text-slate-800">Competency description</span>
+            <span className="text-sm font-medium text-slate-800">
+              Competency description
+            </span>
             <textarea
               className="min-h-28 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
               value={competencyDescription}
@@ -412,7 +424,9 @@ export default function InputForm({
                 className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 md:grid-cols-[minmax(0,12rem)_minmax(0,1fr)_auto]"
               >
                 <label className="space-y-2">
-                  <span className="text-sm font-medium text-slate-800">Code</span>
+                  <span className="text-sm font-medium text-slate-800">
+                    Code
+                  </span>
                   <input
                     className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
                     value={entry.id}
@@ -424,7 +438,9 @@ export default function InputForm({
                 </label>
 
                 <label className="space-y-2">
-                  <span className="text-sm font-medium text-slate-800">Label</span>
+                  <span className="text-sm font-medium text-slate-800">
+                    Label
+                  </span>
                   <input
                     className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
                     value={entry.label}
@@ -459,7 +475,9 @@ export default function InputForm({
         </div>
 
         <label className="space-y-2 md:col-span-2">
-          <span className="text-sm font-medium text-slate-800">Core concept</span>
+          <span className="text-sm font-medium text-slate-800">
+            Core concept
+          </span>
           <textarea
             className="min-h-28 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
             value={coreConcept}
@@ -469,7 +487,9 @@ export default function InputForm({
         </label>
 
         <label className="space-y-2">
-          <span className="text-sm font-medium text-slate-800">Bloom target 1</span>
+          <span className="text-sm font-medium text-slate-800">
+            Bloom target 1
+          </span>
           <input
             className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
             value={bloomTargetOne}
@@ -479,7 +499,9 @@ export default function InputForm({
         </label>
 
         <label className="space-y-2">
-          <span className="text-sm font-medium text-slate-800">Bloom target 2</span>
+          <span className="text-sm font-medium text-slate-800">
+            Bloom target 2
+          </span>
           <input
             className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
             value={bloomTargetTwo}
@@ -489,7 +511,9 @@ export default function InputForm({
         </label>
 
         <label className="space-y-2">
-          <span className="text-sm font-medium text-slate-800">Bloom target 3</span>
+          <span className="text-sm font-medium text-slate-800">
+            Bloom target 3
+          </span>
           <input
             className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
             value={bloomTargetThree}
@@ -499,7 +523,9 @@ export default function InputForm({
         </label>
 
         <label className="space-y-2 md:col-span-2">
-          <span className="text-sm font-medium text-slate-800">Essential question seed</span>
+          <span className="text-sm font-medium text-slate-800">
+            Essential question seed
+          </span>
           <textarea
             className="min-h-28 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
             value={essentialQuestionSeed}
@@ -517,7 +543,9 @@ export default function InputForm({
         </div>
 
         <label className="space-y-2 md:col-span-2">
-          <span className="text-sm font-medium text-slate-800">Vocabulary seeds</span>
+          <span className="text-sm font-medium text-slate-800">
+            Vocabulary seeds
+          </span>
           <textarea
             className="min-h-28 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
             value={vocabularySeeds}
@@ -530,7 +558,9 @@ export default function InputForm({
         </label>
 
         <label className="space-y-2">
-          <span className="text-sm font-medium text-slate-800">Model passage domain</span>
+          <span className="text-sm font-medium text-slate-800">
+            Model passage domain
+          </span>
           <input
             className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
             value={modelPassageDomain}
@@ -540,7 +570,9 @@ export default function InputForm({
         </label>
 
         <label className="space-y-2">
-          <span className="text-sm font-medium text-slate-800">Assessment passage domain</span>
+          <span className="text-sm font-medium text-slate-800">
+            Assessment passage domain
+          </span>
           <input
             className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
             value={assessmentPassageDomain}
@@ -550,7 +582,9 @@ export default function InputForm({
         </label>
 
         <label className="space-y-2">
-          <span className="text-sm font-medium text-slate-800">Entertain example domain</span>
+          <span className="text-sm font-medium text-slate-800">
+            Entertain example domain
+          </span>
           <input
             className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
             value={entertainExampleDomain}
@@ -560,7 +594,9 @@ export default function InputForm({
         </label>
 
         <label className="space-y-2">
-          <span className="text-sm font-medium text-slate-800">Inform example domain</span>
+          <span className="text-sm font-medium text-slate-800">
+            Inform example domain
+          </span>
           <input
             className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
             value={informExampleDomain}
@@ -570,7 +606,9 @@ export default function InputForm({
         </label>
 
         <label className="space-y-2">
-          <span className="text-sm font-medium text-slate-800">Persuade example domain</span>
+          <span className="text-sm font-medium text-slate-800">
+            Persuade example domain
+          </span>
           <input
             className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
             value={persuadeExampleDomain}
@@ -580,7 +618,9 @@ export default function InputForm({
         </label>
 
         <label className="space-y-2">
-          <span className="text-sm font-medium text-slate-800">Tone register</span>
+          <span className="text-sm font-medium text-slate-800">
+            Tone register
+          </span>
           <select
             className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
             value={toneRegister}
@@ -595,7 +635,9 @@ export default function InputForm({
         </label>
 
         <label className="space-y-2">
-          <span className="text-sm font-medium text-slate-800">Length preset</span>
+          <span className="text-sm font-medium text-slate-800">
+            Length preset
+          </span>
           <select
             className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
             value={lengthPreset}
