@@ -291,8 +291,8 @@ Notes: The real local stack now completes an end-to-end UI run with a realistic 
 
 ### Task 12.2 — Run scaffold-native evals
 
-Status: `not started`
-Notes: The scaffold eval structure exists, but current study-guide behavior has not been validated through `agents-cli` eval runs.
+Status: `complete`
+Notes: Scaffold-native CLI and eval loading now work against `backend/study-guide-agent/app/` through a dedicated conversational adapter in `backend/study-guide-agent/app/eval_agent.py`, while the real study-guide workflow remains exported from `backend/study-guide-agent/app/agent.py` for `/generate`. `backend/study-guide-agent/app/__init__.py`, `backend/study-guide-agent/study_guide_agent/agent.py`, and `backend/study-guide-agent/tests/eval/evalsets/basic.evalset.json` now match ADK loader expectations, `./agents-cli eval run` passes with 2 tests passed and 0 failed, and `./scripts/validate-task.sh` passed.
 
 ### Task 12.3 — Run backend tests
 

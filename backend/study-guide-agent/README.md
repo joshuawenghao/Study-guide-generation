@@ -122,6 +122,17 @@ The `full-workflow` JSON summary now includes both `validation_warning_count` an
 
 You can also use features from the [ADK](https://adk.dev/) CLI with `uv run adk`, or use `agents-cli playground` for the scaffolded agent playground.
 
+Scaffold-native conversational CLI and eval flows now run through `app/eval_agent.py` when you target `./app`, while the real typed study-guide workflow used by the backend `/generate` endpoint remains in `app/agent.py`.
+
+Run the scaffold-native evalset from this directory with:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+./agents-cli eval run
+```
+
+The current evalset under `tests/eval/evalsets/basic.evalset.json` targets the scaffold loader app name `app`, which must match the loaded `./app` directory for ADK eval runs.
+
 ## Commands
 
 | Command                                      | Description                          |

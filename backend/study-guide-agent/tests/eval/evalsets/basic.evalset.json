@@ -13,7 +13,7 @@
         }
       ],
       "session_input": {
-        "app_name": "study_guide_agent",
+        "app_name": "app",
         "user_id": "eval_user",
         "state": {}
       }
@@ -28,7 +28,7 @@
         }
       ],
       "session_input": {
-        "app_name": "study_guide_agent",
+        "app_name": "app",
         "user_id": "eval_user",
         "state": {}
       }
