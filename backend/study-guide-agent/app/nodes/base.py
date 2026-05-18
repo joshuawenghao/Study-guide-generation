@@ -5,11 +5,18 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+from pathlib import Path
 
+from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
 logger = logging.getLogger(__name__)
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+# Local backend runs keep secrets in backend/study-guide-agent/.env.
+load_dotenv(PROJECT_ROOT / ".env")
 
 _client: genai.Client | None = None
 

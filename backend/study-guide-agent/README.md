@@ -77,7 +77,7 @@ Create the backend environment file in the scaffolded project root:
 cp .env.example .env
 ```
 
-The backend runtime reads `backend/study-guide-agent/.env`. At minimum set `GOOGLE_API_KEY`; `MARKET_DEFAULT=PH` is included as the default market.
+The backend runtime reads `backend/study-guide-agent/.env` automatically for local runs. At minimum set `GOOGLE_API_KEY`; `MARKET_DEFAULT=PH` is included as the default market.
 
 To enable the primary English reading-level path locally, install the NLTK `cmudict` corpus into a project-local data directory:
 
@@ -116,7 +116,7 @@ uv run python run_demo.py --mode full-workflow --open
 
 The custom input file may contain either the full `GenerateRequest` JSON object or a partial override that only includes the fields you want to change. Partial overrides are merged onto the default fixture so you can vary a lesson title, grade level, curriculum, or optional hints without rebuilding the whole payload.
 
-The `renderer-only` mode proves Jinja2 plus WeasyPrint PDF rendering without calling Gemini. The `full-workflow` mode runs the real workflow against `tests/fixtures/legacy_evals/english_grade6_ph.json` and requires `GOOGLE_API_KEY` to be available in the environment or `backend/study-guide-agent/.env`.
+The `renderer-only` mode proves Jinja2 plus WeasyPrint PDF rendering without calling Gemini. The `full-workflow` mode runs the real workflow against `tests/fixtures/legacy_evals/english_grade6_ph.json` and auto-loads `backend/study-guide-agent/.env` for `GOOGLE_API_KEY` during local runs.
 
 The `full-workflow` JSON summary now includes both `validation_warning_count` and `validation_warnings`, which makes it easier to inspect remaining soft-validator output from the terminal without opening the PDF first.
 

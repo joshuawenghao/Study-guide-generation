@@ -20,8 +20,10 @@ import os
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import suppress
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any, Protocol, cast
 
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 
@@ -34,6 +36,9 @@ from google.adk.cli.fast_api import get_fast_api_app
 from app.agent import study_guide_workflow
 from app.app_utils.telemetry import setup_telemetry
 from app.types import GenerateRequest, GenerateResponse, ProgressEvent
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+load_dotenv(PROJECT_ROOT / ".env")
 
 setup_telemetry()
 
