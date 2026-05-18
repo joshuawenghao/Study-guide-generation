@@ -287,7 +287,7 @@ Notes: `frontend/app/page.tsx` now keeps `ProgressTracker` visible after complet
 ### Task 12.1 — Run the full app locally
 
 Status: `complete`
-Notes: The real local stack now completes an end-to-end UI run with a realistic Grade 6 English request: the controlled form submits, streamed progress events stay visible through validation and retry, the results workspace renders a 16-section preview, and the PDF download tab surfaces the backend-rendered file details and download control. `frontend/app/page.tsx` no longer aborts the generation request on its own stage transitions, `backend/study-guide-agent/app/app_utils/weasyprint_compat.py` now teaches local macOS runs how to resolve Homebrew WeasyPrint libraries before renderer import, and `./scripts/validate-task.sh` passed after the slice was validated in the browser.
+Notes: The real local stack now completes an end-to-end UI run with a realistic Grade 6 English request: the controlled form submits, streamed progress events stay visible through validation and retry, the results workspace renders the preview, and the PDF download tab surfaces the backend-rendered file details and download control. `frontend/app/page.tsx` no longer aborts the generation request on its own stage transitions, `backend/study-guide-agent/app/app_utils/weasyprint_compat.py` now teaches local macOS runs how to resolve Homebrew WeasyPrint libraries before renderer import, and the browser validation rerun after the answer-key fix now reaches `Results ready` with 0 failed sections and 0 best-effort sections for that same flow. `./scripts/validate-task.sh` passed after the relevant validation slices.
 
 ### Task 12.2 — Run scaffold-native evals
 

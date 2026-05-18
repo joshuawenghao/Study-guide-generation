@@ -279,12 +279,14 @@ async def test_study_guide_workflow_runs_sections_validation_retry_and_render(
         check_in: dict[str, Any],
         assessment_passage: dict[str, Any],
         assessment_questions: dict[str, Any],
+        step_up: dict[str, Any],
     ) -> dict[str, Any]:
         assert request_input == request
         assert blueprint_input == blueprint
         assert check_in["section"] == "check_in"
         assert assessment_passage["section"] == "assessment_passage"
         assert assessment_questions["section"] == "assessment_questions"
+        assert step_up["section"] == "step_up"
         return {"title": "Answer Key", "section": "answer_key"}
 
     validation_passes = 0

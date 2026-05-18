@@ -214,6 +214,12 @@ async def test_answer_key_output_shape(
     check_in = _build_check_in()
     assessment_passage = _build_assessment_passage()
     assessment_questions = _build_assessment_questions()
+    step_up = {
+        "title": "Step Up",
+        "challenge_prompt": "Use evidence from the passage to explain the author's purpose.",
+        "required_evidence": ['"protect coastlines"'],
+        "success_criteria": ["Answers use passage evidence."],
+    }
 
     async def fake_call_gemini(
         *,
@@ -231,6 +237,7 @@ async def test_answer_key_output_shape(
         assert "PH Grade 6 English" in system_prompt
         assert str(check_in_questions[0]["question"]) in user_prompt
         assert str(assessment_question_list[0]["question"]) in user_prompt
+        assert str(step_up["challenge_prompt"]) in user_prompt
         assert temperature == answer_key_module.TEMP_ANSWER_KEY
         assert max_retries == 2
         assert context_label == "answer_key"
@@ -254,6 +261,10 @@ async def test_answer_key_output_shape(
                         "evidence_quote": '"protect coastlines"',
                     }
                 ],
+                "step_up_answer": {
+                    "challenge_response": "The author informs and persuades by showing how mangroves protect coastlines.",
+                    "required_evidence": ['"protect coastlines"'],
+                },
                 "teacher_note": "Accept direct quotes from the passage.",
             }
         )
@@ -266,12 +277,14 @@ async def test_answer_key_output_shape(
         check_in,
         assessment_passage,
         assessment_questions,
+        step_up,
     )
 
     assert result.keys() == {
         "title",
         "check_in_answers",
         "assessment_answers",
+        "step_up_answer",
         "teacher_note",
     }
     assert result["check_in_answers"][0]["question_number"] == 1

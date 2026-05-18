@@ -13,6 +13,7 @@ def build_prompt(
     check_in = spec.get("check_in", {})
     assessment_passage = spec.get("assessment_passage", {})
     assessment_questions = spec.get("assessment_questions", {})
+    step_up = spec.get("step_up", {})
 
     check_in_questions = "\n".join(
         f"- Q{item.get('number', '?')}: {item.get('question', '')}"
@@ -22,6 +23,10 @@ def build_prompt(
     assessment_questions_text = "\n".join(
         f"- Q{item.get('number', '?')}: {item.get('question', '')}"
         for item in assessment_questions.get("questions", [])
+    )
+    step_up_prompt = step_up.get("challenge_prompt", "")
+    step_up_evidence = "\n".join(
+        f"- {item}" for item in step_up.get("required_evidence", [])
     )
 
     answer_key_schema = """{
@@ -42,6 +47,12 @@ def build_prompt(
             "evidence_quote": "string"
         }
     ],
+    "step_up_answer": {
+        "challenge_response": "string",
+        "required_evidence": [
+            "string"
+        ]
+    },
     "teacher_note": "string"
 }"""
 
@@ -55,10 +66,15 @@ def build_prompt(
         assessment_passage_text,
         "- Assessment questions:",
         assessment_questions_text or "- none provided",
+        "- Step-up prompt:",
+        step_up_prompt or "- none provided",
+        "- Step-up required evidence:",
+        step_up_evidence or "- none provided",
         "Requirements:",
         "- Provide one answer-key entry per check-in question and per assessment question.",
         "- Every possible_answer for assessment questions must contain at least one verbatim quoted phrase from the assessment passage.",
         "- Include an evidence_quote field that repeats the exact quoted phrase used from the assessment passage.",
+        "- Provide a step_up_answer object that answers the step-up prompt directly and repeats the required_evidence list.",
         "- Keep answers concise, student-appropriate, and structurally ready for downstream quote validation.",
         "Expected JSON schema:",
         answer_key_schema,

@@ -98,6 +98,18 @@ def _build_assessment_questions() -> dict[str, object]:
     }
 
 
+def _build_step_up() -> dict[str, object]:
+    return {
+        "title": "Step Up",
+        "challenge_prompt": "Use evidence from the passage to explain the author's purpose.",
+        "required_evidence": ['"protect coastlines"'],
+        "success_criteria": [
+            "Answers explain the purpose clearly.",
+            "Answers use evidence from the passage.",
+        ],
+    }
+
+
 @pytest.mark.asyncio
 async def test_generate_answer_key_returns_structured_json(
     monkeypatch: pytest.MonkeyPatch,
@@ -107,6 +119,7 @@ async def test_generate_answer_key_returns_structured_json(
     check_in = _build_check_in()
     assessment_passage = _build_assessment_passage()
     assessment_questions = _build_assessment_questions()
+    step_up = _build_step_up()
 
     async def fake_call_gemini(
         *,
@@ -123,6 +136,7 @@ async def test_generate_answer_key_returns_structured_json(
         assert "PH Grade 6 English" in system_prompt
         assert str(check_in_questions[0]["question"]) in user_prompt
         assert str(assessment_question_list[0]["question"]) in user_prompt
+        assert str(step_up["challenge_prompt"]) in user_prompt
         assert (
             '"Mangrove forests protect coastlines from strong waves."'
             not in user_prompt
@@ -151,6 +165,10 @@ async def test_generate_answer_key_returns_structured_json(
                         "evidence_quote": '"protect coastlines"',
                     }
                 ],
+                "step_up_answer": {
+                    "challenge_response": "The author wants readers to care and act because the passage explains how mangroves protect communities.",
+                    "required_evidence": ['"protect coastlines"'],
+                },
                 "teacher_note": "Accept answers that identify the purpose and cite a direct phrase from the passage.",
             }
         )
@@ -163,11 +181,13 @@ async def test_generate_answer_key_returns_structured_json(
         check_in,
         assessment_passage,
         assessment_questions,
+        step_up,
     )
 
     assert result["title"] == "Answer Key"
     assert result["check_in_answers"][0]["question_number"] == 1
     assert result["assessment_answers"][0]["evidence_quote"] == '"protect coastlines"'
+    assert result["step_up_answer"]["required_evidence"] == ['"protect coastlines"']
 
 
 @pytest.mark.asyncio
@@ -191,4 +211,5 @@ async def test_generate_answer_key_raises_on_malformed_json(
             _build_check_in(),
             _build_assessment_passage(),
             _build_assessment_questions(),
+            _build_step_up(),
         )

@@ -26,6 +26,7 @@ async def generate_answer_key(
     check_in: dict[str, Any],
     assessment_passage: dict[str, Any],
     assessment_questions: dict[str, Any],
+    step_up: dict[str, Any],
 ) -> dict[str, Any]:
     system_prompt = build_system_prompt(request)
     user_prompt = build_answer_key_prompt(
@@ -33,6 +34,7 @@ async def generate_answer_key(
             "check_in": check_in,
             "assessment_passage": assessment_passage,
             "assessment_questions": assessment_questions,
+            "step_up": step_up,
         },
         blueprint,
         request,
@@ -48,7 +50,14 @@ async def generate_answer_key(
 
 answer_key_node = cast(
     Callable[
-        [GenerateRequest, Blueprint, dict[str, Any], dict[str, Any], dict[str, Any]],
+        [
+            GenerateRequest,
+            Blueprint,
+            dict[str, Any],
+            dict[str, Any],
+            dict[str, Any],
+            dict[str, Any],
+        ],
         Any,
     ],
     node(generate_answer_key),

@@ -101,6 +101,7 @@ class StepUpNodeInput(AssessmentQuestionsNodeInput):
 class AnswerKeyNodeInput(AssessmentQuestionsNodeInput):
     check_in: dict[str, Any]
     assessment_questions: dict[str, Any]
+    step_up: dict[str, Any]
 
 
 class ValidationNodeInput(BaseModel):
@@ -175,6 +176,7 @@ def _retry_prompt_builder(
             "check_in": sections["check_in"],
             "assessment_passage": sections["assessment_passage"],
             "assessment_questions": sections["assessment_questions"],
+            "step_up": sections["step_up"],
         }
     raise ValueError(f"Unsupported retry section: {section_key}")
 
@@ -338,6 +340,7 @@ async def _generate_answer_key_node(
         node_input.check_in,
         node_input.assessment_passage,
         node_input.assessment_questions,
+        node_input.step_up,
     )
 
 
@@ -520,6 +523,7 @@ async def study_guide_workflow(
             check_in=check_in,
             assessment_passage=assessment_passage,
             assessment_questions=assessment_questions,
+            step_up=step_up,
         ),
     )
 
