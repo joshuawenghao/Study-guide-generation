@@ -296,8 +296,8 @@ Notes: Scaffold-native CLI and eval loading now use a cleaner separation: the co
 
 ### Task 12.3 — Run backend tests
 
-Status: `partial`
-Notes: Scaffold test structure exists, but the real study-guide implementation does not yet have matching backend test coverage.
+Status: `complete`
+Notes: The real backend test suite now runs cleanly from `backend/study-guide-agent/` with `uv run pytest tests/unit tests/integration`, covering the implemented workflow, validators, renderer, section nodes, prompt templates, FastAPI boot path, and orchestrator retry flow. The focused backend validation passed at 48 tests passed and 0 failed, and `./scripts/validate-task.sh` also passed afterward.
 
 ### Task 12.4 — Verify IFC must-haves
 
