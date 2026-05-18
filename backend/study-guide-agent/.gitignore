@@ -196,6 +196,7 @@ my_env.tfvars
 .requirements.txt
 .google-agents-cli/
 study_guide_agent/.adk/
+eval_app/.adk/
 demo-output/
 .nltk_data/
 

@@ -13,7 +13,7 @@
         }
       ],
       "session_input": {
-        "app_name": "app",
+        "app_name": "eval_app",
         "user_id": "eval_user",
         "state": {}
       }
@@ -28,7 +28,7 @@
         }
       ],
       "session_input": {
-        "app_name": "app",
+        "app_name": "eval_app",
         "user_id": "eval_user",
         "state": {}
       }

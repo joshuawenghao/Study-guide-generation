@@ -2,6 +2,8 @@
 
 This directory contains evaluation sets for testing agent behavior using `agents-cli eval run`.
 
+In this repository, the repo-local `./agents-cli` wrapper routes local conversational evals to the dedicated `eval_app/` surface instead of loading the product implementation package under `app/`.
+
 The scaffold also contains preserved legacy fixtures under `tests/fixtures/legacy_evals/`. Those JSON files are not agents-cli evalsets; they are structured study-guide acceptance fixtures migrated from the original backend prototype.
 
 ## Running Evaluations
@@ -40,7 +42,7 @@ Each `.evalset.json` follows the ADK evaluation format:
         }
       ],
       "session_input": {
-        "app_name": "app_name",
+        "app_name": "eval_app",
         "user_id": "test_user",
         "state": {}
       }

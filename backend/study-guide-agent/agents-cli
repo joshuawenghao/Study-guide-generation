@@ -2,6 +2,105 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+
+run_local_eval() {
+  local default_evalset="tests/eval/evalsets/basic.evalset.json"
+  local config_path="tests/eval/eval_config.json"
+  local -a evalsets=()
+  local -a passthrough=()
+  local -a command=()
+
+  while (($#)); do
+    case "$1" in
+      --evalset)
+        if (($# < 2)); then
+          echo "Missing value for --evalset" >&2
+          exit 2
+        fi
+        evalsets+=("$2")
+        shift 2
+        ;;
+      --all)
+        while IFS= read -r evalset; do
+          evalsets+=("${evalset#"$SCRIPT_DIR/"}")
+        done < <(find "$SCRIPT_DIR/tests/eval/evalsets" -maxdepth 1 -type f -name '*.evalset.json' | sort)
+        shift
+        ;;
+      --config|--config_file_path)
+        if (($# < 2)); then
+          echo "Missing value for $1" >&2
+          exit 2
+        fi
+        config_path="$2"
+        shift 2
+        ;;
+      --help|-h)
+        echo "Local wrapper for scaffold evals. Supported flags: --evalset <file>, --all, --config <file>."
+        echo "Other flags are passed through to 'uv run adk eval'."
+        exit 0
+        ;;
+      *)
+        passthrough+=("$1")
+        shift
+        ;;
+    esac
+  done
+
+  if ((${#evalsets[@]} == 0)); then
+    evalsets=("$default_evalset")
+  fi
+
+  cd "$SCRIPT_DIR"
+  uv sync --dev --extra eval
+  command=(uv run adk eval ./eval_app "${evalsets[@]}" --config_file_path "$config_path")
+  if ((${#passthrough[@]} > 0)); then
+    command+=("${passthrough[@]}")
+  fi
+  exec "${command[@]}"
+}
+
+run_local_chat() {
+  local -a forwarded=()
+
+  while (($#)); do
+    case "$1" in
+      --stop-server|--verbose)
+        shift
+        ;;
+      --help|-h|--url|--mode)
+        break
+        ;;
+      *)
+        forwarded+=("$1")
+        shift
+        ;;
+    esac
+  done
+
+  if (($# > 0)); then
+    return 1
+  fi
+
+  cd "$SCRIPT_DIR"
+  if ((${#forwarded[@]} > 0)); then
+    exec uv run adk run ./eval_app "${forwarded[@]}"
+  fi
+  exec uv run adk run ./eval_app
+}
+
+if (($# >= 2)) && [[ "$1" == "eval" ]] && [[ "$2" == "run" ]]; then
+  shift 2
+  run_local_eval "$@"
+fi
+
+if (($# >= 1)) && [[ "$1" == "run" ]]; then
+  shift
+  if run_local_chat "$@"; then
+    exit 0
+  fi
+fi
+
 if [[ -x "$HOME/.local/bin/agents-cli" ]]; then
   exec "$HOME/.local/bin/agents-cli" "$@"
 fi

@@ -2,11 +2,23 @@
 
 from __future__ import annotations
 
+import importlib
+import sys
+from pathlib import Path
+
+from dotenv import load_dotenv
 from google.adk.agents import Agent
 from google.adk.apps import App
 
-from app.app_utils.adk_compat import ensure_google_adk_beta_compat
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
+ensure_google_adk_beta_compat = importlib.import_module(
+    "app.app_utils.adk_compat"
+).ensure_google_adk_beta_compat
+
+load_dotenv(PROJECT_ROOT / ".env")
 ensure_google_adk_beta_compat()
 
 root_agent = Agent(
@@ -38,4 +50,4 @@ root_agent = Agent(
     ),
 )
 
-app = App(root_agent=root_agent, name="app")
+app = App(root_agent=root_agent, name="eval_app")

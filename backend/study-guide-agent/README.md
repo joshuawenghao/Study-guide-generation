@@ -122,7 +122,9 @@ The `full-workflow` JSON summary now includes both `validation_warning_count` an
 
 You can also use features from the [ADK](https://adk.dev/) CLI with `uv run adk`, or use `agents-cli playground` for the scaffolded agent playground.
 
-Scaffold-native conversational CLI and eval flows now run through `app/eval_agent.py` when you target `./app`, while the real typed study-guide workflow used by the backend `/generate` endpoint remains in `app/agent.py`.
+Scaffold-native conversational CLI and eval flows now run through the dedicated `eval_app/` loader surface, while the real typed study-guide workflow used by the backend `/generate` endpoint remains under `app/agent.py` and the ADK loader compatibility package remains `study_guide_agent/`.
+
+This keeps `app/` as implementation code for the real generator instead of overloading it as both a product package and a conversational eval surface.
 
 Run the scaffold-native evalset from this directory with:
 
@@ -131,7 +133,13 @@ export PATH="$HOME/.local/bin:$PATH"
 ./agents-cli eval run
 ```
 
-The current evalset under `tests/eval/evalsets/basic.evalset.json` targets the scaffold loader app name `app`, which must match the loaded `./app` directory for ADK eval runs.
+For simple local conversational spot checks, you can also run:
+
+```bash
+./agents-cli run "What kind of study guides can you generate for teachers?"
+```
+
+The repo-local wrapper routes these local chat and eval commands to `./eval_app`, and the current evalset under `tests/eval/evalsets/basic.evalset.json` therefore uses the ADK app name `eval_app`.
 
 ## Commands
 
