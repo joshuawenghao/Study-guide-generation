@@ -133,6 +133,7 @@ It is intended to answer, in words, what currently exists in the repository with
 - Phase 12 validation is now underway in earnest: one real local browser run has been completed against the live backend and frontend dev servers, confirming streamed progress, rendered preview output, and the PDF download surface for the current implementation.
 - Phase 12 validation now also includes a passing scaffold-native `./agents-cli eval run` against `tests/eval/evalsets/basic.evalset.json`, confirming that the scaffolded conversational CLI/eval surface responds helpfully while the repo-level done gate still passes afterward.
 - The Phase 12 browser validation path has also been rerun after the answer-key fix: the live UI now reaches `Results ready` with zero failed sections and zero best-effort sections for the same Grade 6 English request, leaving only non-blocking reading-level warnings in that run.
+- Phase 12 IFC acceptance verification is now complete: the repo done gate passes, the full backend suite passes at 48 tests, and the focused workflow, renderer, and validator slice passes at 8 tests, backing the must-have claims around section dependency order, single-pass retry, hard-validator enforcement, canonical preview/PDF ordering, answer-key page breaks, market-aware prompting, and frontend-to-backend-only model access.
 - The repo-level validation script now also runs backend Pyright against the shared repo `pyrightconfig.json`, so editor-visible backend type errors can fail the done gate before a task is marked complete.
 - Backend pytest output is now filtered for the two known upstream Google ADK experimental credential-service `UserWarning`s, so the done gate stays clean without suppressing unrelated test warnings.
 - The frontend now also declares CSS imports for TypeScript through `frontend/global.d.ts`, so App Router files like `frontend/app/layout.tsx` no longer depend on editor-local suppression behavior for `globals.css` side-effect imports.
@@ -142,5 +143,5 @@ It is intended to answer, in words, what currently exists in the repository with
 
 - Wave 1, Wave 2, Wave 3, and answer-key generation are implemented; the validator layer now includes its aggregator node, five hard validators, two soft validators, broad isolated test coverage, and the complete Phase 6 renderer slice including template, node, and focused renderer tests.
 - Workflow orchestration and focused backend integration coverage are now implemented.
-- The remaining major gaps are the unfinished Phase 12 validation work plus the unfinished Phase 13 parity and remote deployment tasks.
+- The remaining major gaps now sit in Phase 13 parity and remote deployment work.
 - Deployment is now specified, and the backend image plus Cloud Run backend configuration path are in place, but the parity stack, Vercel setup, and staged remote deployment checkpoints are still not implemented or validated end to end.
