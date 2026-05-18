@@ -12,6 +12,7 @@ from typing import Any, cast
 from pydantic import BaseModel
 
 from app.app_utils.adk_compat import ensure_google_adk_beta_compat
+from app.app_utils.weasyprint_compat import ensure_weasyprint_runtime_compat
 
 ensure_google_adk_beta_compat()
 
@@ -79,6 +80,8 @@ def _load_template() -> Any:
 
 
 def _render_pdf_bytes(html: str) -> bytes:
+    ensure_weasyprint_runtime_compat()
+
     from weasyprint import HTML
 
     pdf_bytes = HTML(string=html).write_pdf()

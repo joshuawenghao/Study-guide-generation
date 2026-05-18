@@ -136,7 +136,7 @@ export default function Home() {
   }, [stage]);
 
   useEffect(() => {
-    if (stage !== "planning" || !pendingRequest) {
+    if (!pendingRequest) {
       return;
     }
 
@@ -263,7 +263,7 @@ export default function Home() {
         abortControllerRef.current = null;
       }
     };
-  }, [pendingRequest, stage]);
+  }, [pendingRequest]);
 
   function handleFormSubmit(request: GenerateRequest) {
     try {

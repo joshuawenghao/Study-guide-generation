@@ -94,6 +94,8 @@ Test the agent with a local web server:
 uv run uvicorn app.fast_api_app:app --reload --host 0.0.0.0 --port 8000
 ```
 
+On macOS, the renderer now auto-resolves common Homebrew WeasyPrint libraries from `/opt/homebrew/opt` and `/usr/local/opt` before importing WeasyPrint. The local PDF path still expects the relevant formulas to be installed, but you no longer need to hand-wire library paths just to run the study-guide UI or demo flow.
+
 Generate local demo PDFs without starting the server:
 
 ```bash

@@ -1,6 +1,6 @@
 # Task Status
 
-Last updated: 2026-05-15
+Last updated: 2026-05-18
 
 This file mirrors the structure of `TASKS.md` and records the current repo state against each task directly.
 Use it together with `TASKS.md`:
@@ -286,8 +286,8 @@ Notes: `frontend/app/page.tsx` now keeps `ProgressTracker` visible after complet
 
 ### Task 12.1 — Run the full app locally
 
-Status: `not started`
-Notes: No completed end-to-end local run has been recorded for the real study-guide flow.
+Status: `complete`
+Notes: The real local stack now completes an end-to-end UI run with a realistic Grade 6 English request: the controlled form submits, streamed progress events stay visible through validation and retry, the results workspace renders a 16-section preview, and the PDF download tab surfaces the backend-rendered file details and download control. `frontend/app/page.tsx` no longer aborts the generation request on its own stage transitions, `backend/study-guide-agent/app/app_utils/weasyprint_compat.py` now teaches local macOS runs how to resolve Homebrew WeasyPrint libraries before renderer import, and `./scripts/validate-task.sh` passed after the slice was validated in the browser.
 
 ### Task 12.2 — Run scaffold-native evals
 
