@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable
+from difflib import SequenceMatcher
 from typing import Any, cast
 
 from app.app_utils.adk_compat import ensure_google_adk_beta_compat
@@ -39,38 +40,215 @@ def _normalize_evidence_quote(value: str) -> str:
     return value.strip()
 
 
-def _normalize_assessment_answer_quotes(
-    answer_key: dict[str, Any], assessment_passage: dict[str, Any]
+def _collect_quote_candidates(assessment_passage: dict[str, Any]) -> list[str]:
+    passage_lines = [
+        str(item).strip()
+        for item in assessment_passage.get("passage", [])
+        if str(item).strip()
+    ]
+    passage_text = "\n".join(passage_lines)
+
+    candidates: list[str] = []
+    for clue in assessment_passage.get("evidence_clues", []):
+        normalized_clue = str(clue).strip()
+        if (
+            normalized_clue
+            and normalized_clue in passage_text
+            and normalized_clue not in candidates
+        ):
+            candidates.append(normalized_clue)
+
+    for paragraph in passage_lines:
+        if paragraph and paragraph not in candidates:
+            candidates.append(paragraph)
+
+        for fragment in paragraph.replace(";", ",").split(","):
+            normalized_fragment = fragment.strip()
+            if (
+                len(normalized_fragment.split()) >= 3
+                and normalized_fragment in passage_text
+                and normalized_fragment not in candidates
+            ):
+                candidates.append(normalized_fragment)
+
+    return candidates
+
+
+def _quote_token_overlap_score(candidate: str, target: str) -> float:
+    candidate_tokens = {
+        token for token in re.findall(r"[A-Za-z0-9']+", candidate.lower()) if token
+    }
+    target_tokens = {
+        token for token in re.findall(r"[A-Za-z0-9']+", target.lower()) if token
+    }
+    if not candidate_tokens or not target_tokens:
+        return 0.0
+    return len(candidate_tokens & target_tokens) / len(candidate_tokens | target_tokens)
+
+
+def _best_matching_quote_candidate(
+    targets: list[str], quote_candidates: list[str]
+) -> str | None:
+    best_candidate: str | None = None
+    best_score = 0.0
+
+    for candidate in quote_candidates:
+        for target in targets:
+            normalized_target = target.strip()
+            if not normalized_target:
+                continue
+            sequence_score = SequenceMatcher(
+                None, candidate.lower(), normalized_target.lower()
+            ).ratio()
+            overlap_score = _quote_token_overlap_score(candidate, normalized_target)
+            score = max(sequence_score, overlap_score)
+            if score > best_score:
+                best_score = score
+                best_candidate = candidate
+
+    if best_score >= 0.4:
+        return best_candidate
+    return None
+
+
+def _quote_text(value: str) -> str:
+    return f'"{value}"'
+
+
+def _strip_nonverbatim_quotes(value: str, exact_quote: str | None) -> str:
+    cleaned_value = value
+    for phrase in _extract_quoted_phrases(value):
+        if exact_quote is not None and phrase == exact_quote:
+            continue
+        cleaned_value = cleaned_value.replace(f'"{phrase}"', phrase).replace(
+            f"“{phrase}”", phrase
+        )
+    return cleaned_value
+
+
+def _find_assessment_answer_source(
+    raw_answers: list[dict[str, Any]], index: int, question_spec: dict[str, Any]
+) -> dict[str, Any]:
+    question_number = question_spec.get("number")
+    question_text = str(question_spec.get("question", "")).strip()
+
+    for answer in raw_answers:
+        if answer.get("question_number") == question_number:
+            return answer
+
+    for answer in raw_answers:
+        if str(answer.get("question", "")).strip() == question_text:
+            return answer
+
+    if 0 <= index < len(raw_answers):
+        return raw_answers[index]
+
+    return {}
+
+
+def _build_assessment_possible_answer(
+    *,
+    answer_expectation: str,
+    fallback_answer: str,
+    quote_candidate: str | None,
+) -> str:
+    base_answer = answer_expectation.strip() or fallback_answer.strip()
+    base_answer = _strip_nonverbatim_quotes(base_answer, quote_candidate)
+    if quote_candidate is None:
+        return base_answer
+
+    if (
+        _quote_text(quote_candidate) in base_answer
+        or f"“{quote_candidate}”" in base_answer
+    ):
+        return base_answer
+
+    trimmed_base = base_answer.rstrip(" .")
+    if not trimmed_base:
+        return f"Evidence from the passage: {_quote_text(quote_candidate)}."
+
+    return f"{trimmed_base}. Evidence from the passage: {_quote_text(quote_candidate)}."
+
+
+def normalize_answer_key_payload(
+    answer_key: dict[str, Any],
+    assessment_passage: dict[str, Any],
+    assessment_questions: dict[str, Any],
 ) -> dict[str, Any]:
     passage_text = "\n".join(assessment_passage.get("passage", []))
+    quote_candidates = _collect_quote_candidates(assessment_passage)
+    raw_answers = [dict(answer) for answer in answer_key.get("assessment_answers", [])]
     normalized_answers: list[dict[str, Any]] = []
 
-    for raw_answer in answer_key.get("assessment_answers", []):
-        answer = dict(raw_answer)
+    for index, raw_question_spec in enumerate(
+        assessment_questions.get("questions", [])
+    ):
+        question_spec = dict(raw_question_spec)
+        answer = _find_assessment_answer_source(raw_answers, index, question_spec)
         possible_answer = str(answer.get("possible_answer", "")).strip()
         evidence_quote = str(answer.get("evidence_quote", "")).strip()
         normalized_evidence_quote = _normalize_evidence_quote(evidence_quote)
         quoted_phrases = _extract_quoted_phrases(possible_answer)
+        exact_quoted_phrase = next(
+            (phrase for phrase in quoted_phrases if phrase in passage_text),
+            None,
+        )
 
-        if (
-            quoted_phrases
-            or not evidence_quote
-            or not normalized_evidence_quote
-            or normalized_evidence_quote not in passage_text
-        ):
-            normalized_answers.append(answer)
-            continue
+        best_candidate = exact_quoted_phrase
+        if best_candidate is None and normalized_evidence_quote in passage_text:
+            best_candidate = normalized_evidence_quote
+        if best_candidate is None:
+            match_targets = [
+                *quoted_phrases,
+                normalized_evidence_quote,
+                possible_answer,
+                str(question_spec.get("question", "")),
+                str(question_spec.get("answer_expectation", "")),
+                str(question_spec.get("evidence_requirement", "")),
+            ]
+            best_candidate = _best_matching_quote_candidate(
+                match_targets, quote_candidates
+            )
 
-        separator = " " if possible_answer else ""
-        answer["possible_answer"] = (
-            f"{possible_answer}{separator}Evidence from the passage: {evidence_quote}."
-        ).strip()
-        normalized_answers.append(answer)
+        normalized_answers.append(
+            {
+                "question_number": question_spec.get(
+                    "number", answer.get("question_number", index + 1)
+                ),
+                "question": str(question_spec.get("question", "")).strip()
+                or str(answer.get("question", "")).strip(),
+                "possible_answer": _build_assessment_possible_answer(
+                    answer_expectation=str(question_spec.get("answer_expectation", "")),
+                    fallback_answer=possible_answer,
+                    quote_candidate=best_candidate,
+                ),
+                "evidence_quote": (
+                    _quote_text(best_candidate)
+                    if best_candidate is not None
+                    else evidence_quote
+                ),
+            }
+        )
+
+    if not normalized_answers:
+        return answer_key
 
     return {
         **answer_key,
         "assessment_answers": normalized_answers,
     }
+
+
+def _normalize_assessment_answer_quotes(
+    answer_key: dict[str, Any],
+    assessment_passage: dict[str, Any],
+    assessment_questions: dict[str, Any],
+) -> dict[str, Any]:
+    return normalize_answer_key_payload(
+        answer_key,
+        assessment_passage,
+        assessment_questions,
+    )
 
 
 async def generate_answer_key(
@@ -99,7 +277,11 @@ async def generate_answer_key(
         context_label="answer_key",
     )
     parsed_response = _parse_section_response(response_text, "answer_key")
-    return _normalize_assessment_answer_quotes(parsed_response, assessment_passage)
+    return _normalize_assessment_answer_quotes(
+        parsed_response,
+        assessment_passage,
+        assessment_questions,
+    )
 
 
 answer_key_node = cast(

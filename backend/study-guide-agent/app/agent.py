@@ -20,7 +20,10 @@ from app.nodes.base import TEMP_RETRY, call_gemini
 from app.nodes.blueprint import blueprint_node
 from app.nodes.renderer import generate_rendered_response
 from app.nodes.sections import _parse_section_response
-from app.nodes.sections.answer_key import generate_answer_key
+from app.nodes.sections.answer_key import (
+    generate_answer_key,
+    normalize_answer_key_payload,
+)
 from app.nodes.sections.assessment_passage import generate_assessment_passage
 from app.nodes.sections.assessment_questions import generate_assessment_questions
 from app.nodes.sections.check_in import generate_check_in
@@ -225,7 +228,14 @@ async def _generate_retry_payload(node_input: RetryNodeInput) -> Any:
         temperature=TEMP_RETRY,
         context_label=f"{node_input.section_key}_retry",
     )
-    return _parse_section_response(response_text, node_input.section_key)
+    parsed_response = _parse_section_response(response_text, node_input.section_key)
+    if node_input.section_key == "answer_key":
+        return normalize_answer_key_payload(
+            parsed_response,
+            node_input.sections["assessment_passage"],
+            node_input.sections["assessment_questions"],
+        )
+    return parsed_response
 
 
 def _build_retry_node(section_key: str, attempt: int) -> Any:

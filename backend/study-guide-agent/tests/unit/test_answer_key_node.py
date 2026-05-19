@@ -80,6 +80,7 @@ def _build_assessment_passage() -> dict[str, object]:
             "Mangrove forests protect coastlines from strong waves.",
             "They help both people and wildlife stay safe.",
         ],
+        "evidence_clues": ["protect coastlines", "stay safe"],
     }
 
 
@@ -137,11 +138,9 @@ async def test_generate_answer_key_returns_structured_json(
         assert str(check_in_questions[0]["question"]) in user_prompt
         assert str(assessment_question_list[0]["question"]) in user_prompt
         assert str(step_up["challenge_prompt"]) in user_prompt
-        assert (
-            '"Mangrove forests protect coastlines from strong waves."'
-            not in user_prompt
-        )
+        assert '"Mangrove forests protect coastlines from strong waves."' in user_prompt
         assert "Mangrove forests protect coastlines from strong waves." in user_prompt
+        assert '"protect coastlines"' in user_prompt
         assert temperature == answer_key_module.TEMP_ANSWER_KEY
         assert max_retries == 2
         assert context_label == "answer_key"
@@ -254,4 +253,158 @@ async def test_generate_answer_key_repairs_missing_assessment_quote_from_evidenc
         _build_step_up(),
     )
 
+    assert '"protect coastlines"' in result["assessment_answers"][0]["possible_answer"]
+
+
+@pytest.mark.asyncio
+async def test_generate_answer_key_repairs_nonverbatim_quote_to_exact_passage_phrase(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = _load_request_from_fixture()
+    blueprint = _build_blueprint(request)
+
+    async def fake_call_gemini(**_: object) -> str:
+        return json.dumps(
+            {
+                "title": "Answer Key",
+                "check_in_answers": [],
+                "assessment_answers": [
+                    {
+                        "question_number": 1,
+                        "question": "What is the author's purpose in this article?",
+                        "possible_answer": 'The author wants to inform readers because "protects coastlines" shows why mangroves matter.',
+                        "evidence_quote": '"protects coastlines"',
+                    }
+                ],
+                "step_up_answer": {
+                    "challenge_response": "The author explains why mangroves protect communities.",
+                    "required_evidence": ['"protect coastlines"'],
+                },
+                "teacher_note": "Accept answers that identify purpose and cite direct evidence.",
+            }
+        )
+
+    monkeypatch.setattr(answer_key_module, "call_gemini", fake_call_gemini)
+
+    result = await answer_key_module.generate_answer_key(
+        request,
+        blueprint,
+        _build_check_in(),
+        _build_assessment_passage(),
+        _build_assessment_questions(),
+        _build_step_up(),
+    )
+
+    assert result["assessment_answers"][0]["evidence_quote"] == '"protect coastlines"'
+    assert '"protect coastlines"' in result["assessment_answers"][0]["possible_answer"]
+    assert (
+        result["assessment_answers"][0]["question"]
+        == "What is the author's purpose in this article?"
+    )
+
+
+@pytest.mark.asyncio
+async def test_generate_answer_key_realigns_assessment_answers_to_upstream_questions(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = _load_request_from_fixture()
+    blueprint = _build_blueprint(request)
+
+    async def fake_call_gemini(**_: object) -> str:
+        return json.dumps(
+            {
+                "title": "Answer Key",
+                "check_in_answers": [],
+                "assessment_answers": [
+                    {
+                        "question_number": 99,
+                        "question": "What components were included in the program?",
+                        "possible_answer": "The program improved infection control.",
+                        "evidence_quote": '"protect coastlines"',
+                    }
+                ],
+                "step_up_answer": {
+                    "challenge_response": "The author explains why mangroves protect communities.",
+                    "required_evidence": ['"protect coastlines"'],
+                },
+                "teacher_note": "Accept answers that identify purpose and cite direct evidence.",
+            }
+        )
+
+    monkeypatch.setattr(answer_key_module, "call_gemini", fake_call_gemini)
+
+    result = await answer_key_module.generate_answer_key(
+        request,
+        blueprint,
+        _build_check_in(),
+        _build_assessment_passage(),
+        _build_assessment_questions(),
+        _build_step_up(),
+    )
+
+    assert result["assessment_answers"] == [
+        {
+            "question_number": 1,
+            "question": "What is the author's purpose in this article?",
+            "possible_answer": 'Identify the purpose and explain it. Evidence from the passage: "protect coastlines".',
+            "evidence_quote": '"protect coastlines"',
+        }
+    ]
+
+
+@pytest.mark.asyncio
+async def test_generate_answer_key_strips_nonverbatim_quotes_from_answer_expectation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = _load_request_from_fixture()
+    blueprint = _build_blueprint(request)
+    assessment_questions = {
+        "title": "Assessment Questions",
+        "questions": [
+            {
+                "number": 1,
+                "question": "What is the author's purpose in this article?",
+                "question_type": "short_response",
+                "answer_expectation": 'The author informs readers because "protects coastlines" explains why mangroves matter.',
+                "evidence_requirement": "Quote a phrase that explains why mangroves matter.",
+            }
+        ],
+    }
+
+    async def fake_call_gemini(**_: object) -> str:
+        return json.dumps(
+            {
+                "title": "Answer Key",
+                "check_in_answers": [],
+                "assessment_answers": [
+                    {
+                        "question_number": 1,
+                        "question": "Different question",
+                        "possible_answer": "Fallback answer.",
+                        "evidence_quote": '"protect coastlines"',
+                    }
+                ],
+                "step_up_answer": {
+                    "challenge_response": "The author explains why mangroves protect communities.",
+                    "required_evidence": ['"protect coastlines"'],
+                },
+                "teacher_note": "Accept answers that identify purpose and cite direct evidence.",
+            }
+        )
+
+    monkeypatch.setattr(answer_key_module, "call_gemini", fake_call_gemini)
+
+    result = await answer_key_module.generate_answer_key(
+        request,
+        blueprint,
+        _build_check_in(),
+        _build_assessment_passage(),
+        assessment_questions,
+        _build_step_up(),
+    )
+
+    assert (
+        '"protects coastlines"'
+        not in result["assessment_answers"][0]["possible_answer"]
+    )
     assert '"protect coastlines"' in result["assessment_answers"][0]["possible_answer"]
