@@ -252,6 +252,27 @@ Frontend deployment requirements:
 - production points to the production Cloud Run backend
 - environment switching is handled only through Vercel settings
 
+### Vercel project settings
+
+Set `ADK_BACKEND_URL` in the Vercel project for each environment instead of committing deployed values to the repo:
+
+- `Development`: optional Vercel development environment value when using `vercel dev`
+- `Preview`: the dev Cloud Run service URL
+- `Production`: the production Cloud Run service URL
+
+This keeps the frontend deployment path environment-driven. The same built app and the same proxy route can be used across preview and production; only the Vercel environment value changes.
+
+The proxy route at `frontend/app/api/generate/route.ts` is already compatible with this contract because it reads `ADK_BACKEND_URL` at runtime and forwards requests without embedding backend-specific business logic.
+
+### Frontend deployment checklist
+
+Before considering the frontend Vercel path configured, confirm all of the following:
+
+- `ADK_BACKEND_URL` is set in Vercel Preview to the dev Cloud Run backend URL
+- `ADK_BACKEND_URL` is set in Vercel Production to the production Cloud Run backend URL
+- no frontend code or committed env file changes are required when switching environments
+- the backend `BACKEND_CORS_ALLOW_ORIGINS` value includes the active preview domain for dev and only the production domain for prod
+
 ## Staged deployment checkpoints
 
 Do not postpone deployment testing until the full app is complete.

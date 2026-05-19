@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Frontend
 
-## Getting Started
+This directory contains the Next.js 14 frontend for the study-guide generation app.
 
-First, run the development server:
+## Local development
+
+Install dependencies and start the dev server:
 
 ```bash
+cd frontend
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The frontend reads `ADK_BACKEND_URL` from `frontend/.env.local` during local development.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Local example:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```env
+ADK_BACKEND_URL=http://localhost:8000
+```
 
-## Learn More
+## Production and parity runs
 
-To learn more about Next.js, take a look at the following resources:
+Build and start the production frontend locally:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+cd frontend
+npm run build
+ADK_BACKEND_URL=http://127.0.0.1:8080 npm run start
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+For the repo-standardized production-like local stack, use `./scripts/run-local-parity.sh` from the repository root.
 
-## Deploy on Vercel
+## Vercel deployment contract
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The frontend deployment path assumes Vercel for hosting and Cloud Run for the backend.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Set `ADK_BACKEND_URL` in Vercel Project Settings instead of editing frontend code:
+
+- `Development`: the local or shared dev backend URL when using Vercel's development environment
+- `Preview`: the dev Cloud Run backend URL
+- `Production`: the production Cloud Run backend URL
+
+The proxy route at `frontend/app/api/generate/route.ts` must remain thin. It forwards requests to `ADK_BACKEND_URL` and does not contain environment-specific business logic. Switching preview and production backends should require only Vercel environment-variable changes.
+
+## Validation
+
+The repo-level validation entrypoint is `./scripts/validate-task.sh` from the repository root. For frontend-only validation, the narrow checks are:
+
+```bash
+cd frontend
+npm run format:check
+npm run lint
+npm run typecheck
+npm run build
+```

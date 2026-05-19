@@ -328,8 +328,8 @@ Notes: `app/fast_api_app.py` now reads deployment-facing runtime configuration f
 
 ### Task 13.5 — Configure the frontend deployment for Vercel
 
-Status: `not started`
-Notes: The repo now recommends Vercel for the frontend, but preview and production environment configuration have not been set up or validated yet.
+Status: `complete`
+Notes: `DEPLOYMENT.md` now documents the Vercel project-settings contract for `ADK_BACKEND_URL` across Development, Preview, and Production, `frontend/README.md` now documents the frontend deployment path and the requirement that `frontend/app/api/generate/route.ts` stay thin and environment-driven, and `frontend/.env.local.example` now explicitly marks the committed example as local-only while directing deployed values to Vercel project settings. Focused validation passed by running the same built frontend with different runtime `ADK_BACKEND_URL` configurations and observing different proxy behavior without code changes, and `./scripts/validate-task.sh` also passed.
 
 ### Task 13.6 — Run staged deployment checkpoints
 
