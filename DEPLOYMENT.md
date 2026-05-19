@@ -60,6 +60,35 @@ Local parity mode should preserve these constraints:
 
 Fast local dev is still the default development loop. Local parity exists for debugging deployment behavior, not for daily iteration speed.
 
+### Repo-standardized local parity command
+
+The repo-standardized local parity entrypoint is:
+
+```bash
+./scripts/run-local-parity.sh
+```
+
+That command keeps the two-runtime split intact by:
+
+- building the backend image from `backend/study-guide-agent/Dockerfile`
+- running the backend container locally with the Cloud Run-style `PORT` contract
+- loading backend secrets and config from `backend/study-guide-agent/.env`
+- building the frontend in production mode and starting `next start`
+- injecting `ADK_BACKEND_URL` so the frontend proxy talks to the local backend container without application code changes
+
+Prerequisites:
+
+- a running Docker daemon, for example Docker Desktop or Colima
+- `backend/study-guide-agent/.env` present locally
+- frontend dependencies installed with `cd frontend && npm install`
+
+Default ports:
+
+- frontend: `3000`
+- backend: `8080`
+
+You can override the defaults with environment variables such as `FRONTEND_PORT`, `BACKEND_PORT`, `BACKEND_IMAGE`, and `BACKEND_CONTAINER` when needed.
+
 ## Environment and secret ownership
 
 ### Frontend
@@ -93,7 +122,7 @@ Backend deployment requirements:
 - request timeout is set for long-running generation requests
 - configuration comes from environment variables, not code edits
 
-The repo currently includes a backend Dockerfile and `agents-cli deploy`, and the Dockerfile now installs the Linux runtime libraries WeasyPrint needs plus a build-time PDF smoke check. A local `docker build` now succeeds for that image definition in this workspace. However, the exact validated project-specific path still needs to be completed under Phase 13 because a real container run and Cloud Run-shaped parity check have not yet been verified here.
+The repo currently includes a backend Dockerfile and `agents-cli deploy`, and the Dockerfile now installs the Linux runtime libraries WeasyPrint needs plus a build-time PDF smoke check. The project-specific local parity path is now standardized and validated through `./scripts/run-local-parity.sh`, which runs the same backend image shape locally while serving the frontend through its production Next.js runtime.
 
 ### Backend container commands
 
