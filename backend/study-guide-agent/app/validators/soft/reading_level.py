@@ -121,10 +121,30 @@ def _warning_tolerance(target_grade_level: int, section_key: str) -> float:
         tolerance = 1.5
     elif target_grade_level <= 6:
         tolerance = 1.25
+    elif target_grade_level >= 11:
+        tolerance = 1.5
     else:
         tolerance = 1.0
 
     if section_key == "intro" and target_grade_level <= 6:
+        tolerance += 0.5
+
+    if (
+        section_key in {"model_passage", "assessment_passage"}
+        and target_grade_level >= 9
+    ):
+        tolerance += 0.25
+
+    return tolerance
+
+
+def _low_warning_tolerance(target_grade_level: int, section_key: str) -> float:
+    tolerance = _warning_tolerance(target_grade_level, section_key) + 1.0
+
+    if target_grade_level >= 9:
+        tolerance += 0.5
+
+    if section_key in {"model_passage", "assessment_passage"}:
         tolerance += 0.5
 
     return tolerance
@@ -164,13 +184,16 @@ def validate_reading_level(
                 )
                 break
 
-        if abs(grade_score - target_grade_level) <= _warning_tolerance(
-            target_grade_level, section_key
-        ):
+        score_delta = grade_score - target_grade_level
+        if score_delta > _warning_tolerance(target_grade_level, section_key):
+            warnings.append(
+                f"Reading level warning for {section_key}: Flesch-Kincaid grade {grade_score:.1f} is above the target grade band for Grade {target_grade_level}."
+            )
             continue
 
-        warnings.append(
-            f"Reading level warning for {section_key}: Flesch-Kincaid grade {grade_score:.1f} is outside the target grade band for Grade {target_grade_level}."
-        )
+        if score_delta < -_low_warning_tolerance(target_grade_level, section_key):
+            warnings.append(
+                f"Reading level warning for {section_key}: Flesch-Kincaid grade {grade_score:.1f} is below the target grade band for Grade {target_grade_level}."
+            )
 
     return _success_result(warnings)

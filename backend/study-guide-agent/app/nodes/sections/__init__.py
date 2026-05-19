@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import html
 import json
 import re
 from collections.abc import Callable
@@ -12,6 +13,8 @@ from app.prompts.system_prompt import build_system_prompt
 from app.types import Blueprint, GenerateRequest
 
 _INVALID_JSON_ESCAPE_PATTERN = re.compile(r'(?<!\\)\\(?!["\\/bfnrtu])')
+_HTML_LINE_BREAK_TAG_PATTERN = re.compile(r"(?is)<\s*(?:br|/p|/div|/li|/tr)\s*/?\s*>")
+_HTML_TAG_PATTERN = re.compile(r"(?is)</?[a-z][^>]*>")
 _CONTROL_ESCAPE_TO_PREFIX = {
     "\b": "b",
     "\f": "f",
@@ -37,9 +40,19 @@ def _restore_control_escapes(text: str) -> str:
     return "".join(restored)
 
 
+def _strip_html_like_markup(text: str) -> str:
+    normalized = html.unescape(text)
+    normalized = _HTML_LINE_BREAK_TAG_PATTERN.sub("\n", normalized)
+    normalized = _HTML_TAG_PATTERN.sub("", normalized)
+    normalized = re.sub(r"[ \t\f\v]+", " ", normalized)
+    normalized = re.sub(r" *\n *", "\n", normalized)
+    normalized = re.sub(r"\n{3,}", "\n\n", normalized)
+    return normalized.strip()
+
+
 def _normalize_payload_value(value: Any) -> Any:
     if isinstance(value, str):
-        return _restore_control_escapes(value)
+        return _strip_html_like_markup(_restore_control_escapes(value))
     if isinstance(value, list):
         return [_normalize_payload_value(item) for item in value]
     if isinstance(value, dict):

@@ -213,3 +213,45 @@ async def test_generate_answer_key_raises_on_malformed_json(
             _build_assessment_questions(),
             _build_step_up(),
         )
+
+
+@pytest.mark.asyncio
+async def test_generate_answer_key_repairs_missing_assessment_quote_from_evidence_field(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = _load_request_from_fixture()
+    blueprint = _build_blueprint(request)
+
+    async def fake_call_gemini(**_: object) -> str:
+        return json.dumps(
+            {
+                "title": "Answer Key",
+                "check_in_answers": [],
+                "assessment_answers": [
+                    {
+                        "question_number": 1,
+                        "question": "What is the author's purpose in this article?",
+                        "possible_answer": "The author wants to inform readers about why mangroves matter.",
+                        "evidence_quote": '"protect coastlines"',
+                    }
+                ],
+                "step_up_answer": {
+                    "challenge_response": "The author explains why mangroves protect communities.",
+                    "required_evidence": ['"protect coastlines"'],
+                },
+                "teacher_note": "Accept answers that identify purpose and cite direct evidence.",
+            }
+        )
+
+    monkeypatch.setattr(answer_key_module, "call_gemini", fake_call_gemini)
+
+    result = await answer_key_module.generate_answer_key(
+        request,
+        blueprint,
+        _build_check_in(),
+        _build_assessment_passage(),
+        _build_assessment_questions(),
+        _build_step_up(),
+    )
+
+    assert '"protect coastlines"' in result["assessment_answers"][0]["possible_answer"]

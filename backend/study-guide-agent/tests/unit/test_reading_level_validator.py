@@ -65,6 +65,7 @@ def test_validate_reading_level_warns_for_section_outside_target_band(
     assert result.failures == {}
     assert any("intro" in warning for warning in result.warnings)
     assert any("9.4" in warning for warning in result.warnings)
+    assert any("above the target grade band" in warning for warning in result.warnings)
 
 
 def test_validate_reading_level_warns_when_dependency_data_is_unavailable(
@@ -97,6 +98,7 @@ def test_validate_reading_level_warns_when_dependency_data_is_unavailable(
     assert result.failures == {}
     assert any("intro" in warning for warning in result.warnings)
     assert any("8.2" in warning for warning in result.warnings)
+    assert any("above the target grade band" in warning for warning in result.warnings)
 
 
 def test_validate_reading_level_skips_answer_key_section(monkeypatch) -> None:
@@ -249,3 +251,117 @@ def test_validate_reading_level_still_warns_for_large_lower_grade_gap(
 
     assert result.passed is True
     assert any("deep_dive" in warning for warning in result.warnings)
+    assert any("above the target grade band" in warning for warning in result.warnings)
+
+
+def test_validate_reading_level_uses_wider_band_for_grade_12_technical_content(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(reading_level_module, "_has_local_cmudict", lambda: True)
+    monkeypatch.setattr(
+        reading_level_module.textstat,
+        "flesch_kincaid_grade",
+        lambda _text: 13.4,
+    )
+
+    result = reading_level_module.validate_reading_level(
+        target_grade_level=12,
+        section_payloads={
+            "core_explainer": {
+                "overview": (
+                    "Hand hygiene interrupts pathogen transmission, reduces cross-contamination, "
+                    "and protects patients during routine care when students follow each step "
+                    "carefully and explain the safety reason in plain language."
+                )
+            }
+        },
+    )
+
+    assert result.passed is True
+    assert result.warnings == []
+
+
+def test_validate_reading_level_allows_slightly_lower_grade_12_content(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(reading_level_module, "_has_local_cmudict", lambda: True)
+    monkeypatch.setattr(
+        reading_level_module.textstat,
+        "flesch_kincaid_grade",
+        lambda _text: 10.1,
+    )
+
+    result = reading_level_module.validate_reading_level(
+        target_grade_level=12,
+        section_payloads={
+            "core_explainer": {
+                "overview": (
+                    "Hand hygiene protects patients, interrupts pathogen spread, and gives future "
+                    "healthcare workers a clear routine they can explain, practice, and apply in "
+                    "clinical scenarios without using dense or overly technical wording."
+                )
+            }
+        },
+    )
+
+    assert result.passed is True
+    assert result.warnings == []
+
+
+def test_validate_reading_level_still_warns_for_large_grade_12_gap(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(reading_level_module, "_has_local_cmudict", lambda: True)
+    monkeypatch.setattr(
+        reading_level_module.textstat,
+        "flesch_kincaid_grade",
+        lambda _text: 14.0,
+    )
+
+    result = reading_level_module.validate_reading_level(
+        target_grade_level=12,
+        section_payloads={
+            "core_explainer": {
+                "overview": (
+                    "Nosocomial transmission pathways, procedural noncompliance, and multilayered "
+                    "clinical mitigation frameworks create compounding interpretation demands for "
+                    "students who are still building fluency with technical healthcare discourse, "
+                    "especially when the explanation layers abstract causal chains, operational "
+                    "exceptions, and policy terminology into a single dense paragraph."
+                )
+            }
+        },
+    )
+
+    assert result.passed is True
+    assert any("core_explainer" in warning for warning in result.warnings)
+    assert any("above the target grade band" in warning for warning in result.warnings)
+
+
+def test_validate_reading_level_warns_for_materially_lower_grade_12_gap(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(reading_level_module, "_has_local_cmudict", lambda: True)
+    monkeypatch.setattr(
+        reading_level_module.textstat,
+        "flesch_kincaid_grade",
+        lambda _text: 8.2,
+    )
+
+    result = reading_level_module.validate_reading_level(
+        target_grade_level=12,
+        section_payloads={
+            "model_passage": {
+                "passage": [
+                    "Wash your hands before care. Wash after care. Wash when you touch shared tools. "
+                    "Wash again after contact with body fluids. Repeat each step slowly and check "
+                    "the posted reminder so every action stays safe for the patient and the worker."
+                ],
+                "evidence_focus": "The repeated commands show the main safety message.",
+            }
+        },
+    )
+
+    assert result.passed is True
+    assert any("model_passage" in warning for warning in result.warnings)
+    assert any("below the target grade band" in warning for warning in result.warnings)

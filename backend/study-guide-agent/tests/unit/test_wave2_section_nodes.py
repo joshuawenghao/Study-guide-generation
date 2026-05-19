@@ -208,3 +208,39 @@ async def test_wave2_section_nodes_repair_lone_backslashes_in_json_strings(
     assert result["passage"] == [
         "Compare 1/2 and \\frac{3}{4} using a common denominator."
     ]
+
+
+@pytest.mark.asyncio
+async def test_wave2_section_nodes_strip_html_like_markup_from_payload_strings(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = _load_request_from_fixture()
+    blueprint = _build_blueprint(request)
+
+    async def fake_call_gemini(**_: object) -> str:
+        return json.dumps(
+            {
+                "title": "Assessment Passage",
+                "topic_domain": "infection prevention",
+                "genre": "article",
+                "passage": [
+                    "<b>Hand hygiene</b> helps prevent infection.<br>It protects patients.",
+                ],
+                "evidence_clues": [
+                    "&lt;b&gt;clean hands&lt;/b&gt; reduce contamination"
+                ],
+                "answerability_note": "Use <i>plain</i> evidence from the text.",
+            }
+        )
+
+    monkeypatch.setattr(sections_module, "call_gemini", fake_call_gemini)
+
+    result = await assessment_passage_module.generate_assessment_passage(
+        request, blueprint
+    )
+
+    assert result["passage"] == [
+        "Hand hygiene helps prevent infection.\nIt protects patients."
+    ]
+    assert result["evidence_clues"] == ["clean hands reduce contamination"]
+    assert result["answerability_note"] == "Use plain evidence from the text."

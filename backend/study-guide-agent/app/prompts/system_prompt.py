@@ -27,8 +27,9 @@ def _reading_level_guidance(grade_level: int) -> str:
             "explanations that remain readable without becoming simplistic."
         )
     return (
-        "Use college-preparatory academic language, precise subject terminology, and "
-        "efficient explanations suitable for advanced secondary learners."
+        "Use advanced secondary-school academic language with precise subject terminology, "
+        "but keep explanations plain, concrete, and efficient enough for first-pass student reading. "
+        "When a technical term is necessary, define it in simpler words nearby instead of building long, dense sentences."
     )
 
 
@@ -76,10 +77,19 @@ def build_system_prompt(request: GenerateRequest) -> str:
             "code fences. Do not add commentary, headings, or prose outside the JSON object."
         ),
         (
+            "Markup rule: Do not include HTML or XML tags such as <b>, <i>, <br>, or "
+            "<p> anywhere in any JSON string value. Return plain text only."
+        ),
+        (
             "Readability target: Aim for a Flesch-Kincaid reading level close to "
             f"Grade {metadata.grade_level}. Prefer common everyday words when possible, "
             "keep most sentences to one clear idea, and avoid extra clauses or abstract "
             "academic phrasing unless a lesson term requires it."
+        ),
+        (
+            "Age-fit rule: Keep the material intellectually appropriate for the target grade "
+            "even when the language is simple. Do not make older-student content sound childish "
+            "or written for much younger learners."
         ),
         (
             "Sentence discipline: Keep sentences concise. For upper elementary and middle "

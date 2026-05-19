@@ -73,6 +73,7 @@ def build_prompt(
         "Requirements:",
         "- Provide one answer-key entry per check-in question and per assessment question.",
         "- Every possible_answer for assessment questions must contain at least one verbatim quoted phrase from the assessment passage.",
+        '- For each assessment answer, write the quote directly inside possible_answer, for example: The passage informs readers because "hand hygiene prevents infection" states the core idea.',
         "- Include an evidence_quote field that repeats the exact quoted phrase used from the assessment passage.",
         "- Provide a step_up_answer object that answers the step-up prompt directly and repeats the required_evidence list.",
         "- Keep answers concise, student-appropriate, and structurally ready for downstream quote validation.",
