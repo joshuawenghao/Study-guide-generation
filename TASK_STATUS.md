@@ -1,6 +1,6 @@
 # Task Status
 
-Last updated: 2026-05-18
+Last updated: 2026-05-19
 
 This file mirrors the structure of `TASKS.md` and records the current repo state against each task directly.
 Use it together with `TASKS.md`:
@@ -81,8 +81,8 @@ Notes: `frontend/lib/types.ts` exists and mirrors the current backend contract s
 
 ### Task 2.3 — Verify sync manually
 
-Status: `partial`
-Notes: Backend and frontend types are present, but there is no ongoing enforcement workflow beyond manual comparison.
+Status: `complete`
+Notes: The manual contract-sync check now matches the current repo state: the request/response contract in `backend/study-guide-agent/app/types.py` and `frontend/lib/types.ts` is still aligned for `GenerateRequest`, `Blueprint`, `WebPreviewPayload`, `ValidationResult`, `GenerateResponse`, and `ProgressEvent`, and the frontend proxy continues to consume the shared request shape through `frontend/app/api/generate/route.ts`. There is still no automated cross-runtime drift enforcement beyond manual comparison, but the manual verification task itself is complete.
 
 ## Phase 3 — System prompt and blueprint generation
 
