@@ -479,7 +479,7 @@ Soft validators produce warnings that are surfaced to the user in the web previe
 | Validator        | What it checks                                                                               |
 | ---------------- | -------------------------------------------------------------------------------------------- |
 | `answer_leakage` | Body sections do not contain verbatim phrases that appear in the answer key possible answers |
-| `reading_level`  | Each section's Flesch-Kincaid grade score falls within ±1.0 of the target grade band         |
+| `reading_level`  | Longer prose-heavy sections stay within the configured grade-band tolerance, with warnings when a section is materially above or below target |
 
 ### Retry logic
 

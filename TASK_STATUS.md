@@ -1,6 +1,6 @@
 # Task Status
 
-Last updated: 2026-05-19
+Last updated: 2026-05-20
 
 This file mirrors the structure of `TASKS.md` and records the current repo state against each task directly.
 Use it together with `TASKS.md`:
@@ -176,7 +176,7 @@ Notes: `backend/study-guide-agent/app/validators/soft/answer_leakage.py` now ext
 ### Task 5.7 — Implement soft validator: reading_level
 
 Status: `complete`
-Notes: `backend/study-guide-agent/app/validators/soft/reading_level.py` now computes section-level Flesch-Kincaid scores with `textstat`, compares them to an explicit target grade level using a ±1.0 band, and emits non-blocking `ValidationResult.warnings` for out-of-band sections; focused coverage exists in `tests/unit/test_reading_level_validator.py`, `textstat` was added to backend dependencies, and the repo done gate passed.
+Notes: `backend/study-guide-agent/app/validators/soft/reading_level.py` now computes section-level Flesch-Kincaid scores with `textstat`, focuses on longer prose-heavy sections, and emits non-blocking `ValidationResult.warnings` when a section is materially above or below the target grade band using the current asymmetric tolerance rules; focused coverage exists in `tests/unit/test_reading_level_validator.py`, `textstat` was added to backend dependencies, and the repo done gate passed.
 
 ### Task 5.8 — Implement the validator node
 
@@ -300,7 +300,7 @@ Notes: Scaffold-native CLI and eval loading now use a cleaner separation: the co
 ### Task 12.3 — Run backend tests
 
 Status: `complete`
-Notes: The real backend test suite now runs cleanly from `backend/study-guide-agent/` with `uv run pytest tests/unit tests/integration`, covering the implemented workflow, validators, renderer, section nodes, prompt templates, FastAPI boot path, and orchestrator retry flow. The focused backend validation passed at 48 tests passed and 0 failed, and `./scripts/validate-task.sh` also passed afterward.
+Notes: The real backend test suite now runs cleanly from `backend/study-guide-agent/` with `uv run pytest tests/unit tests/integration`, covering the implemented workflow, validators, renderer, section nodes, prompt templates, FastAPI boot path, and orchestrator retry flow. The current backend suite passes at 63 tests passed and 0 failed, and `./scripts/validate-task.sh` also passed afterward.
 
 ### Task 12.4 — Verify IFC must-haves
 

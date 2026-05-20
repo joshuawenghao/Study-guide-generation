@@ -1,6 +1,6 @@
 # Codebase State
 
-Last updated: 2026-05-18
+Last updated: 2026-05-20
 
 This document is the live plain-language summary of the shipped codebase.
 It is intended to answer, in words, what currently exists in the repository without requiring a reader to inspect source files directly.
@@ -92,7 +92,8 @@ It is intended to answer, in words, what currently exists in the repository with
 - The repo includes a compatibility shim in `backend/study-guide-agent/app/app_utils/adk_compat.py` to smooth over current ADK beta import-surface issues before ADK imports are loaded.
 - The repo now includes focused backend integration coverage for both the exported workflow surface and the orchestrator behavior: one integration test validates the `Workflow` export and retry-capable orchestration path, and another validates FastAPI boot plus session creation.
 - The backend validation surface now also has a clean end-to-end suite run at `uv run pytest tests/unit tests/integration`, currently passing with 63 tests across the implemented section nodes, prompt templates, validators, renderer, orchestrator, and server integration paths.
-- A fresh plain backend rerun of the Grade 12 nursing scenario now completes with 0 failed sections and 0 best-effort sections, while still surfacing only non-blocking reading-level warnings in that scenario.
+- A fresh browser rerun of the Grade 12 nursing scenario now completes with 0 failed sections and 0 best-effort sections in the live UI, while the remaining feedback on that run is limited to one non-blocking answer-leakage warning and two non-blocking reading-level warnings.
+- Additional plain backend reruns across nursing, science, and English scenarios now also complete with 0 failed sections and 0 best-effort sections, leaving the current instability concentrated in soft warning surfaces rather than hard validation failures.
 - The repo now includes `backend/study-guide-agent/study_guide_agent/agent.py` as an ADK loader adapter that re-exports the real agent from `app.agent` for CLI and FastAPI loading.
 - The repo-local `backend/study-guide-agent/agents-cli` wrapper now owns the local conversational routing for `run` and `eval run`, invoking ADK directly against `./eval_app` so the product implementation package no longer has to masquerade as the scaffold eval app.
 - `DEPLOYMENT.md` now includes concrete backend container commands for local build, local run, alternate-port parity runs, and the intended Cloud Run deploy shape.
@@ -143,9 +144,9 @@ It is intended to answer, in words, what currently exists in the repository with
 - The repo-level validation script now also boots the built Next.js app on a temporary local port and checks that the home route renders expected page text, so the done gate can catch production-start or top-level route-render failures that lint, typecheck, and build alone would miss.
 - Phase 12 validation is now underway in earnest: one real local browser run has been completed against the live backend and frontend dev servers, confirming streamed progress, rendered preview output, and the PDF download surface for the current implementation.
 - Phase 12 validation now also includes a passing scaffold-native `./agents-cli eval run` against `tests/eval/evalsets/basic.evalset.json`, confirming that the scaffolded conversational CLI/eval surface responds helpfully while the repo-level done gate still passes afterward.
-- The Phase 12 browser validation path has also been rerun after the answer-key fix: the live UI now reaches `Results ready` with zero failed sections and zero best-effort sections for the same Grade 6 English request, leaving only non-blocking reading-level warnings in that run.
+- The Phase 12 browser validation path has also been rerun after the answer-key and assessment-grounding fixes: the live UI now reaches `Results ready` with zero failed sections and zero best-effort sections for the Grade 12 nursing request used during recent verification, leaving only non-blocking warning output in that run.
 - Local backend runs now auto-load `backend/study-guide-agent/.env` for Gemini-backed workflow calls and backend server config, so `uv run python run_demo.py --mode full-workflow` and local FastAPI runs no longer require `GOOGLE_API_KEY` to be exported separately in the shell when the repo-local `.env` is present.
-- Phase 12 IFC acceptance verification is now complete with a fresh live full-workflow demo: the repo done gate passes, the full backend suite passes at 48 tests, the focused workflow, renderer, and validator slice passes at 8 tests, and the current demo run succeeds with 18 preview sections, zero failed sections, zero best-effort sections, and only non-blocking reading-level warnings.
+- Phase 12 IFC acceptance verification is now complete with a fresh live full-workflow demo: the repo done gate passes, the full backend suite passes at 63 tests, the focused workflow, renderer, and validator slice passes at 8 tests, and the current demo run succeeds with 18 preview sections, zero failed sections, zero best-effort sections, and only non-blocking warnings.
 - The repo-level validation script now also runs backend Pyright against the shared repo `pyrightconfig.json`, so editor-visible backend type errors can fail the done gate before a task is marked complete.
 - Backend pytest output is now filtered for the two known upstream Google ADK experimental credential-service `UserWarning`s, so the done gate stays clean without suppressing unrelated test warnings.
 - The frontend now also declares CSS imports for TypeScript through `frontend/global.d.ts`, so App Router files like `frontend/app/layout.tsx` no longer depend on editor-local suppression behavior for `globals.css` side-effect imports.
