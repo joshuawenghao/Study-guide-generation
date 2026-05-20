@@ -410,3 +410,248 @@ async def test_study_guide_workflow_runs_sections_validation_retry_and_render(
         node_name.startswith("retry_intro_1") for node_name in context.node_calls
     )
     assert context.node_calls[-1] == cast(Any, agent_module.render_workflow_node).name
+
+
+@pytest.mark.asyncio
+async def test_study_guide_workflow_normalizes_answer_key_before_validation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = _load_request_from_fixture()
+    blueprint = _build_blueprint(request)
+    context = FakeContext()
+
+    async def fake_blueprint_node(request_input: GenerateRequest) -> Blueprint:
+        assert request_input == request
+        return blueprint
+
+    monkeypatch.setattr(agent_module.blueprint_node, "_func", fake_blueprint_node)
+
+    async def fake_generate_simple_section(
+        request_input: GenerateRequest,
+        blueprint_input: Blueprint,
+    ) -> dict[str, Any]:
+        assert request_input == request
+        assert blueprint_input == blueprint
+        return {"title": "Section"}
+
+    async def fake_generate_subconcept(
+        request_input: GenerateRequest,
+        blueprint_input: Blueprint,
+        sub_competency: Any,
+    ) -> dict[str, Any]:
+        assert request_input == request
+        assert blueprint_input == blueprint
+        return {"title": f"Subconcept {sub_competency.id}"}
+
+    async def fake_generate_model_passage(
+        request_input: GenerateRequest,
+        blueprint_input: Blueprint,
+    ) -> dict[str, Any]:
+        assert request_input == request
+        assert blueprint_input == blueprint
+        return {"title": "Model Passage", "section": "model_passage"}
+
+    async def fake_generate_assessment_passage(
+        request_input: GenerateRequest,
+        blueprint_input: Blueprint,
+    ) -> dict[str, Any]:
+        assert request_input == request
+        assert blueprint_input == blueprint
+        return {
+            "title": "Assessment Passage",
+            "topic_domain": "mangrove forest protection article",
+            "genre": "informational",
+            "passage": [
+                "Mangrove forests protect coastlines from strong waves.",
+                "They help both people and wildlife stay safe.",
+            ],
+            "evidence_clues": ["protect coastlines", "stay safe"],
+            "answerability_note": "",
+        }
+
+    async def fake_generate_check_in(
+        request_input: GenerateRequest,
+        blueprint_input: Blueprint,
+        model_passage: dict[str, Any],
+    ) -> dict[str, Any]:
+        assert request_input == request
+        assert blueprint_input == blueprint
+        assert model_passage["section"] == "model_passage"
+        return {
+            "title": "Check In",
+            "questions": [
+                {
+                    "number": 1,
+                    "question": "What clues show the author's purpose?",
+                    "evidence_hint": "Look at the encouraging language.",
+                    "expected_response_type": "short_response",
+                }
+            ],
+        }
+
+    async def fake_generate_assessment_questions(
+        request_input: GenerateRequest,
+        blueprint_input: Blueprint,
+        assessment_passage: dict[str, Any],
+    ) -> dict[str, Any]:
+        assert request_input == request
+        assert blueprint_input == blueprint
+        assert assessment_passage["title"] == "Assessment Passage"
+        return {
+            "title": "Assessment Questions",
+            "passage_title": "Assessment Passage",
+            "questions": [
+                {
+                    "number": 1,
+                    "question": "What is the author's purpose in this article?",
+                    "question_type": "short_response",
+                    "answer_expectation": "Identify the purpose and explain it.",
+                    "evidence_requirement": "Quote a phrase that explains why mangroves matter.",
+                }
+            ],
+        }
+
+    async def fake_generate_step_up(
+        request_input: GenerateRequest,
+        blueprint_input: Blueprint,
+        assessment_passage: dict[str, Any],
+        assessment_questions: dict[str, Any],
+    ) -> dict[str, Any]:
+        assert request_input == request
+        assert blueprint_input == blueprint
+        assert assessment_passage["title"] == "Assessment Passage"
+        assert assessment_questions["title"] == "Assessment Questions"
+        return {
+            "title": "Step Up",
+            "challenge_prompt": "Use evidence from the passage to explain the author's purpose.",
+            "required_evidence": ["protect coastlines"],
+            "success_criteria": ["Answers use evidence from the passage."],
+        }
+
+    async def fake_generate_answer_key(
+        request_input: GenerateRequest,
+        blueprint_input: Blueprint,
+        check_in: dict[str, Any],
+        assessment_passage: dict[str, Any],
+        assessment_questions: dict[str, Any],
+        step_up: dict[str, Any],
+    ) -> dict[str, Any]:
+        assert request_input == request
+        assert blueprint_input == blueprint
+        assert check_in["title"] == "Check In"
+        assert assessment_passage["title"] == "Assessment Passage"
+        assert assessment_questions["title"] == "Assessment Questions"
+        assert step_up["title"] == "Step Up"
+        return {
+            "title": "Answer Key",
+            "check_in_answers": [
+                {
+                    "question_number": 1,
+                    "question": "What clues show the author's purpose?",
+                    "possible_answer": "The descriptive details guide the reader toward the main idea.",
+                    "evidence_quote": None,
+                }
+            ],
+            "assessment_answers": [
+                {
+                    "question_number": 1,
+                    "question": "Different question",
+                    "possible_answer": 'The author wants readers to care because "the mangrove roots keep every shoreline family safe during strong storms".',
+                    "evidence_quote": '"the mangrove roots keep every shoreline family safe during strong storms"',
+                }
+            ],
+            "step_up_answer": {
+                "challenge_response": "The passage explains why the evidence matters.",
+                "required_evidence": ["protect coastlines"],
+            },
+            "teacher_note": "Accept concise answers that explain the purpose and cite evidence.",
+        }
+
+    async def fake_generate_validation(
+        request_input: GenerateRequest,
+        blueprint_input: Blueprint,
+        sections: dict[str, Any],
+    ) -> ValidationResult:
+        assert request_input == request
+        assert blueprint_input == blueprint
+        assert sections["answer_key"]["check_in_answers"][0]["evidence_quote"] == "N/A"
+        assert sections["answer_key"]["assessment_answers"] == [
+            {
+                "question_number": 1,
+                "question": "What is the author's purpose in this article?",
+                "possible_answer": 'Identify the purpose and explain it. Evidence from the passage: "protect coastlines".',
+                "evidence_quote": '"protect coastlines"',
+            }
+        ]
+        return ValidationResult(
+            passed=True,
+            failed_sections=[],
+            failures={},
+            warnings=[],
+            best_effort_sections=[],
+        )
+
+    async def fake_generate_rendered_response(
+        blueprint_input: Blueprint,
+        sections: dict[str, Any],
+        validation: ValidationResult,
+    ) -> GenerateResponse:
+        assert blueprint_input == blueprint
+        assert validation.passed is True
+        return GenerateResponse.model_validate(
+            {
+                "success": True,
+                "pdf_base64": "cGRm",
+                "preview": {"sections": []},
+                "validation": validation.model_dump(mode="json"),
+                "error": None,
+            }
+        )
+
+    monkeypatch.setattr(agent_module, "generate_intro", fake_generate_simple_section)
+    monkeypatch.setattr(
+        agent_module, "generate_learning_targets", fake_generate_simple_section
+    )
+    monkeypatch.setattr(agent_module, "generate_warmup", fake_generate_simple_section)
+    monkeypatch.setattr(
+        agent_module, "generate_vocabulary", fake_generate_simple_section
+    )
+    monkeypatch.setattr(
+        agent_module, "generate_key_points", fake_generate_simple_section
+    )
+    monkeypatch.setattr(
+        agent_module, "generate_self_assessment", fake_generate_simple_section
+    )
+    monkeypatch.setattr(
+        agent_module, "generate_core_explainer", fake_generate_simple_section
+    )
+    monkeypatch.setattr(agent_module, "generate_subconcept", fake_generate_subconcept)
+    monkeypatch.setattr(
+        agent_module, "generate_strategy_list", fake_generate_simple_section
+    )
+    monkeypatch.setattr(
+        agent_module, "generate_deep_dive", fake_generate_simple_section
+    )
+    monkeypatch.setattr(
+        agent_module, "generate_model_passage", fake_generate_model_passage
+    )
+    monkeypatch.setattr(
+        agent_module, "generate_assessment_passage", fake_generate_assessment_passage
+    )
+    monkeypatch.setattr(agent_module, "generate_check_in", fake_generate_check_in)
+    monkeypatch.setattr(
+        agent_module,
+        "generate_assessment_questions",
+        fake_generate_assessment_questions,
+    )
+    monkeypatch.setattr(agent_module, "generate_step_up", fake_generate_step_up)
+    monkeypatch.setattr(agent_module, "generate_answer_key", fake_generate_answer_key)
+    monkeypatch.setattr(agent_module, "generate_validation", fake_generate_validation)
+    monkeypatch.setattr(
+        agent_module, "generate_rendered_response", fake_generate_rendered_response
+    )
+
+    result = await cast(Any, agent_module.study_guide_workflow)._func(context, request)
+
+    assert result.success is True
+    assert result.validation.failed_sections == []

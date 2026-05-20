@@ -76,14 +76,6 @@ def build_prompt(
             "evidence_quote": "string"
         }
     ],
-    "assessment_answers": [
-        {
-            "question_number": 1,
-            "question": "string",
-            "possible_answer": "string",
-            "evidence_quote": "string"
-        }
-    ],
     "step_up_answer": {
         "challenge_response": "string",
         "required_evidence": [
@@ -110,11 +102,9 @@ def build_prompt(
         "- Step-up required evidence:",
         step_up_evidence or "- none provided",
         "Requirements:",
-        "- Provide one answer-key entry per check-in question and per assessment question.",
-        "- Every possible_answer for assessment questions must contain at least one verbatim quoted phrase from the assessment passage.",
-        '- For each assessment answer, write the quote directly inside possible_answer, for example: The passage informs readers because "hand hygiene prevents infection" states the core idea.',
-        "- Include an evidence_quote field that repeats the exact quoted phrase used from the assessment passage.",
-        "- For assessment answers, choose evidence only from the exact quote bank above. Do not invent, combine, shorten, or paraphrase quoted evidence.",
+        "- Provide one answer-key entry per check-in question.",
+        "- Do not include assessment_answers in the JSON payload. Assessment answers are derived downstream from the assessment questions and exact quote bank above.",
+        "- Do not place raw double-quoted evidence inside free-text fields such as check-in answers, step_up_answer.challenge_response, or teacher_note.",
         "- Provide a step_up_answer object that answers the step-up prompt directly and repeats the required_evidence list.",
         "- Keep answers concise, student-appropriate, and structurally ready for downstream quote validation.",
         "Expected JSON schema:",

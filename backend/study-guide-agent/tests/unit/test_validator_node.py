@@ -129,6 +129,11 @@ async def test_generate_validation_runs_schema_checks_for_each_section_payload(
     )
     monkeypatch.setattr(
         validator_module,
+        "validate_assessment_question_grounding",
+        lambda **_: _success_result(),
+    )
+    monkeypatch.setattr(
+        validator_module,
         "validate_answer_key_quotes",
         lambda **_: _success_result(),
     )
@@ -164,6 +169,19 @@ async def test_generate_validation_runs_schema_checks_for_each_section_payload(
             "evidence_clues": ["protect coastlines"],
             "answerability_note": "Quote the text.",
         },
+        "assessment_questions": {
+            "title": "Assessment Questions",
+            "passage_title": "Assessment Passage",
+            "questions": [
+                {
+                    "number": 1,
+                    "question": "What is the purpose?",
+                    "question_type": "short_response",
+                    "answer_expectation": "Identify the purpose and explain it.",
+                    "evidence_requirement": 'Quote this exact phrase from the passage: "protect coastlines".',
+                }
+            ],
+        },
         "answer_key": {
             "title": "Answer Key",
             "check_in_answers": [],
@@ -197,6 +215,7 @@ async def test_generate_validation_runs_schema_checks_for_each_section_payload(
         "subconcept",
         "self_assessment",
         "assessment_passage",
+        "assessment_questions",
         "answer_key",
     ]
 
@@ -240,6 +259,11 @@ async def test_generate_validation_aggregates_failures_and_skips_invalid_schema_
     )
     monkeypatch.setattr(
         validator_module,
+        "validate_assessment_question_grounding",
+        lambda **_: _success_result(),
+    )
+    monkeypatch.setattr(
+        validator_module,
         "validate_answer_key_quotes",
         lambda **_: _success_result(),
     )
@@ -273,6 +297,19 @@ async def test_generate_validation_aggregates_failures_and_skips_invalid_schema_
             "passage": ["Mangrove forests protect coastlines from strong waves."],
             "evidence_clues": ["protect coastlines"],
             "answerability_note": "Quote the text.",
+        },
+        "assessment_questions": {
+            "title": "Assessment Questions",
+            "passage_title": "Assessment Passage",
+            "questions": [
+                {
+                    "number": 1,
+                    "question": "What is the purpose?",
+                    "question_type": "short_response",
+                    "answer_expectation": "Identify the purpose and explain it.",
+                    "evidence_requirement": 'Quote this exact phrase from the passage: "protect coastlines".',
+                }
+            ],
         },
         "answer_key": {
             "title": "Answer Key",
@@ -309,3 +346,41 @@ async def test_generate_validation_aggregates_failures_and_skips_invalid_schema_
         "Reading level warning for intro",
     ]
     assert self_assessment_validator_called is False
+
+
+def test_validate_assessment_question_grounding_fails_when_evidence_quote_is_off_passage() -> (
+    None
+):
+    assessment_questions = validator_module.AssessmentQuestionsSection.model_validate(
+        {
+            "title": "Assessment Questions",
+            "passage_title": "Assessment Passage",
+            "questions": [
+                {
+                    "number": 1,
+                    "question": "What is the purpose?",
+                    "question_type": "short_response",
+                    "answer_expectation": "Identify the purpose and explain it.",
+                    "evidence_requirement": 'Quote this exact phrase from the passage: "protects every shoreline family during storms".',
+                }
+            ],
+        }
+    )
+    assessment_passage = validator_module.AssessmentPassageSection.model_validate(
+        {
+            "title": "Assessment Passage",
+            "topic_domain": "mangrove forests",
+            "genre": "article",
+            "passage": ["Mangrove forests protect coastlines from strong waves."],
+            "evidence_clues": ["protect coastlines"],
+            "answerability_note": "Quote the text.",
+        }
+    )
+
+    result = validator_module.validate_assessment_question_grounding(
+        assessment_questions=assessment_questions,
+        assessment_passage=assessment_passage,
+    )
+
+    assert result.passed is False
+    assert result.failed_sections == ["assessment_questions"]

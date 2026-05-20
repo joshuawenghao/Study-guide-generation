@@ -13,15 +13,20 @@ ensure_google_adk_beta_compat()
 
 from google.adk.workflow import node
 
+from app.nodes.sections.answer_key import normalize_answer_key_payload
 from app.types import (
     AnswerKeySection,
     AssessmentPassageSection,
+    AssessmentQuestionsSection,
     Blueprint,
     GenerateRequest,
     SelfAssessmentSection,
     ValidationResult,
 )
 from app.validators.hard.answer_key_quotes import validate_answer_key_quotes
+from app.validators.hard.assessment_question_grounding import (
+    validate_assessment_question_grounding,
+)
 from app.validators.hard.json_schema import validate_json_schema
 from app.validators.hard.passage_domain_diff import validate_passage_domain_diff
 from app.validators.hard.self_assess_targets import validate_self_assess_targets
@@ -130,6 +135,7 @@ async def generate_validation(
 
     answer_key_payload = sections.get("answer_key")
     assessment_passage_payload = sections.get("assessment_passage")
+    assessment_questions_payload = sections.get("assessment_questions")
     if answer_key_payload is None:
         result = _merge_results(result, _missing_section_result("answer_key"))
     if assessment_passage_payload is None:
@@ -137,14 +143,52 @@ async def generate_validation(
 
     validated_answer_key: AnswerKeySection | None = None
     validated_assessment_passage: AssessmentPassageSection | None = None
-    if answer_key_payload is not None and "answer_key" not in schema_failed_sections:
-        validated_answer_key = AnswerKeySection.model_validate(answer_key_payload)
+    validated_assessment_questions: AssessmentQuestionsSection | None = None
     if (
         assessment_passage_payload is not None
         and "assessment_passage" not in schema_failed_sections
     ):
         validated_assessment_passage = AssessmentPassageSection.model_validate(
             assessment_passage_payload
+        )
+    if (
+        assessment_questions_payload is not None
+        and "assessment_questions" not in schema_failed_sections
+    ):
+        validated_assessment_questions = AssessmentQuestionsSection.model_validate(
+            assessment_questions_payload
+        )
+
+    normalized_answer_key_payload = answer_key_payload
+    if (
+        answer_key_payload is not None
+        and validated_assessment_passage is not None
+        and validated_assessment_questions is not None
+    ):
+        normalized_answer_key_payload = normalize_answer_key_payload(
+            dict(answer_key_payload),
+            validated_assessment_passage.model_dump(mode="json"),
+            validated_assessment_questions.model_dump(mode="json"),
+        )
+
+    if (
+        normalized_answer_key_payload is not None
+        and "answer_key" not in schema_failed_sections
+    ):
+        validated_answer_key = AnswerKeySection.model_validate(
+            normalized_answer_key_payload
+        )
+
+    if (
+        validated_assessment_questions is not None
+        and validated_assessment_passage is not None
+    ):
+        result = _merge_results(
+            result,
+            validate_assessment_question_grounding(
+                assessment_questions=validated_assessment_questions,
+                assessment_passage=validated_assessment_passage,
+            ),
         )
 
     if validated_answer_key is not None and validated_assessment_passage is not None:

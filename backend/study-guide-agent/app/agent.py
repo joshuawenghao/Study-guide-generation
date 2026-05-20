@@ -555,6 +555,11 @@ async def study_guide_workflow(
         "self_assessment": self_assessment,
         "answer_key": answer_key,
     }
+    sections["answer_key"] = normalize_answer_key_payload(
+        sections["answer_key"],
+        assessment_passage,
+        assessment_questions,
+    )
 
     validation = await ctx.run_node(
         validation_workflow_node,
@@ -579,6 +584,12 @@ async def study_guide_workflow(
                     failure_messages=validation.failures.get(section_key, []),
                 ),
             )
+            if section_key == "answer_key":
+                sections[section_key] = normalize_answer_key_payload(
+                    sections[section_key],
+                    sections["assessment_passage"],
+                    sections["assessment_questions"],
+                )
         validation = await ctx.run_node(
             validation_workflow_node,
             ValidationNodeInput(

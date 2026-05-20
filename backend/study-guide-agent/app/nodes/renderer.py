@@ -13,6 +13,7 @@ from pydantic import BaseModel
 
 from app.app_utils.adk_compat import ensure_google_adk_beta_compat
 from app.app_utils.weasyprint_compat import ensure_weasyprint_runtime_compat
+from app.nodes.sections.answer_key import normalize_answer_key_payload
 
 ensure_google_adk_beta_compat()
 
@@ -158,14 +159,29 @@ async def generate_rendered_response(
     sections: Mapping[str, Any],
     validation: ValidationResult,
 ) -> GenerateResponse:
+    normalized_sections = dict(sections)
+    answer_key_payload = normalized_sections.get("answer_key")
+    assessment_passage_payload = normalized_sections.get("assessment_passage")
+    assessment_questions_payload = normalized_sections.get("assessment_questions")
+    if (
+        isinstance(answer_key_payload, Mapping)
+        and isinstance(assessment_passage_payload, Mapping)
+        and isinstance(assessment_questions_payload, Mapping)
+    ):
+        normalized_sections["answer_key"] = normalize_answer_key_payload(
+            dict(answer_key_payload),
+            dict(assessment_passage_payload),
+            dict(assessment_questions_payload),
+        )
+
     html = _render_html(
         blueprint=blueprint,
-        sections=sections,
+        sections=normalized_sections,
         validation=validation,
     )
     pdf_bytes = _render_pdf_bytes(html)
     pdf_base64 = base64.b64encode(pdf_bytes).decode("utf-8")
-    preview = WebPreviewPayload(sections=_iter_preview_entries(sections))
+    preview = WebPreviewPayload(sections=_iter_preview_entries(normalized_sections))
 
     return GenerateResponse(
         success=True,

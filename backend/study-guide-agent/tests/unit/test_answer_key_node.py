@@ -141,6 +141,8 @@ async def test_generate_answer_key_returns_structured_json(
         assert '"Mangrove forests protect coastlines from strong waves."' in user_prompt
         assert "Mangrove forests protect coastlines from strong waves." in user_prompt
         assert '"protect coastlines"' in user_prompt
+        assert "Do not include assessment_answers in the JSON payload" in user_prompt
+        assert '"assessment_answers"' not in user_prompt
         assert temperature == answer_key_module.TEMP_ANSWER_KEY
         assert max_retries == 2
         assert context_label == "answer_key"
@@ -407,4 +409,136 @@ async def test_generate_answer_key_strips_nonverbatim_quotes_from_answer_expecta
         '"protects coastlines"'
         not in result["assessment_answers"][0]["possible_answer"]
     )
+    assert '"protect coastlines"' in result["assessment_answers"][0]["possible_answer"]
+
+
+@pytest.mark.asyncio
+async def test_generate_answer_key_derives_assessment_answers_when_model_omits_them(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = _load_request_from_fixture()
+    blueprint = _build_blueprint(request)
+
+    async def fake_call_gemini(**_: object) -> str:
+        return json.dumps(
+            {
+                "title": "Answer Key",
+                "check_in_answers": [
+                    {
+                        "question_number": 1,
+                        "question": "What clues show the author's purpose?",
+                        "possible_answer": "The text uses strong descriptive details to guide the reader.",
+                        "evidence_quote": "N/A",
+                    }
+                ],
+                "step_up_answer": {
+                    "challenge_response": "The passage explains why the evidence matters.",
+                    "required_evidence": ["protect coastlines"],
+                },
+                "teacher_note": "Accept concise answers that explain the purpose and cite evidence.",
+            }
+        )
+
+    monkeypatch.setattr(answer_key_module, "call_gemini", fake_call_gemini)
+
+    result = await answer_key_module.generate_answer_key(
+        request,
+        blueprint,
+        _build_check_in(),
+        _build_assessment_passage(),
+        _build_assessment_questions(),
+        _build_step_up(),
+    )
+
+    assert result["assessment_answers"] == [
+        {
+            "question_number": 1,
+            "question": "What is the author's purpose in this article?",
+            "possible_answer": 'Identify the purpose and explain it. Evidence from the passage: "protect coastlines".',
+            "evidence_quote": '"protect coastlines"',
+        }
+    ]
+
+
+@pytest.mark.asyncio
+async def test_generate_answer_key_normalizes_null_check_in_evidence_quote(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = _load_request_from_fixture()
+    blueprint = _build_blueprint(request)
+
+    async def fake_call_gemini(**_: object) -> str:
+        return json.dumps(
+            {
+                "title": "Answer Key",
+                "check_in_answers": [
+                    {
+                        "question_number": 1,
+                        "question": "What clues show the author's purpose?",
+                        "possible_answer": "The descriptive details guide the reader toward the main idea.",
+                        "evidence_quote": None,
+                    }
+                ],
+                "step_up_answer": {
+                    "challenge_response": "The passage explains why the evidence matters.",
+                    "required_evidence": ["protect coastlines"],
+                },
+                "teacher_note": "Accept concise answers that explain the purpose and cite evidence.",
+            }
+        )
+
+    monkeypatch.setattr(answer_key_module, "call_gemini", fake_call_gemini)
+
+    result = await answer_key_module.generate_answer_key(
+        request,
+        blueprint,
+        _build_check_in(),
+        _build_assessment_passage(),
+        _build_assessment_questions(),
+        _build_step_up(),
+    )
+
+    assert result["check_in_answers"][0]["evidence_quote"] == "N/A"
+
+
+@pytest.mark.asyncio
+async def test_generate_answer_key_ignores_model_paraphrase_when_selecting_assessment_quote(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = _load_request_from_fixture()
+    blueprint = _build_blueprint(request)
+
+    async def fake_call_gemini(**_: object) -> str:
+        return json.dumps(
+            {
+                "title": "Answer Key",
+                "check_in_answers": [],
+                "assessment_answers": [
+                    {
+                        "question_number": 1,
+                        "question": "What is the author's purpose in this article?",
+                        "possible_answer": 'The author wants readers to care because "the mangrove roots keep every shoreline family safe during strong storms".',
+                        "evidence_quote": '"the mangrove roots keep every shoreline family safe during strong storms"',
+                    }
+                ],
+                "step_up_answer": {
+                    "challenge_response": "The passage explains why the evidence matters.",
+                    "required_evidence": ["protect coastlines"],
+                },
+                "teacher_note": "Accept concise answers that explain the purpose and cite evidence.",
+            }
+        )
+
+    monkeypatch.setattr(answer_key_module, "call_gemini", fake_call_gemini)
+
+    result = await answer_key_module.generate_answer_key(
+        request,
+        blueprint,
+        _build_check_in(),
+        _build_assessment_passage(),
+        _build_assessment_questions(),
+        _build_step_up(),
+    )
+
+    assert result["assessment_answers"][0]["evidence_quote"] == '"protect coastlines"'
     assert '"protect coastlines"' in result["assessment_answers"][0]["possible_answer"]
