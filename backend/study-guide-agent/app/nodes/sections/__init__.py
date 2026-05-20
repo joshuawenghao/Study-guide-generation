@@ -13,6 +13,9 @@ from app.prompts.system_prompt import build_system_prompt
 from app.types import Blueprint, GenerateRequest
 
 _INVALID_JSON_ESCAPE_PATTERN = re.compile(r'(?<!\\)\\(?!["\\/bfnrtu])')
+_INLINE_QUOTED_LIST_ANNOTATION_PATTERN = re.compile(
+    r'(?<=[A-Za-z0-9.!?])\s+\[(?:"[^"\n]+"(?:,\s*"[^"\n]+")*)\]'
+)
 _HTML_LINE_BREAK_TAG_PATTERN = re.compile(r"(?is)<\s*(?:br|/p|/div|/li|/tr)\s*/?\s*>")
 _HTML_TAG_PATTERN = re.compile(r"(?is)</?[a-z][^>]*>")
 _CONTROL_ESCAPE_TO_PREFIX = {
@@ -26,6 +29,10 @@ _CONTROL_ESCAPE_TO_PREFIX = {
 
 def _repair_invalid_json_escapes(response_text: str) -> str:
     return _INVALID_JSON_ESCAPE_PATTERN.sub(r"\\\\", response_text)
+
+
+def _strip_inline_quoted_list_annotations(response_text: str) -> str:
+    return _INLINE_QUOTED_LIST_ANNOTATION_PATTERN.sub("", response_text)
 
 
 def _restore_control_escapes(text: str) -> str:
@@ -73,6 +80,19 @@ def _parse_section_response(response_text: str, context_label: str) -> dict[str,
             else:
                 if isinstance(payload, dict):
                     return payload
+        annotation_stripped_response = _strip_inline_quoted_list_annotations(
+            repaired_response
+        )
+        if annotation_stripped_response != repaired_response:
+            try:
+                payload = json.loads(annotation_stripped_response)
+            except json.JSONDecodeError:
+                pass
+            else:
+                if isinstance(payload, dict):
+                    normalized_payload = _normalize_payload_value(payload)
+                    if isinstance(normalized_payload, dict):
+                        return normalized_payload
         raise RuntimeError(
             f"Failed to parse {context_label} response as JSON. "
             f"Raw response:\n{response_text}"

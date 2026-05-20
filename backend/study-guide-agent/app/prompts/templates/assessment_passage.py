@@ -42,6 +42,7 @@ def build_prompt(spec, blueprint: Blueprint, request: GenerateRequest) -> str:
         "- Write an evidence-friendly passage suitable for downstream assessment questions and answer-key quotation checks.",
         "- Include evidence_clues that point to phrases students can quote or cite.",
         "- Return the passage as an ordered list of paragraphs.",
+        '- Do not append bracketed notes, clue lists, or inline annotations such as ["quote one", "quote two"] inside any passage paragraph.',
         f"- Keep the passage readable for Grade {request.lesson_metadata.grade_level} students.",
         f"- {_passage_length_guidance(request)}",
         "- Prefer familiar words, concrete details, and short sentences with one main idea each.",

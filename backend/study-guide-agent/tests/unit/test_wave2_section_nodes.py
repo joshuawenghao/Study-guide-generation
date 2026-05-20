@@ -244,3 +244,44 @@ async def test_wave2_section_nodes_strip_html_like_markup_from_payload_strings(
     ]
     assert result["evidence_clues"] == ["clean hands reduce contamination"]
     assert result["answerability_note"] == "Use plain evidence from the text."
+
+
+@pytest.mark.asyncio
+async def test_wave2_section_nodes_strip_inline_quoted_list_annotations_from_passage(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = _load_request_from_fixture()
+    blueprint = _build_blueprint(request)
+
+    async def fake_call_gemini(**_: object) -> str:
+        return (
+            "{"
+            '"title": "Assessment Passage", '
+            '"topic_domain": "sustainable fishing", '
+            '"genre": "informational", '
+            '"passage": ['
+            '"Many people depend on fish for food. ["fish for food", "earn a living"] We should protect the sea.", '
+            '"Sustainable fishing protects ocean habitats. ["protects ocean habitats"]"'
+            "], "
+            '"evidence_clues": ['
+            '"fish for food", '
+            '"protects ocean habitats"'
+            "], "
+            '"answerability_note": "All questions are answerable from the text."'
+            "}"
+        )
+
+    monkeypatch.setattr(sections_module, "call_gemini", fake_call_gemini)
+
+    result = await assessment_passage_module.generate_assessment_passage(
+        request, blueprint
+    )
+
+    assert result["passage"] == [
+        "Many people depend on fish for food. We should protect the sea.",
+        "Sustainable fishing protects ocean habitats.",
+    ]
+    assert result["evidence_clues"] == [
+        "fish for food",
+        "protects ocean habitats",
+    ]
