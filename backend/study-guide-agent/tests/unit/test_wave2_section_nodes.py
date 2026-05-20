@@ -285,3 +285,162 @@ async def test_wave2_section_nodes_strip_inline_quoted_list_annotations_from_pas
         "fish for food",
         "protects ocean habitats",
     ]
+
+
+@pytest.mark.asyncio
+async def test_wave2_section_nodes_strip_multiline_quoted_list_annotations_from_passage(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = _load_request_from_fixture()
+    blueprint = _build_blueprint(request)
+
+    async def fake_call_gemini(**_: object) -> str:
+        return """{
+    "title": "Assessment Passage",
+    "topic_domain": "student nursing infection-control drill",
+    "genre": "Explanatory",
+    "passage": [
+        "Imagine a student nurse, Maria, practicing basic patient care skills in a simulated hospital setting. ["
+            "quote one",
+            "quote two"
+        "]. Her instructor emphasizes standard precautions during every drill. These precautions are the foundation of infection control.",
+        "Maria begins by washing her hands thoroughly before touching her patient. ["
+            "quote three",
+            "quote four"
+        "]. She puts on gloves before starting any procedure that might involve contact with blood or bodily fluids."
+    ],
+    "evidence_clues": [
+        "foundation of infection control",
+        "washing her hands thoroughly"
+    ],
+    "answerability_note": "The passage provides clear examples of standard precautions."
+}"""
+
+    monkeypatch.setattr(sections_module, "call_gemini", fake_call_gemini)
+
+    result = await assessment_passage_module.generate_assessment_passage(
+        request, blueprint
+    )
+
+    assert result["passage"] == [
+        "Imagine a student nurse, Maria, practicing basic patient care skills in a simulated hospital setting. Her instructor emphasizes standard precautions during every drill. These precautions are the foundation of infection control.",
+        "Maria begins by washing her hands thoroughly before touching her patient. She puts on gloves before starting any procedure that might involve contact with blood or bodily fluids.",
+    ]
+    assert result["evidence_clues"] == [
+        "foundation of infection control",
+        "washing her hands thoroughly",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_wave2_section_nodes_strip_concatenated_quoted_list_annotations_from_passage(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = _load_request_from_fixture()
+    blueprint = _build_blueprint(request)
+
+    async def fake_call_gemini(**_: object) -> str:
+        return """{
+    "title": "Assessment Passage",
+    "topic_domain": "student nursing infection-control drill",
+    "genre": "expository",
+    "passage": [
+        "In a student nursing drill, imagine you're caring for Patient Maria, who has a cough. [" + "\\\"Patient Maria seems stable, but any cough is a potential source of infection,\\\"" + "] notes your instructor, stressing the importance of standard precautions.",
+        "Hand hygiene is crucial. [" + "\\\"If soap and water aren't available, use an alcohol-based hand sanitizer,\\\"" + "] your instructor reminds you."
+    ],
+    "evidence_clues": [
+        "standard precautions",
+        "alcohol-based hand sanitizer"
+    ],
+    "answerability_note": "All claims are directly answerable from the text."
+}"""
+
+    monkeypatch.setattr(sections_module, "call_gemini", fake_call_gemini)
+
+    result = await assessment_passage_module.generate_assessment_passage(
+        request, blueprint
+    )
+
+    assert result["passage"] == [
+        "In a student nursing drill, imagine you're caring for Patient Maria, who has a cough. notes your instructor, stressing the importance of standard precautions.",
+        "Hand hygiene is crucial. your instructor reminds you.",
+    ]
+    assert result["evidence_clues"] == [
+        "standard precautions",
+        "alcohol-based hand sanitizer",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_wave2_section_nodes_strip_multi_segment_concatenated_annotations_from_passage(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = _load_request_from_fixture()
+    blueprint = _build_blueprint(request)
+
+    async def fake_call_gemini(**_: object) -> str:
+        return """{
+    "title": "Assessment Passage",
+    "topic_domain": "student nursing infection-control drill",
+    "genre": "instructive",
+    "passage": [
+        "Imagine you're a student nurse practicing basic patient care. [" + "evidence_clues" + ": wash your hands" + "] You wash your hands before patient contact.",
+        "You prepare sterile supplies. [" + "evidence_clues" + ": maintain asepsis" + "] You avoid touching the catheter itself."
+    ],
+    "evidence_clues": [
+        "wash your hands",
+        "maintain asepsis"
+    ],
+    "answerability_note": "All claims are directly answerable from the text."
+}"""
+
+    monkeypatch.setattr(sections_module, "call_gemini", fake_call_gemini)
+
+    result = await assessment_passage_module.generate_assessment_passage(
+        request, blueprint
+    )
+
+    assert result["passage"] == [
+        "Imagine you're a student nurse practicing basic patient care. You wash your hands before patient contact.",
+        "You prepare sterile supplies. You avoid touching the catheter itself.",
+    ]
+    assert result["evidence_clues"] == ["wash your hands", "maintain asepsis"]
+
+
+@pytest.mark.asyncio
+async def test_wave2_section_nodes_strip_mixed_quote_code_like_annotations_from_passage(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = _load_request_from_fixture()
+    blueprint = _build_blueprint(request)
+
+    async def fake_call_gemini(**_: object) -> str:
+        return """{
+    "title": "Assessment Passage",
+    "topic_domain": "student nursing injection drill",
+    "genre": "Explanatory",
+    "passage": [
+        "Maria is a student nurse practicing injections on a mannequin. [" + '"' + "Standard precautions are a set of infection control practices used to prevent transmission of diseases," + '"' + "] she reminds herself.",
+        "Before starting, Maria washes her hands. [" + '"' + "She washes her hands thoroughly with soap and water," + '"' + "] then puts on gloves."
+    ],
+    "evidence_clues": [
+        "Standard precautions are a set of infection control practices used to prevent transmission of diseases",
+        "She washes her hands thoroughly with soap and water"
+    ],
+    "answerability_note": "All passage claims are directly attributable to standard nursing practices."
+}"""
+
+    monkeypatch.setattr(sections_module, "call_gemini", fake_call_gemini)
+
+    result = await assessment_passage_module.generate_assessment_passage(
+        request, blueprint
+    )
+
+    assert result["passage"] == [
+        "Maria is a student nurse practicing injections on a mannequin. she reminds herself.",
+        "Before starting, Maria washes her hands. then puts on gloves.",
+    ]
+    assert result["evidence_clues"] == [
+        "Standard precautions are a set of infection control practices used to prevent transmission of diseases",
+        "She washes her hands thoroughly with soap and water",
+    ]

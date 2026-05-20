@@ -43,6 +43,8 @@ def build_prompt(spec, blueprint: Blueprint, request: GenerateRequest) -> str:
         "- Include evidence_clues that point to phrases students can quote or cite.",
         "- Return the passage as an ordered list of paragraphs.",
         '- Do not append bracketed notes, clue lists, or inline annotations such as ["quote one", "quote two"] inside any passage paragraph.',
+        "- Never split one passage paragraph across multiple JSON strings or insert placeholder quote fragments between string segments.",
+        "- Never use code-like concatenation, escaped quote snippets, or placeholder expressions inside passage text.",
         f"- Keep the passage readable for Grade {request.lesson_metadata.grade_level} students.",
         f"- {_passage_length_guidance(request)}",
         "- Prefer familiar words, concrete details, and short sentences with one main idea each.",

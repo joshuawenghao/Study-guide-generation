@@ -16,6 +16,13 @@ _INVALID_JSON_ESCAPE_PATTERN = re.compile(r'(?<!\\)\\(?!["\\/bfnrtu])')
 _INLINE_QUOTED_LIST_ANNOTATION_PATTERN = re.compile(
     r'(?<=[A-Za-z0-9.!?])\s+\[(?:"[^"\n]+"(?:,\s*"[^"\n]+")*)\]'
 )
+_CODE_LIKE_INLINE_ANNOTATION_PATTERN = re.compile(
+    r"\[(?=[^\]\n]*\+)(?:\s*(?:\"(?:\\.|[^\"\n])*\"|'(?:\\.|[^'\n])*'|\+)\s*)+\]"
+)
+_CONCATENATED_QUOTED_LIST_ANNOTATION_PATTERN = re.compile(
+    r'\[\s*"\s*(?:\+\s*"(?:\\.|[^"\n])*"\s*)+\+\s*"\s*\]'
+)
+_STANDALONE_QUOTED_LINE_PATTERN = re.compile(r'^\s*"[^"\n]*",?\s*$')
 _HTML_LINE_BREAK_TAG_PATTERN = re.compile(r"(?is)<\s*(?:br|/p|/div|/li|/tr)\s*/?\s*>")
 _HTML_TAG_PATTERN = re.compile(r"(?is)</?[a-z][^>]*>")
 _CONTROL_ESCAPE_TO_PREFIX = {
@@ -33,6 +40,57 @@ def _repair_invalid_json_escapes(response_text: str) -> str:
 
 def _strip_inline_quoted_list_annotations(response_text: str) -> str:
     return _INLINE_QUOTED_LIST_ANNOTATION_PATTERN.sub("", response_text)
+
+
+def _strip_code_like_inline_annotations(response_text: str) -> str:
+    return _CODE_LIKE_INLINE_ANNOTATION_PATTERN.sub("", response_text)
+
+
+def _strip_concatenated_quoted_list_annotations(response_text: str) -> str:
+    return _CONCATENATED_QUOTED_LIST_ANNOTATION_PATTERN.sub("", response_text)
+
+
+def _strip_multiline_quoted_list_annotations(response_text: str) -> str:
+    lines = response_text.splitlines()
+    repaired_lines: list[str] = []
+    index = 0
+
+    while index < len(lines):
+        line = lines[index]
+        annotation_start = line.find('["')
+        if annotation_start == -1:
+            repaired_lines.append(line)
+            index += 1
+            continue
+
+        end_index = index + 1
+        while end_index < len(lines) and '"]' not in lines[end_index]:
+            end_index += 1
+
+        if end_index >= len(lines):
+            repaired_lines.append(line)
+            index += 1
+            continue
+
+        annotation_lines = lines[index + 1 : end_index]
+        closing_line = lines[end_index]
+        closing_marker_index = closing_line.find('"]')
+        if closing_marker_index == -1 or any(
+            not _STANDALONE_QUOTED_LINE_PATTERN.match(annotation_line)
+            for annotation_line in annotation_lines
+        ):
+            repaired_lines.append(line)
+            index += 1
+            continue
+
+        repaired_line = (
+            f"{line[:annotation_start]}{closing_line[closing_marker_index + 2 :]}"
+        )
+        repaired_line = re.sub(r"([.!?])\s+([.!?])", r"\1", repaired_line)
+        repaired_lines.append(repaired_line)
+        index = end_index + 1
+
+    return "\n".join(repaired_lines)
 
 
 def _restore_control_escapes(text: str) -> str:
@@ -83,9 +141,18 @@ def _parse_section_response(response_text: str, context_label: str) -> dict[str,
         annotation_stripped_response = _strip_inline_quoted_list_annotations(
             repaired_response
         )
-        if annotation_stripped_response != repaired_response:
+        annotation_stripped_response = _strip_code_like_inline_annotations(
+            annotation_stripped_response
+        )
+        annotation_stripped_response = _strip_concatenated_quoted_list_annotations(
+            annotation_stripped_response
+        )
+        multiline_annotation_stripped_response = (
+            _strip_multiline_quoted_list_annotations(annotation_stripped_response)
+        )
+        if multiline_annotation_stripped_response != repaired_response:
             try:
-                payload = json.loads(annotation_stripped_response)
+                payload = json.loads(multiline_annotation_stripped_response)
             except json.JSONDecodeError:
                 pass
             else:
