@@ -16,7 +16,7 @@ It is intended to answer, in words, what currently exists in the repository with
 - The local app stack has now been validated through the actual browser UI with a realistic lesson input: submission, streamed progress, preview rendering, and PDF download controls all work in the dev stack.
 - The answer-key generation path now includes the required structured `step_up_answer` payload, so full workflow runs no longer carry the answer key forward as a best-effort section just because that field was missing.
 - The scaffold-native ADK CLI and eval path now uses a dedicated `backend/study-guide-agent/eval_app/` loader surface for `./agents-cli run` and `./agents-cli eval run`, keeping `backend/study-guide-agent/app/` focused on the real typed workflow implementation used by `/generate`.
-- The validation layer now has a working validator node that aggregates five hard validators and two soft validators into a single `ValidationResult` for the orchestrator retry loop and preview warnings.
+- The validation layer now has a working validator node that aggregates six hard validators and two soft validators into a single `ValidationResult` for the orchestrator retry loop and preview warnings.
 - The ADK FastAPI loader now has a compatibility adapter so the server integration path can locate `study_guide_agent.root_agent` correctly.
 - The repo documentation now includes an explicit deployment plan and task phase covering Vercel, Cloud Run, and a production-like local parity mode.
 
@@ -52,7 +52,7 @@ It is intended to answer, in words, what currently exists in the repository with
 - The backend now includes focused unit coverage for that validator in `tests/unit/test_answer_key_quotes_validator.py`, covering a passing verbatim quote plus failures for missing quotes and non-verbatim quoted phrases.
 - Task 5.5 is now implemented: `app/validators/hard/passage_domain_diff.py` validates that the blueprint model-passage and assessment-passage topic domains are both present and differ case-insensitively, failing the `assessment_passage` slice when they collapse to the same domain.
 - The backend now includes focused unit coverage for that validator in `tests/unit/test_passage_domain_diff_validator.py`, covering distinct domains, case-insensitive equality failure, and blank-domain failure.
-- Task 5.6 is now implemented: `app/validators/soft/answer_leakage.py` extracts quoted evidence phrases from assessment answer-key `possible_answer` fields and warns when those phrases reappear in other body sections, while intentionally excluding the assessment passage and answer key from the search surface.
+- Task 5.6 is now implemented: `app/validators/soft/answer_leakage.py` extracts quoted evidence phrases from assessment answer-key `possible_answer` fields and warns when those phrases reappear in instructional body sections, while intentionally excluding the assessment passage, assessment questions, and answer key from the search surface.
 - The backend now includes focused unit coverage for that validator in `tests/unit/test_answer_leakage_validator.py`, covering both a clean case where the quote remains only in the assessment passage and a warning case where a body section repeats the quoted phrase.
 - Task 5.7 is now implemented: `app/validators/soft/reading_level.py` flattens section text, computes Flesch-Kincaid grade scores through `textstat`, and emits warnings when a prose-heavy section is materially above the target grade band or materially below it.
 - The backend now includes focused unit coverage for that validator in `tests/unit/test_reading_level_validator.py`, and `backend/study-guide-agent/pyproject.toml` plus `backend/study-guide-agent/uv.lock` now include the `textstat` dependency needed for runtime scoring.
@@ -92,7 +92,8 @@ It is intended to answer, in words, what currently exists in the repository with
 - The repo includes a compatibility shim in `backend/study-guide-agent/app/app_utils/adk_compat.py` to smooth over current ADK beta import-surface issues before ADK imports are loaded.
 - The repo now includes focused backend integration coverage for both the exported workflow surface and the orchestrator behavior: one integration test validates the `Workflow` export and retry-capable orchestration path, and another validates FastAPI boot plus session creation.
 - The backend validation surface now also has a clean end-to-end suite run at `uv run pytest tests/unit tests/integration`, currently passing with 63 tests across the implemented section nodes, prompt templates, validators, renderer, orchestrator, and server integration paths.
-- A fresh browser rerun of the Grade 12 nursing scenario now completes with 0 failed sections and 0 best-effort sections in the live UI, while the remaining feedback on that run is limited to one non-blocking answer-leakage warning and two non-blocking reading-level warnings.
+- A fresh browser rerun of the Grade 12 nursing scenario now completes with 0 failed sections and 0 best-effort sections in the live UI.
+- The latest focused backend reruns for the retested nursing and science scenarios no longer surface the earlier `assessment_questions` answer-leakage warning after that validator scope was narrowed to instructional sections; the remaining warnings in those probes were reading-level only.
 - Additional plain backend reruns across nursing, science, and English scenarios now also complete with 0 failed sections and 0 best-effort sections, leaving the current instability concentrated in soft warning surfaces rather than hard validation failures.
 - The repo now includes `backend/study-guide-agent/study_guide_agent/agent.py` as an ADK loader adapter that re-exports the real agent from `app.agent` for CLI and FastAPI loading.
 - The repo-local `backend/study-guide-agent/agents-cli` wrapper now owns the local conversational routing for `run` and `eval run`, invoking ADK directly against `./eval_app` so the product implementation package no longer has to masquerade as the scaffold eval app.
@@ -154,7 +155,7 @@ It is intended to answer, in words, what currently exists in the repository with
 
 ## Current Product Gaps
 
-- Wave 1, Wave 2, Wave 3, and answer-key generation are implemented; the validator layer now includes its aggregator node, five hard validators, two soft validators, broad isolated test coverage, and the complete Phase 6 renderer slice including template, node, and focused renderer tests.
+- Wave 1, Wave 2, Wave 3, and answer-key generation are implemented; the validator layer now includes its aggregator node, six hard validators, two soft validators, broad isolated test coverage, and the complete Phase 6 renderer slice including template, node, and focused renderer tests.
 - Workflow orchestration and focused backend integration coverage are now implemented.
 - The remaining major gaps now sit in Phase 13 parity and remote deployment work.
 - Deployment is now specified, and the backend image, local parity stack, backend Cloud Run configuration path, and frontend Vercel environment contract are in place, but the staged remote deployment checkpoints in Task 13.6 are still not implemented or validated end to end.

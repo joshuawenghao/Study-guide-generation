@@ -469,6 +469,7 @@ Hard validators block document assembly. A section that fails a hard validator i
 | `vocab_presence`      | Every vocabulary word from the blueprint appears (case-insensitive) in the combined body section text | All body sections collectively |
 | `self_assess_targets` | Each skill row in the self-assessment matches a learning target objective verbatim                    | `self_assessment`              |
 | `answer_key_quotes`   | Each possible answer in the answer key contains a verbatim phrase from the assessment passage         | `answer_key`                   |
+| `assessment_question_grounding` | Each assessment question evidence requirement stays grounded to an exact phrase from the assessment passage | `assessment_questions`         |
 | `passage_domain_diff` | The topic domain of the assessment passage differs from the model passage domain                      | `assessment_passage`           |
 | `json_schema`         | Each section output parses correctly against its expected JSON schema                                 | All section nodes              |
 
@@ -476,9 +477,9 @@ Hard validators block document assembly. A section that fails a hard validator i
 
 Soft validators produce warnings that are surfaced to the user in the web preview but do not block assembly or trigger retries.
 
-| Validator        | What it checks                                                                               |
-| ---------------- | -------------------------------------------------------------------------------------------- |
-| `answer_leakage` | Body sections do not contain verbatim phrases that appear in the answer key possible answers |
+| Validator        | What it checks                                                                                                                                |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `answer_leakage` | Instructional body sections do not contain verbatim phrases that appear in the answer key possible answers; assessment artifacts are excluded |
 | `reading_level`  | Longer prose-heavy sections stay within the configured grade-band tolerance, with warnings when a section is materially above or below target |
 
 ### Retry logic

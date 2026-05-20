@@ -4,6 +4,7 @@ from app.types import (
     AnswerKeyItem,
     AnswerKeySection,
     AssessmentPassageSection,
+    AssessmentQuestionsSection,
     IntroSection,
     StepUpAnswer,
 )
@@ -82,3 +83,29 @@ def test_validate_answer_leakage_warns_when_body_section_repeats_quote() -> None
     assert result.failures == {}
     assert any("intro" in warning for warning in result.warnings)
     assert any("protect coastlines" in warning for warning in result.warnings)
+
+
+def test_validate_answer_leakage_ignores_assessment_questions_quotes() -> None:
+    result = validate_answer_leakage(
+        answer_key=build_answer_key(),
+        section_payloads={
+            "assessment_questions": AssessmentQuestionsSection(
+                title="Assessment Questions",
+                passage_title="Assessment Passage",
+                questions=[
+                    {
+                        "number": 1,
+                        "question": "Why are mangroves important?",
+                        "question_type": "short_response",
+                        "answer_expectation": "Explain why mangroves matter.",
+                        "evidence_requirement": 'Quote the exact phrase "protect coastlines" from the passage.',
+                    }
+                ],
+            )
+        },
+    )
+
+    assert result.passed is True
+    assert result.failed_sections == []
+    assert result.failures == {}
+    assert result.warnings == []

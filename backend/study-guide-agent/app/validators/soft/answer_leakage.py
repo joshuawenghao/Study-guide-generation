@@ -10,7 +10,11 @@ from pydantic import BaseModel
 
 from app.types import AnswerKeySection, ValidationResult
 
-EXCLUDED_SECTION_KEYS = {"answer_key", "assessment_passage"}
+EXCLUDED_SECTION_KEYS = {
+    "answer_key",
+    "assessment_passage",
+    "assessment_questions",
+}
 QUOTED_PHRASE_PATTERN = re.compile(r'"([^"\n]+)"|“([^”\n]+)”')
 
 
