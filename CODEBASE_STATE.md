@@ -1,6 +1,6 @@
 # Codebase State
 
-Last updated: 2026-05-20
+Last updated: 2026-05-21
 
 This document is the live plain-language summary of the shipped codebase.
 It is intended to answer, in words, what currently exists in the repository without requiring a reader to inspect source files directly.
@@ -152,6 +152,7 @@ It is intended to answer, in words, what currently exists in the repository with
 - Local backend runs now auto-load `backend/study-guide-agent/.env` for Gemini-backed workflow calls and backend server config, so `uv run python run_demo.py --mode full-workflow` and local FastAPI runs no longer require `GOOGLE_API_KEY` to be exported separately in the shell when the repo-local `.env` is present.
 - Phase 12 IFC acceptance verification is now complete with a fresh live full-workflow demo: the repo done gate passes, the full backend suite passes at 69 tests, the focused workflow, renderer, and validator slice passes at 8 tests, and the current demo run succeeds with 18 preview sections, zero failed sections, zero best-effort sections, and only non-blocking warnings.
 - The repo-level validation script now also runs backend Pyright against the shared repo `pyrightconfig.json`, so editor-visible backend type errors can fail the done gate before a task is marked complete.
+- The done gate still validates backend typing through CLI Pyright rather than VS Code's live Pylance problem stream, and the workflow-local Pydantic input models in `backend/study-guide-agent/app/agent.py` now redeclare inherited fields on specialized node inputs so the editor and done-gate diagnostics stay aligned on the orchestration path.
 - Backend pytest output is now filtered for the two known upstream Google ADK experimental credential-service `UserWarning`s, so the done gate stays clean without suppressing unrelated test warnings.
 - The frontend now also declares CSS imports for TypeScript through `frontend/global.d.ts`, so App Router files like `frontend/app/layout.tsx` no longer depend on editor-local suppression behavior for `globals.css` side-effect imports.
 - The repo now includes a root `.editorconfig` to standardize LF endings and final newlines, reducing formatter-only post-commit diffs across frontend and backend files.

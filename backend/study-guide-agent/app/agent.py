@@ -86,22 +86,34 @@ class SectionNodeInput(BaseModel):
 
 
 class SubconceptNodeInput(SectionNodeInput):
+    request: GenerateRequest
+    blueprint: Blueprint
     sub_competency: SubCompetency
 
 
 class CheckInNodeInput(SectionNodeInput):
+    request: GenerateRequest
+    blueprint: Blueprint
     model_passage: dict[str, Any]
 
 
 class AssessmentQuestionsNodeInput(SectionNodeInput):
+    request: GenerateRequest
+    blueprint: Blueprint
     assessment_passage: dict[str, Any]
 
 
 class StepUpNodeInput(AssessmentQuestionsNodeInput):
+    request: GenerateRequest
+    blueprint: Blueprint
+    assessment_passage: dict[str, Any]
     assessment_questions: dict[str, Any]
 
 
 class AnswerKeyNodeInput(AssessmentQuestionsNodeInput):
+    request: GenerateRequest
+    blueprint: Blueprint
+    assessment_passage: dict[str, Any]
     check_in: dict[str, Any]
     assessment_questions: dict[str, Any]
     step_up: dict[str, Any]
