@@ -477,7 +477,37 @@ Commit after both files are in sync.
 
 ---
 
-**✅ Phase 2 done.** Shared types are now stable enough for prompts, nodes, validators, and frontend flows.
+### Task 2.4 — Extend the preview contract for iconography
+
+🤖 **Copilot**
+
+Open `backend/study-guide-agent/app/types.py` and `frontend/lib/types.ts`. Open Copilot Chat and paste:
+
+```text
+@workspace
+Extend the shared study-guide preview contract for renderer-owned iconography.
+
+Read ARCHITECTURE.md sections 6, 8, and 9 before editing.
+
+Requirements:
+- Add optional icon metadata for preview sections without changing the request contract
+- Keep icons presentation-only; they must not become required instructional content
+- Mirror the backend and frontend contract changes in the same edit slice
+- Preserve strict typing on both sides
+
+Constraints:
+- Do not add teacher-configurable icon inputs
+- Do not add generated image payloads or asset upload fields
+- Keep backwards compatibility by making new icon fields optional
+```
+
+**Done looks like:**
+
+- Backend and frontend preview contracts can carry optional icon metadata with no request-shape changes
+
+---
+
+**Phase 2 note.** Shared types are in place for the shipped prototype, and Task 2.4 extends that contract for the planned iconography slice.
 
 ---
 
@@ -1191,7 +1221,58 @@ Requirements:
 
 ---
 
-**✅ Phase 6 done.** Rendering is now testable and aligned with the product contract.
+### Task 6.4 — Add deterministic iconography to the renderer and PDF template
+
+🤖 **Copilot**
+
+Open `backend/study-guide-agent/app/nodes/renderer.py` and `backend/study-guide-agent/app/templates/study_guide.html.j2`. Paste:
+
+```text
+@workspace
+Implement the first-pass iconography system for the study-guide renderer and PDF template.
+
+Read ARCHITECTURE.md section 8 before editing.
+
+Requirements:
+- Keep icon selection deterministic and renderer-owned
+- Emit optional icon metadata in the preview payload based on section type and supported UI roles
+- Add icon treatments to the WeasyPrint-safe Jinja template for section headers and selected repeated callouts
+- Use inline SVG or equivalent template-owned markup that survives PDF rendering reliably
+- Fall back to text-only rendering if an icon key is unknown or unsupported
+
+Constraints:
+- Do not call Gemini for icon selection
+- Do not add generated images, uploaded assets, or remote image dependencies
+- Keep the canonical section order unchanged
+```
+
+**Done looks like:**
+
+- The backend renderer and PDF template apply the new iconography system without changing guide content semantics
+
+---
+
+### Task 6.5 — Add focused renderer iconography tests
+
+🧑 **You**
+
+Run the narrowest validation available after the first iconography renderer implementation.
+Examples:
+
+```bash
+cd backend/study-guide-agent
+uv run pytest tests/unit/test_renderer.py -q
+```
+
+If needed, extend the focused renderer tests first so they assert both preview `icon_key` emission and a stable PDF render path when icon markup is present.
+
+**Done looks like:**
+
+- Focused renderer tests cover icon metadata and confirm the PDF render path still succeeds
+
+---
+
+**Phase 6 note.** Rendering is in place for the shipped prototype, and Tasks 6.4 through 6.5 extend that renderer for the planned iconography slice.
 
 ---
 
@@ -1556,7 +1637,37 @@ Requirements:
 
 ---
 
-**✅ Phase 11 done.** The frontend is feature-complete for the prototype experience.
+### Task 11.5 — Add iconography parity to the web preview
+
+🤖 **Copilot**
+
+Open `frontend/components/PreviewSection.tsx` and `frontend/components/WebPreview.tsx`. Paste:
+
+```text
+@workspace
+Implement web preview iconography parity for the study-guide results UI.
+
+Read ARCHITECTURE.md sections 8 and 9 before editing.
+
+Requirements:
+- Render the optional preview icon metadata using a local icon mapping
+- Keep the visual language aligned with the PDF iconography treatment
+- Support section headers and any approved repeated callout roles in the preview UI
+- Degrade gracefully to text-only rendering when icon metadata is missing or unknown
+
+Constraints:
+- Do not fetch icons from remote URLs
+- Do not introduce teacher-facing icon settings
+- Preserve existing validation warning and best-effort indicators
+```
+
+**Done looks like:**
+
+- The web preview renders the same iconography family as the PDF without changing content structure
+
+---
+
+**Phase 11 note.** The frontend results experience is feature-complete for the shipped prototype, and Task 11.5 extends it for iconography parity.
 
 ---
 

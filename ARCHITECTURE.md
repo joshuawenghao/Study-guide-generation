@@ -438,6 +438,7 @@ GenerateResponse
       section_id: string
       section_type: string
       title: string
+      icon_key?: string           # optional renderer-selected icon token for section-level visual affordances
       content: object             # shape varies by section_type; documented per-section
   validation: ValidationResult
   error?: string                  # present only on failure
@@ -464,14 +465,14 @@ ProgressEvent
 
 Hard validators block document assembly. A section that fails a hard validator is retried once. If the retry also fails, the document is assembled with a visible warning on the affected section.
 
-| Validator             | What it checks                                                                                        | Section(s) it applies to       |
-| --------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------ |
-| `vocab_presence`      | Every vocabulary word from the blueprint appears (case-insensitive) in the combined body section text | All body sections collectively |
-| `self_assess_targets` | Each skill row in the self-assessment matches a learning target objective verbatim                    | `self_assessment`              |
-| `answer_key_quotes`   | Each possible answer in the answer key contains a verbatim phrase from the assessment passage         | `answer_key`                   |
+| Validator                       | What it checks                                                                                              | Section(s) it applies to       |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| `vocab_presence`                | Every vocabulary word from the blueprint appears (case-insensitive) in the combined body section text       | All body sections collectively |
+| `self_assess_targets`           | Each skill row in the self-assessment matches a learning target objective verbatim                          | `self_assessment`              |
+| `answer_key_quotes`             | Each possible answer in the answer key contains a verbatim phrase from the assessment passage               | `answer_key`                   |
 | `assessment_question_grounding` | Each assessment question evidence requirement stays grounded to an exact phrase from the assessment passage | `assessment_questions`         |
-| `passage_domain_diff` | The topic domain of the assessment passage differs from the model passage domain                      | `assessment_passage`           |
-| `json_schema`         | Each section output parses correctly against its expected JSON schema                                 | All section nodes              |
+| `passage_domain_diff`           | The topic domain of the assessment passage differs from the model passage domain                            | `assessment_passage`           |
+| `json_schema`                   | Each section output parses correctly against its expected JSON schema                                       | All section nodes              |
 
 ### Soft validators
 
@@ -490,6 +491,10 @@ After all failed sections are retried, the validator runs a second time. The `wh
 
 Because ADK dynamic workflows checkpoint each node execution by deterministic execution ID, a mid-run timeout or infrastructure failure resumes from the last successful node — not from the start of the workflow.
 
+### Presentation-only visual affordances
+
+Icons are presentation metadata, not instructional content. They do not participate in prompt generation, hard validation, or retry decisions. If icon resolution fails for a section or UI role, the renderer and preview fall back to text-only output rather than failing the guide generation run.
+
 ---
 
 ## 8. Rendering pipeline
@@ -503,13 +508,24 @@ The renderer populates a Jinja2 HTML template with the validated section content
 - Page margins and size (A4)
 - Section order (hardcoded in the template — matches the fixed 17-section structure)
 - Heading hierarchy (H1 for the lesson title, H2 for section titles, H3 for sub-concept titles)
+- Deterministic icon slots beside section titles, selected subheaders, and repeated callout treatments using a backend-owned icon allowlist
 - Table structures for vocabulary (4 columns: word, part of speech, definition, example) and self-assessment (skill × 3 confidence columns)
 - Page break rules: the answer key always begins on a new page; the assessment passage begins on a new page
 - House style CSS: font family, font sizes per grade band, line height, colour palette
 
+### Iconography system
+
+The first visualization enhancement is a controlled icon system rather than generated media. The iconography design has these constraints:
+
+- Icons are selected deterministically from a fixed allowlist keyed by section type and UI role; Gemini does not generate icon choices.
+- Initial scope covers section headers, selected subsection headings, and recurring callouts such as warnings, tips, or assessment markers.
+- PDF rendering uses template-owned inline SVG or equivalent renderer-controlled markup so icons survive WeasyPrint reliably.
+- Web preview consumes an optional `icon_key` emitted by the renderer and maps it to a local React icon component with the same semantic meaning.
+- Unknown or unsupported `icon_key` values degrade gracefully to text-only rendering and do not trigger validation failures.
+
 ### Web preview rendering
 
-The renderer also produces a `WebPreviewPayload` JSON object that mirrors the PDF structure but is shaped for React consumption. Each section in the payload includes its `section_type`, a `title`, and a `content` object whose shape is documented per-section type. The React `WebPreview` component maps `section_type` to a dedicated sub-component that handles the rendering of that section's specific content structure (e.g. `VocabularySection` renders a table, `PassageSection` renders styled paragraphs with annotations).
+The renderer also produces a `WebPreviewPayload` JSON object that mirrors the PDF structure but is shaped for React consumption. Each section in the payload includes its `section_type`, a `title`, an optional `icon_key`, and a `content` object whose shape is documented per-section type. The React `WebPreview` component maps `section_type` to a dedicated sub-component that handles the rendering of that section's specific content structure (e.g. `VocabularySection` renders a table, `PassageSection` renders styled paragraphs with annotations) while using `icon_key` to render the same high-level visual affordance family used in the PDF.
 
 ---
 
@@ -538,7 +554,7 @@ On submit, the form serialises to a `GenerateRequest` and POSTs to `app/api/gene
 
 On `done` event receipt, the results view renders two tabs: **Web Preview** and **Download PDF**.
 
-The Web Preview tab renders `WebPreview.tsx`, which maps the `WebPreviewPayload` sections to their respective React sub-components. Soft validator warnings are displayed as amber inline callouts on the affected sections. Best-effort sections are marked with a visible badge.
+The Web Preview tab renders `WebPreview.tsx`, which maps the `WebPreviewPayload` sections to their respective React sub-components. Soft validator warnings are displayed as amber inline callouts on the affected sections. Best-effort sections are marked with a visible badge. Section-level iconography should visually track the PDF treatment so teachers do not see two different visual languages for the same generated guide.
 
 The Download PDF tab renders `DownloadButton.tsx`, which decodes the `pdf_base64` field and triggers a browser file download.
 

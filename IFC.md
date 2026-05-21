@@ -25,11 +25,13 @@ Teachers in K–12 markets (initially PH, JP, VN) spend disproportionate time ma
 - Primary users are curriculum writers and teachers working within a structured, branded content pipeline.
 - They are comfortable filling in a structured form but are not technical users — they should not need to understand prompting, LLMs, or the generation pipeline.
 - Their primary goal is either a downloadable PDF document or a web preview they can review and share — the output must be immediately presentable without post-generation formatting work.
+- They benefit from a study guide that is easy to scan visually, not just accurate in content — lightweight iconography around headings, subheadings, and repeated callout patterns can improve readability when it stays consistent and non-distracting.
 - Secondary users are content leads who review output quality; where sections fail validation, the system automatically retries them as part of the validation pass rather than requiring manual intervention.
 
 ### The content constraints
 
 - Output must conform to a specific house style: warm-formal tone, no emoji, no exclamation marks outside dialogue, no LaTeX, reading level matched to the target grade band.
+- Visual enhancement for the prototype is limited to deterministic iconography near section headers, selected subheaders, and other repeated layout affordances such as warnings or callouts; icons are decorative navigation aids, not generated illustrations or content-bearing diagrams.
 - Vocabulary words introduced in the vocabulary section must appear in body sections — not just defined in isolation.
 - The assessment passage must draw from a topic domain that differs from the model passage to prevent answer leakage.
 - Answer key possible answers must quote verbatim from the assessment passage — they cannot be paraphrased.
@@ -63,6 +65,7 @@ Teachers in K–12 markets (initially PH, JP, VN) spend disproportionate time ma
 - **Hard constraint validation.** The system must programmatically verify: vocabulary words appear in body sections; self-assessment skills match learning targets verbatim; answer key quotes exist verbatim in the assessment passage; assessment passage topic domain differs from model passage.
 - **Automated retry on validation failure.** When a section fails a hard validator, the system automatically retries that section in isolation during the validation pass — not by regenerating the entire guide, and not requiring manual intervention.
 - **Structured PDF output.** The final file must be a properly structured PDF document with headings, a vocabulary table, a self-assessment table, and a clearly separated answer key on a new page.
+- **Consistent visual affordances.** The PDF and web preview must support a consistent icon system for section headers and selected subheaders or callouts so the guide is more scannable without changing section order, instructional meaning, or requiring teacher configuration.
 - **House style compliance.** Every generated section must follow tone, register, reading-level, and formatting rules without requiring post-generation editing by the teacher.
 - **Market-aware generation.** The system prompt must be parameterised by market (PH / JP / VN) so cultural references and examples are contextually appropriate.
 - **No answer leakage.** Body sections must not contain or imply correct answers to assessment questions. This must be checked programmatically as a soft validator with a warning surfaced to the user.
@@ -78,3 +81,10 @@ Teachers in K–12 markets (initially PH, JP, VN) spend disproportionate time ma
 - **Short / standard / long length presets.** A length_preset parameter that adjusts target word counts per section without changing the section structure.
 - **Optional input pre-population.** Vocabulary seeds and topic domain overrides let experienced writers guide generation without being required for basic use.
 - **Automated CI/CD promotion.** Once the manual deployment path is stable, dev and production releases can be promoted from versioned configuration rather than ad hoc local commands.
+
+### Out of scope for this visual-icons requirement
+
+- AI-generated images, illustrations, or stock-photo-like scene generation.
+- Subject-specific generated diagrams, charts, or other content visuals that require new structured section payloads.
+- Teacher-controlled icon uploads, per-guide icon theming, or market-specific icon packs.
+- Icon choices that add new instructional facts, replace text labels, or become required for comprehension.

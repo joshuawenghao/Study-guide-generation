@@ -1,6 +1,6 @@
 # Task Status
 
-Last updated: 2026-05-20
+Last updated: 2026-05-21
 
 This file mirrors the structure of `TASKS.md` and records the current repo state against each task directly.
 Use it together with `TASKS.md`:
@@ -26,6 +26,7 @@ Status legend:
 - The backend now also grounds `assessment_questions` evidence requirements to exact passage quotes before downstream use, hard-validates that grounding against the assessment passage, and defensively re-normalizes `answer_key` during validation and rendering so raw model assessment answers cannot silently bypass the quote guard
 - The shared section parser now also strips malformed inline quoted-list annotations, multiline placeholder blocks, and code-like bracket annotations built from concatenated quoted fragments before a second parse attempt, and the assessment-passage prompt now explicitly forbids those bracketed or code-like placeholder annotations inside passage paragraphs, closing the live UI parse failure that had been observed in `assessment_passage`
 - Deployment planning is now documented around a recommended Vercel frontend plus Cloud Run backend topology, with a separate local parity mode planned so production issues can be reproduced without changing the app architecture; the backend container now honors the runtime `PORT` environment variable, serves `app.fast_api_app:app` in the same image shape intended for Cloud Run, and now includes environment-driven CORS/runtime config plus a standardized Cloud Run deploy entrypoint in `DEPLOYMENT.md` and `scripts/deploy-backend-cloud-run.sh`
+- `IFC.md` and `ARCHITECTURE.md` now also document a new deterministic iconography requirement for section headers, selected subheaders, and repeated callouts, but no icon contract or rendering work has been implemented yet in code
 
 ## Phase 0 — Repository and tooling setup
 
@@ -87,6 +88,11 @@ Notes: `frontend/lib/types.ts` exists and mirrors the current backend contract s
 
 Status: `complete`
 Notes: The manual contract-sync check now matches the current repo state: the request/response contract in `backend/study-guide-agent/app/types.py` and `frontend/lib/types.ts` is still aligned for `GenerateRequest`, `Blueprint`, `WebPreviewPayload`, `ValidationResult`, `GenerateResponse`, and `ProgressEvent`, and the frontend proxy continues to consume the shared request shape through `frontend/app/api/generate/route.ts`. There is still no automated cross-runtime drift enforcement beyond manual comparison, but the manual verification task itself is complete.
+
+### Task 2.4 — Extend the preview contract for iconography
+
+Status: `not started`
+Notes: The spec now calls for optional preview icon metadata, but the shared contract in `backend/study-guide-agent/app/types.py` and `frontend/lib/types.ts` has not been updated yet.
 
 ## Phase 3 — System prompt and blueprint generation
 
@@ -206,6 +212,16 @@ Notes: `backend/study-guide-agent/app/nodes/renderer.py` now accepts explicit `b
 Status: `complete`
 Notes: `backend/study-guide-agent/tests/unit/test_renderer.py` now provides focused executable coverage for the renderer path, asserting that the rendered PDF payload decodes to bytes with a PDF header and that preview sections are emitted in canonical order; the focused renderer test module and `./scripts/validate-task.sh` both passed.
 
+### Task 6.4 — Add deterministic iconography to the renderer and PDF template
+
+Status: `not started`
+Notes: `backend/study-guide-agent/app/nodes/renderer.py` and `backend/study-guide-agent/app/templates/study_guide.html.j2` do not yet emit or render deterministic icons for section headers or approved callout roles.
+
+### Task 6.5 — Add focused renderer iconography tests
+
+Status: `not started`
+Notes: The renderer test suite does not yet assert preview `icon_key` emission or verify the PDF render path with inline icon markup present.
+
 ## Phase 7 — Workflow orchestration
 
 ### Task 7.1 — Implement the orchestrator workflow
@@ -285,6 +301,11 @@ Notes: `frontend/components/DownloadButton.tsx` now accepts base64 PDF data and 
 
 Status: `complete`
 Notes: `frontend/app/page.tsx` now keeps `ProgressTracker` visible after completion, renders a responsive results workspace with preview and download tabs, surfaces validation warnings in the completed state, and wires the final `GenerateResponse` into `WebPreview` plus `DownloadButton`; `cd frontend && npm run typecheck`, `cd frontend && npm run lint`, and `./scripts/validate-task.sh` passed.
+
+### Task 11.5 — Add iconography parity to the web preview
+
+Status: `not started`
+Notes: The web preview components do not yet consume or render icon metadata, so the frontend has no iconography parity path with the new rendering requirement.
 
 ## Phase 12 — End-to-end validation and QA
 
