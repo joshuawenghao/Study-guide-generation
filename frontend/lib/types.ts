@@ -92,6 +92,7 @@ export interface PreviewSection {
   section_id: string;
   section_type: string;
   title: string;
+  icon_key?: string;
   content: Record<string, unknown>;
 }
 

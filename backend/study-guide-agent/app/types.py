@@ -336,6 +336,13 @@ class PreviewSection(BaseModel):
     section_id: str
     section_type: str
     title: str
+    icon_key: str | None = Field(
+        default=None,
+        description=(
+            "Optional renderer-selected icon token used for presentation-only "
+            "visual affordances in the PDF and web preview."
+        ),
+    )
     content: dict[str, Any] = Field(
         description=(
             "Structured section payload for the frontend preview; exact shape varies "

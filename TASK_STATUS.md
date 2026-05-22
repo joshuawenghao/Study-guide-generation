@@ -1,6 +1,6 @@
 # Task Status
 
-Last updated: 2026-05-21
+Last updated: 2026-05-22
 
 This file mirrors the structure of `TASKS.md` and records the current repo state against each task directly.
 Use it together with `TASKS.md`:
@@ -26,7 +26,7 @@ Status legend:
 - The backend now also grounds `assessment_questions` evidence requirements to exact passage quotes before downstream use, hard-validates that grounding against the assessment passage, and defensively re-normalizes `answer_key` during validation and rendering so raw model assessment answers cannot silently bypass the quote guard
 - The shared section parser now also strips malformed inline quoted-list annotations, multiline placeholder blocks, and code-like bracket annotations built from concatenated quoted fragments before a second parse attempt, and the assessment-passage prompt now explicitly forbids those bracketed or code-like placeholder annotations inside passage paragraphs, closing the live UI parse failure that had been observed in `assessment_passage`
 - Deployment planning is now documented around a recommended Vercel frontend plus Cloud Run backend topology, with a separate local parity mode planned so production issues can be reproduced without changing the app architecture; the backend container now honors the runtime `PORT` environment variable, serves `app.fast_api_app:app` in the same image shape intended for Cloud Run, and now includes environment-driven CORS/runtime config plus a standardized Cloud Run deploy entrypoint in `DEPLOYMENT.md` and `scripts/deploy-backend-cloud-run.sh`
-- `IFC.md` and `ARCHITECTURE.md` now also document a new deterministic iconography requirement for section headers, selected subheaders, and repeated callouts, but no icon contract or rendering work has been implemented yet in code
+- `IFC.md` and `ARCHITECTURE.md` now also document a new deterministic iconography requirement for section headers, selected subheaders, and repeated callouts; the shared preview contract in `backend/study-guide-agent/app/types.py` and `frontend/lib/types.ts` now carries optional `icon_key` metadata, while renderer and preview rendering work remain unimplemented
 
 ## Phase 0 — Repository and tooling setup
 
@@ -91,8 +91,8 @@ Notes: The manual contract-sync check now matches the current repo state: the re
 
 ### Task 2.4 — Extend the preview contract for iconography
 
-Status: `not started`
-Notes: The spec now calls for optional preview icon metadata, but the shared contract in `backend/study-guide-agent/app/types.py` and `frontend/lib/types.ts` has not been updated yet.
+Status: `complete`
+Notes: `backend/study-guide-agent/app/types.py` and `frontend/lib/types.ts` now both expose optional presentation-only `icon_key` metadata on `PreviewSection` without changing the request contract or making icon data required. Focused validation passed with `cd backend/study-guide-agent && uv run pyright app` and `cd frontend && npm run typecheck`, and the repo done gate `./scripts/validate-task.sh` also passed.
 
 ## Phase 3 — System prompt and blueprint generation
 
