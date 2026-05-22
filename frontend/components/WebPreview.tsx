@@ -1,4 +1,7 @@
 import PreviewSection from "@/components/PreviewSection";
+import PreviewIcon, {
+  PREVIEW_CALLOUT_ICON_KEYS,
+} from "@/components/PreviewIcon";
 import type { WebPreviewProps } from "@/lib/types";
 
 function pluralize(count: number, singular: string, plural: string): string {
@@ -93,14 +96,22 @@ export default function WebPreview({ preview, validation }: WebPreviewProps) {
 
       {validation.warnings.length > 0 ? (
         <section className="rounded-[2rem] border border-amber-200 bg-amber-50 px-5 py-5">
-          <div className="space-y-2">
-            <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-amber-900">
-              Validation warnings
-            </h3>
-            <p className="text-sm leading-6 text-amber-950">
-              These warnings did not block output generation, but they should be
-              reviewed before the guide is shared.
-            </p>
+          <div className="flex items-start gap-3">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/80 text-amber-900 shadow-sm">
+              <PreviewIcon
+                iconKey={PREVIEW_CALLOUT_ICON_KEYS.warning}
+                className="h-5 w-5"
+              />
+            </span>
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-amber-900">
+                Validation warnings
+              </h3>
+              <p className="text-sm leading-6 text-amber-950">
+                These warnings did not block output generation, but they should
+                be reviewed before the guide is shared.
+              </p>
+            </div>
           </div>
           <ul className="mt-4 grid gap-3 text-sm leading-6 text-amber-950">
             {validation.warnings.map((warning) => (
@@ -115,7 +126,15 @@ export default function WebPreview({ preview, validation }: WebPreviewProps) {
         </section>
       ) : (
         <section className="rounded-[2rem] border border-emerald-200 bg-emerald-50 px-5 py-5 text-sm leading-6 text-emerald-950">
-          No validation warnings were returned with this preview.
+          <div className="flex items-start gap-3">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/80 text-emerald-800 shadow-sm">
+              <PreviewIcon
+                iconKey={PREVIEW_CALLOUT_ICON_KEYS.success}
+                className="h-5 w-5"
+              />
+            </span>
+            <p>No validation warnings were returned with this preview.</p>
+          </div>
         </section>
       )}
 

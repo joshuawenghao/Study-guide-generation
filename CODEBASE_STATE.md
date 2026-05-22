@@ -21,6 +21,7 @@ It is intended to answer, in words, what currently exists in the repository with
 - The repo documentation now includes an explicit deployment plan and task phase covering Vercel, Cloud Run, and a production-like local parity mode.
 - The shared preview contract now includes optional renderer-owned `icon_key` metadata so presentation-only iconography can flow from the backend to the frontend without changing teacher input payloads.
 - The backend renderer and PDF template now include a first-pass deterministic iconography system for section headers and repeated callouts using inline SVG markup that survives WeasyPrint.
+- The web preview now consumes renderer-selected icon metadata through a local React icon mapping, so the browser preview and PDF now share the same section-header and recurring-callout iconography family.
 
 ## Repository Shape
 
@@ -125,7 +126,7 @@ It is intended to answer, in words, what currently exists in the repository with
 - Task 11.2 is now implemented: `frontend/components/WebPreview.tsx` now acts as the results-preview container, showing high-level validation counts, warning callouts, and the ordered study-guide section list by composing `PreviewSection` across the backend `WebPreviewPayload`.
 - Task 11.3 is now implemented: `frontend/components/DownloadButton.tsx` now provides a browser-side PDF download control that decodes the backend base64 PDF payload, saves it with a sanitized filename, and surfaces simple local error feedback when the file is unavailable.
 - Task 11.4 is now implemented: `frontend/app/page.tsx` now keeps the progress tracker visible after completion and turns the final response into a responsive results workspace with preview and download tabs, repeated validation-warning visibility, result summary cards, and download filename guidance.
-- The frontend does not yet render iconography parity in the web preview; the `icon_key` contract is present, but the current preview components still render text-only section chrome.
+- Task 11.5 is now implemented: `frontend/components/PreviewIcon.tsx` now provides a local inline SVG icon mapping for renderer-owned `icon_key` values and recurring callout roles, and `frontend/components/PreviewSection.tsx` plus `frontend/components/WebPreview.tsx` now render that iconography on preview section headers and repeated warning, success, and default callout treatments with graceful text-only fallback.
 - `frontend/lib/types.ts` now also exports the shared `InputFormProps` contract used by the teacher input form component, keeping frontend component typing aligned with the repo rule that shared types live in the central frontend types module.
 - `frontend/lib/types.ts` now also exports the shared `ProgressTrackerProps` contract used by the streamed progress UI.
 - `frontend/lib/types.ts` now also exports the shared `PreviewSectionProps` contract so preview UI components can stay aligned with the backend preview payload and validation metadata.
@@ -169,6 +170,5 @@ It is intended to answer, in words, what currently exists in the repository with
 
 - Wave 1, Wave 2, Wave 3, and answer-key generation are implemented; the validator layer now includes its aggregator node, six hard validators, two soft validators, broad isolated test coverage, and the complete Phase 6 renderer slice including template, node, and focused renderer tests.
 - Workflow orchestration and focused backend integration coverage are now implemented.
-- Frontend preview iconography parity is still an unimplemented follow-up slice.
 - The remaining major gaps now sit in Phase 13 parity and remote deployment work.
 - Deployment is now specified, and the backend image, local parity stack, backend Cloud Run configuration path, and frontend Vercel environment contract are in place, but the staged remote deployment checkpoints in Task 13.6 are still not implemented or validated end to end.

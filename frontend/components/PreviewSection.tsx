@@ -2,6 +2,10 @@ import type {
   PreviewSection as PreviewSectionData,
   PreviewSectionProps,
 } from "@/lib/types";
+import PreviewIcon, {
+  hasPreviewIcon,
+  PREVIEW_CALLOUT_ICON_KEYS,
+} from "@/components/PreviewIcon";
 
 type ContentRecord = Record<string, unknown>;
 
@@ -412,32 +416,54 @@ function renderAnswerKey(section: PreviewSectionData): JSX.Element {
       {renderAnswerGroup("Assessment answers", assessmentAnswers)}
       {stepUpChallenge || requiredEvidence.length > 0 ? (
         <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
-            Step-up response
-          </h3>
-          {stepUpChallenge ? (
-            <p className="mt-4 text-sm leading-6 text-slate-700">
-              {stepUpChallenge}
-            </p>
-          ) : null}
-          {requiredEvidence.length > 0 ? (
-            <div className="mt-4 flex flex-wrap gap-2">
-              {requiredEvidence.map((item) => (
-                <span
-                  key={item}
-                  className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-amber-900"
-                >
-                  {item}
-                </span>
-              ))}
+          <div className="flex items-start gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+              <PreviewIcon
+                iconKey={PREVIEW_CALLOUT_ICON_KEYS.default}
+                className="h-5 w-5"
+              />
+            </span>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+                Step-up response
+              </h3>
+              {stepUpChallenge ? (
+                <p className="mt-4 text-sm leading-6 text-slate-700">
+                  {stepUpChallenge}
+                </p>
+              ) : null}
+              {requiredEvidence.length > 0 ? (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {requiredEvidence.map((item) => (
+                    <span
+                      key={item}
+                      className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-amber-900"
+                    >
+                      {item}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
             </div>
-          ) : null}
+          </div>
         </section>
       ) : null}
       {teacherNote ? (
         <section className="rounded-[2rem] border border-dashed border-slate-300 bg-slate-50 px-5 py-4 text-sm leading-6 text-slate-700">
-          <span className="font-semibold text-slate-900">Teacher note:</span>{" "}
-          {teacherNote}
+          <div className="flex items-start gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-slate-700">
+              <PreviewIcon
+                iconKey={PREVIEW_CALLOUT_ICON_KEYS.default}
+                className="h-5 w-5"
+              />
+            </span>
+            <p>
+              <span className="font-semibold text-slate-900">
+                Teacher note:
+              </span>{" "}
+              {teacherNote}
+            </p>
+          </div>
         </section>
       ) : null}
     </div>
@@ -538,17 +564,25 @@ export default function PreviewSection({
   const failures = validation.failures[sectionKey] ?? [];
   const failed = validation.failed_sections.includes(sectionKey);
   const isBestEffort = validation.best_effort_sections.includes(sectionKey);
+  const showSectionIcon = hasPreviewIcon(section.icon_key);
 
   return (
     <article className="space-y-5 rounded-[2rem] border border-slate-200 bg-surface-strong p-6 shadow-sm sm:p-8">
       <header className="flex flex-col gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-            {formatLabel(section.section_type)}
-          </p>
-          <h2 className="text-2xl font-semibold tracking-tight text-slate-950">
-            {section.title}
-          </h2>
+        <div className="flex items-start gap-4">
+          {showSectionIcon ? (
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-900 shadow-sm">
+              <PreviewIcon iconKey={section.icon_key} className="h-5 w-5" />
+            </span>
+          ) : null}
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+              {formatLabel(section.section_type)}
+            </p>
+            <h2 className="text-2xl font-semibold tracking-tight text-slate-950">
+              {section.title}
+            </h2>
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -566,10 +600,18 @@ export default function PreviewSection({
       </header>
 
       {failures.length > 0 ? (
-        <div className="rounded-3xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm leading-6 text-rose-700">
-          {failures.map((failure) => (
-            <p key={failure}>{failure}</p>
-          ))}
+        <div className="flex gap-3 rounded-3xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm leading-6 text-rose-700">
+          <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/80 text-rose-700">
+            <PreviewIcon
+              iconKey={PREVIEW_CALLOUT_ICON_KEYS.warning}
+              className="h-5 w-5"
+            />
+          </span>
+          <div className="space-y-2">
+            {failures.map((failure) => (
+              <p key={failure}>{failure}</p>
+            ))}
+          </div>
         </div>
       ) : null}
 
