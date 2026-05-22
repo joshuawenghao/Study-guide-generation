@@ -200,6 +200,7 @@ async def generate_rendered_response(
     if (
         isinstance(answer_key_payload, Mapping)
         and isinstance(normalized_sections.get("check_in"), Mapping)
+        and isinstance(normalized_sections.get("model_passage"), Mapping)
         and isinstance(assessment_passage_payload, Mapping)
         and isinstance(assessment_questions_payload, Mapping)
     ):
@@ -208,6 +209,7 @@ async def generate_rendered_response(
             dict(cast(Mapping[str, Any], normalized_sections["check_in"])),
             dict(assessment_passage_payload),
             dict(assessment_questions_payload),
+            dict(cast(Mapping[str, Any], normalized_sections["model_passage"])),
         )
 
     html = _render_html(

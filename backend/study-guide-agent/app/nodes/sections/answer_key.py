@@ -243,15 +243,67 @@ def _build_assessment_possible_answer(
 
 
 def _normalize_check_in_answers(
-    answer_key: dict[str, Any], check_in: dict[str, Any]
+    answer_key: dict[str, Any],
+    check_in: dict[str, Any],
+    model_passage: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     normalized_answers: list[dict[str, Any]] = []
     raw_answers = [dict(answer) for answer in answer_key.get("check_in_answers", [])]
+    model_passage_text = (
+        "\n".join(model_passage.get("passage", [])) if model_passage else ""
+    )
+    quote_candidates = _collect_quote_candidates(model_passage or {})
+    used_candidates: set[str] = set()
 
     for index, raw_question_spec in enumerate(check_in.get("questions", [])):
         question_spec = dict(raw_question_spec)
         answer = _find_check_in_answer_source(raw_answers, index, question_spec)
-        evidence_quote = answer.get("evidence_quote")
+        possible_answer = str(answer.get("possible_answer", "")).strip()
+        raw_evidence_quote = answer.get("evidence_quote")
+        evidence_quote = (
+            str(raw_evidence_quote).strip() if raw_evidence_quote is not None else ""
+        )
+        normalized_evidence_quote = _normalize_evidence_quote(evidence_quote)
+        should_normalize_quote = bool(normalized_evidence_quote) and (
+            normalized_evidence_quote != "N/A"
+        )
+        quoted_phrases = _extract_quoted_phrases(possible_answer)
+        best_candidate = None
+
+        if should_normalize_quote:
+            best_candidate = next(
+                (phrase for phrase in quoted_phrases if phrase in model_passage_text),
+                None,
+            )
+
+        if (
+            best_candidate is None
+            and should_normalize_quote
+            and normalized_evidence_quote in model_passage_text
+        ):
+            best_candidate = normalized_evidence_quote
+
+        if best_candidate is None and should_normalize_quote and model_passage_text:
+            match_targets = [
+                str(question_spec.get("question", "")),
+                possible_answer,
+                str(question_spec.get("evidence_hint", "")),
+                normalized_evidence_quote,
+            ]
+            best_candidate = _best_matching_quote_candidate(
+                match_targets, quote_candidates
+            )
+
+        if best_candidate is None and should_normalize_quote:
+            best_candidate = _fallback_quote_candidate(
+                index=index,
+                evidence_clues=[],
+                quote_candidates=quote_candidates,
+                used_candidates=used_candidates,
+            )
+
+        if best_candidate is not None:
+            used_candidates.add(best_candidate)
         normalized_answers.append(
             {
                 "question_number": question_spec.get(
@@ -259,10 +311,12 @@ def _normalize_check_in_answers(
                 ),
                 "question": str(question_spec.get("question", "")).strip()
                 or str(answer.get("question", "")).strip(),
-                "possible_answer": str(answer.get("possible_answer", "")).strip(),
-                "evidence_quote": str(evidence_quote).strip()
-                if evidence_quote
-                else "N/A",
+                "possible_answer": possible_answer,
+                "evidence_quote": (
+                    _quote_text(best_candidate)
+                    if best_candidate is not None
+                    else (evidence_quote if evidence_quote else "N/A")
+                ),
             }
         )
 
@@ -291,6 +345,7 @@ def normalize_answer_key_payload(
     check_in: dict[str, Any],
     assessment_passage: dict[str, Any],
     assessment_questions: dict[str, Any],
+    model_passage: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     passage_text = "\n".join(assessment_passage.get("passage", []))
     quote_candidates = _collect_quote_candidates(assessment_passage)
@@ -359,12 +414,21 @@ def normalize_answer_key_payload(
             }
         )
 
+    normalized_check_in_answers = _normalize_check_in_answers(
+        answer_key,
+        check_in,
+        model_passage,
+    )
+
     if not normalized_answers:
-        return answer_key
+        return {
+            **answer_key,
+            "check_in_answers": normalized_check_in_answers,
+        }
 
     return {
         **answer_key,
-        "check_in_answers": _normalize_check_in_answers(answer_key, check_in),
+        "check_in_answers": normalized_check_in_answers,
         "assessment_answers": normalized_answers,
     }
 
@@ -374,12 +438,14 @@ def _normalize_assessment_answer_quotes(
     check_in: dict[str, Any],
     assessment_passage: dict[str, Any],
     assessment_questions: dict[str, Any],
+    model_passage: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     return normalize_answer_key_payload(
         answer_key,
         check_in,
         assessment_passage,
         assessment_questions,
+        model_passage,
     )
 
 
@@ -416,6 +482,7 @@ async def generate_answer_key(
         check_in,
         assessment_passage,
         assessment_questions,
+        model_passage,
     )
 
 

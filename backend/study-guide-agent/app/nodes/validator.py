@@ -20,6 +20,7 @@ from app.types import (
     AssessmentQuestionsSection,
     Blueprint,
     GenerateRequest,
+    ModelPassageSection,
     SelfAssessmentSection,
     ValidationResult,
 )
@@ -142,8 +143,14 @@ async def generate_validation(
         result = _merge_results(result, _missing_section_result("assessment_passage"))
 
     validated_answer_key: AnswerKeySection | None = None
+    validated_model_passage: ModelPassageSection | None = None
     validated_assessment_passage: AssessmentPassageSection | None = None
     validated_assessment_questions: AssessmentQuestionsSection | None = None
+    if model_passage_payload := sections.get("model_passage"):
+        if "model_passage" not in schema_failed_sections:
+            validated_model_passage = ModelPassageSection.model_validate(
+                model_passage_payload
+            )
     if (
         assessment_passage_payload is not None
         and "assessment_passage" not in schema_failed_sections
@@ -163,6 +170,7 @@ async def generate_validation(
     if (
         answer_key_payload is not None
         and sections.get("check_in") is not None
+        and validated_model_passage is not None
         and validated_assessment_passage is not None
         and validated_assessment_questions is not None
     ):
@@ -171,6 +179,7 @@ async def generate_validation(
             dict(cast(dict[str, Any], sections["check_in"])),
             validated_assessment_passage.model_dump(mode="json"),
             validated_assessment_questions.model_dump(mode="json"),
+            validated_model_passage.model_dump(mode="json"),
         )
 
     if (
@@ -199,6 +208,7 @@ async def generate_validation(
             validate_answer_key_quotes(
                 answer_key=validated_answer_key,
                 assessment_passage=validated_assessment_passage,
+                model_passage=validated_model_passage,
             ),
         )
         result = _merge_results(

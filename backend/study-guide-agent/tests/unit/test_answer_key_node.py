@@ -77,7 +77,7 @@ def _build_model_passage() -> dict[str, object]:
     return {
         "title": "Model Passage",
         "passage": [
-            "The school talent show announcement uses cheerful language to encourage students to join.",
+            "The school talent show announcement uses an encouraging tone to encourage students to join.",
             "It highlights fun activities and invites readers to participate.",
         ],
     }
@@ -147,7 +147,7 @@ async def test_generate_answer_key_returns_structured_json(
         assert "PH Grade 6 English" in system_prompt
         assert str(check_in_questions[0]["question"]) in user_prompt
         assert "Model passage text for check-in answers:" in user_prompt
-        assert "school talent show announcement uses cheerful language" in user_prompt
+        assert "school talent show announcement uses an encouraging tone" in user_prompt
         assert str(assessment_question_list[0]["question"]) in user_prompt
         assert str(step_up["challenge_prompt"]) in user_prompt
         assert '"Mangrove forests protect coastlines from strong waves."' in user_prompt
@@ -648,6 +648,79 @@ async def test_generate_answer_key_prefers_check_in_question_text_over_wrong_num
             "evidence_quote": "N/A",
         },
     ]
+
+
+@pytest.mark.asyncio
+async def test_generate_answer_key_normalizes_nonverbatim_check_in_evidence_quote(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = _load_request_from_fixture()
+    blueprint = _build_blueprint(request)
+    model_passage = {
+        "title": "Model Passage",
+        "passage": [
+            "Before entering Mr. Reyes's room, perform hand hygiene.",
+            "After providing care, remove your PPE carefully and perform hand hygiene again.",
+        ],
+    }
+    check_in = {
+        "title": "Check-In",
+        "questions": [
+            {
+                "number": 1,
+                "question": "How does the author emphasize the importance of hand hygiene in preventing infection?",
+                "evidence_hint": "Notice how often hand hygiene is mentioned in the sequence of actions.",
+                "expected_response_type": "multiple_choice",
+            }
+        ],
+    }
+
+    async def fake_call_gemini(**_: object) -> str:
+        return json.dumps(
+            {
+                "title": "Answer Key",
+                "check_in_answers": [
+                    {
+                        "question_number": 1,
+                        "question": "How does the author emphasize the importance of hand hygiene in preventing infection?",
+                        "possible_answer": "By mentioning hand hygiene before entering the room and again after removing PPE.",
+                        "evidence_quote": '"Before entering Mr. Reyes\'s room, perform hand hygiene. After providing care, remove your PPE carefully and perform hand hygiene again."',
+                    }
+                ],
+                "assessment_answers": [],
+                "step_up_answer": {
+                    "challenge_response": "The passage explains why the evidence matters.",
+                    "required_evidence": ["protect coastlines"],
+                },
+                "teacher_note": "Accept concise answers that explain the purpose and cite evidence.",
+            }
+        )
+
+    monkeypatch.setattr(answer_key_module, "call_gemini", fake_call_gemini)
+
+    result = await answer_key_module.generate_answer_key(
+        request,
+        blueprint,
+        model_passage,
+        check_in,
+        _build_assessment_passage(),
+        _build_assessment_questions(),
+        _build_step_up(),
+    )
+
+    assert result["check_in_answers"][0]["question_number"] == 1
+    assert (
+        result["check_in_answers"][0]["question"]
+        == "How does the author emphasize the importance of hand hygiene in preventing infection?"
+    )
+    assert (
+        result["check_in_answers"][0]["possible_answer"]
+        == "By mentioning hand hygiene before entering the room and again after removing PPE."
+    )
+    assert result["check_in_answers"][0]["evidence_quote"] in {
+        '"Before entering Mr. Reyes\'s room, perform hand hygiene."',
+        '"After providing care, remove your PPE carefully and perform hand hygiene again."',
+    }
 
 
 @pytest.mark.asyncio

@@ -59,6 +59,17 @@ def build_validation() -> ValidationResult:
 
 def build_sections() -> dict[str, object]:
     return {
+        "model_passage": {
+            "title": "Model Passage",
+            "topic_domain": "school talent show announcement",
+            "genre": "announcement",
+            "passage": [
+                "The school talent show announcement uses an encouraging tone to invite students to join.",
+                "It highlights fun activities and invites readers to participate.",
+            ],
+            "text_features": ["persuasive language"],
+            "evidence_focus": "How tone and details reveal purpose.",
+        },
         "check_in": {
             "title": "Check-In",
             "passage_title": "Model Passage",
@@ -215,6 +226,8 @@ async def test_generate_rendered_response_returns_pdf_bytes(
     assert response.success is True
     assert pdf_bytes.startswith(b"%PDF")
     assert "value" in captured_html
+    assert 'fill="none"' in captured_html["value"]
+    assert 'stroke="currentColor"' in captured_html["value"]
     assert "Validation Notes" not in captured_html["value"]
     assert (
         "Reading level slightly above target for intro." not in captured_html["value"]
@@ -243,6 +256,7 @@ async def test_generate_rendered_response_orders_preview_sections_canonically(
         "intro",
         "subconcept-1",
         "subconcept-2",
+        "model_passage",
         "check_in",
         "assessment_passage",
         "assessment_questions",
@@ -252,6 +266,7 @@ async def test_generate_rendered_response_orders_preview_sections_canonically(
         "spark",
         "layers",
         "layers",
+        "notes",
         "message-check",
         "clipboard-notes",
         "pencil",

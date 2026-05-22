@@ -4,7 +4,12 @@ from __future__ import annotations
 
 import re
 
-from app.types import AnswerKeySection, AssessmentPassageSection, ValidationResult
+from app.types import (
+    AnswerKeySection,
+    AssessmentPassageSection,
+    ModelPassageSection,
+    ValidationResult,
+)
 
 QUOTED_PHRASE_PATTERN = re.compile(r'"([^"\n]+)"|“([^”\n]+)”')
 
@@ -42,11 +47,33 @@ def validate_answer_key_quotes(
     *,
     answer_key: AnswerKeySection,
     assessment_passage: AssessmentPassageSection,
+    model_passage: ModelPassageSection | None = None,
 ) -> ValidationResult:
-    """Validate quoted assessment-answer evidence against the assessment passage."""
+    """Validate answer-key evidence quotes against their source passages."""
 
     passage_text = "\n".join(assessment_passage.passage)
     failures: list[str] = []
+
+    if model_passage is not None:
+        model_passage_text = "\n".join(model_passage.passage)
+        for answer in answer_key.check_in_answers:
+            normalized_quote = answer.evidence_quote.strip()
+            if not normalized_quote or normalized_quote == "N/A":
+                failures.append(
+                    f"Check-in question {answer.question_number} must include an evidence_quote taken verbatim from the model passage."
+                )
+                continue
+
+            extracted_quotes = _extract_quoted_phrases(normalized_quote)
+            candidate_quotes = extracted_quotes or [normalized_quote]
+            matching_quote = next(
+                (phrase for phrase in candidate_quotes if phrase in model_passage_text),
+                None,
+            )
+            if matching_quote is None:
+                failures.append(
+                    f"Check-in question {answer.question_number} includes an evidence_quote that does not appear verbatim in the model passage: {normalized_quote}."
+                )
 
     for answer in answer_key.assessment_answers:
         quoted_phrases = _extract_quoted_phrases(answer.possible_answer)

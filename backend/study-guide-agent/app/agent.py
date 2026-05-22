@@ -249,6 +249,7 @@ async def _generate_retry_payload(node_input: RetryNodeInput) -> Any:
             node_input.sections["check_in"],
             node_input.sections["assessment_passage"],
             node_input.sections["assessment_questions"],
+            node_input.sections["model_passage"],
         )
     return parsed_response
 
@@ -577,6 +578,7 @@ async def study_guide_workflow(
         sections["check_in"],
         assessment_passage,
         assessment_questions,
+        model_passage,
     )
 
     validation = await ctx.run_node(
@@ -608,6 +610,7 @@ async def study_guide_workflow(
                     sections["check_in"],
                     sections["assessment_passage"],
                     sections["assessment_questions"],
+                    sections["model_passage"],
                 )
         validation = await ctx.run_node(
             validation_workflow_node,

@@ -4,6 +4,7 @@ from app.types import (
     AnswerKeyItem,
     AnswerKeySection,
     AssessmentPassageSection,
+    ModelPassageSection,
     StepUpAnswer,
 )
 from app.validators.hard.answer_key_quotes import validate_answer_key_quotes
@@ -15,9 +16,9 @@ def build_answer_key(*, possible_answer: str) -> AnswerKeySection:
         check_in_answers=[
             AnswerKeyItem(
                 question_number=1,
-                question="What clue shows the author's tone?",
-                possible_answer="The tone sounds encouraging.",
-                evidence_quote='"encouraging tone"',
+                question="What clue shows the nurse used standard precautions?",
+                possible_answer="She performs hand hygiene before touching the patient.",
+                evidence_quote='"Before touching Mr. Reyes, Nurse Maria performs hand hygiene using an alcohol-based hand rub."',
             )
         ],
         assessment_answers=[
@@ -50,12 +51,28 @@ def build_assessment_passage() -> AssessmentPassageSection:
     )
 
 
+def build_model_passage() -> ModelPassageSection:
+    return ModelPassageSection(
+        title="Model Passage",
+        topic_domain="hospital admission",
+        genre="narrative",
+        passage=[
+            "Before touching Mr. Reyes, Nurse Maria performs hand hygiene using an alcohol-based hand rub.",
+            "She ensures that all used supplies are disposed of properly in designated containers after use, maintaining a clean and safe environment.",
+            "Maintaining a sterile field when administering medications is another crucial aspect of infection prevention that Nurse Maria will consider later when administering medication.",
+        ],
+        text_features=["sequence"],
+        evidence_focus="How standard precautions appear during routine care.",
+    )
+
+
 def test_validate_answer_key_quotes_passes_for_verbatim_assessment_quote() -> None:
     result = validate_answer_key_quotes(
         answer_key=build_answer_key(
             possible_answer='The author wants to inform readers because "protect coastlines" explains why mangroves matter.'
         ),
         assessment_passage=build_assessment_passage(),
+        model_passage=build_model_passage(),
     )
 
     assert result.passed is True
@@ -69,6 +86,7 @@ def test_validate_answer_key_quotes_fails_when_assessment_answer_has_no_quote() 
             possible_answer="The author wants to inform readers because the passage explains why mangroves matter."
         ),
         assessment_passage=build_assessment_passage(),
+        model_passage=build_model_passage(),
     )
 
     assert result.passed is False
@@ -85,10 +103,40 @@ def test_validate_answer_key_quotes_fails_when_quote_is_not_verbatim() -> None:
             possible_answer='The author wants to inform readers because "protects coastlines" explains why mangroves matter.'
         ),
         assessment_passage=build_assessment_passage(),
+        model_passage=build_model_passage(),
     )
 
     assert result.passed is False
     assert result.failed_sections == ["answer_key"]
     assert any(
         "protects coastlines" in message for message in result.failures["answer_key"]
+    )
+
+
+def test_validate_answer_key_quotes_fails_when_check_in_evidence_is_not_verbatim() -> (
+    None
+):
+    answer_key = build_answer_key(
+        possible_answer='The author wants to inform readers because "protect coastlines" explains why mangroves matter.'
+    )
+    answer_key.check_in_answers = [
+        AnswerKeyItem(
+            question_number=1,
+            question="What clue shows the nurse used standard precautions?",
+            possible_answer="She washed her hands with soap and water before touching the patient.",
+            evidence_quote='"Nurse Maria washes her hands with soap and water before touching the patient."',
+        )
+    ]
+
+    result = validate_answer_key_quotes(
+        answer_key=answer_key,
+        assessment_passage=build_assessment_passage(),
+        model_passage=build_model_passage(),
+    )
+
+    assert result.passed is False
+    assert result.failed_sections == ["answer_key"]
+    assert any(
+        "does not appear verbatim in the model passage" in message
+        for message in result.failures["answer_key"]
     )
