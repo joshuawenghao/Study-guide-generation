@@ -30,6 +30,32 @@ from app.types import (
 TEMPLATE_DIR = Path(__file__).resolve().parents[1] / "templates"
 TEMPLATE_NAME = "study_guide.html.j2"
 
+SECTION_ICON_KEYS: dict[str, str] = {
+    "validation_notes": "alert",
+    "intro": "spark",
+    "learning_targets": "target",
+    "warmup": "lightning",
+    "vocabulary": "book",
+    "core_explainer": "compass",
+    "subconcept": "layers",
+    "strategy_list": "map",
+    "deep_dive": "search",
+    "model_passage": "glasses",
+    "check_in": "message-check",
+    "key_points": "pin",
+    "assessment_passage": "clipboard",
+    "assessment_questions": "checklist",
+    "step_up": "stairs",
+    "self_assessment": "gauge",
+    "answer_key": "key",
+}
+
+UI_ICON_KEYS: dict[str, str] = {
+    "callout_default": "spark",
+    "callout_success": "check-badge",
+    "callout_warning": "alert",
+}
+
 CANONICAL_PREVIEW_ORDER: tuple[tuple[str, str], ...] = (
     ("intro", "intro"),
     ("learning_targets", "learning_targets"),
@@ -104,6 +130,8 @@ def _render_html(
             blueprint=_to_jsonable(blueprint),
             sections=_to_jsonable(sections),
             validation=_to_jsonable(validation),
+            section_icons=SECTION_ICON_KEYS,
+            ui_icons=UI_ICON_KEYS,
         ),
     )
 
@@ -118,6 +146,10 @@ def _preview_title(section_key: str, payload: Any) -> str:
         if isinstance(title, str) and title:
             return title
     return section_key.replace("_", " ").title()
+
+
+def _preview_icon_key(section_type: str) -> str | None:
+    return SECTION_ICON_KEYS.get(section_type)
 
 
 def _iter_preview_entries(sections: Mapping[str, Any]) -> list[PreviewSection]:
@@ -137,6 +169,7 @@ def _iter_preview_entries(sections: Mapping[str, Any]) -> list[PreviewSection]:
                         section_id=f"{section_key}-{index}",
                         section_type=section_type,
                         title=_preview_title(section_key, item),
+                        icon_key=_preview_icon_key(section_type),
                         content=cast(dict[str, Any], _to_jsonable(item)),
                     )
                 )
@@ -147,6 +180,7 @@ def _iter_preview_entries(sections: Mapping[str, Any]) -> list[PreviewSection]:
                 section_id=section_key,
                 section_type=section_type,
                 title=_preview_title(section_key, payload),
+                icon_key=_preview_icon_key(section_type),
                 content=cast(dict[str, Any], _to_jsonable(payload)),
             )
         )

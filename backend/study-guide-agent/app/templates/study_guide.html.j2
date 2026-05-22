@@ -63,6 +63,29 @@
 			margin-top: 0.55rem;
 		}
 
+		.section-heading {
+			display: block;
+		}
+
+		.heading-icon {
+			display: inline-block;
+			width: 1.1rem;
+			height: 1.1rem;
+			margin-right: 0.45rem;
+			vertical-align: -0.18rem;
+			color: var(--accent);
+		}
+
+		.icon-svg {
+			width: 100%;
+			height: 100%;
+			stroke: currentColor;
+			fill: none;
+			stroke-width: 1.8;
+			stroke-linecap: round;
+			stroke-linejoin: round;
+		}
+
 		p,
 		ul,
 		ol,
@@ -123,10 +146,25 @@
 		}
 
 		.callout {
+			display: table;
+			width: 100%;
 			background: var(--surface);
 			border-left: 4px solid var(--accent);
 			padding: 0.7rem 0.8rem;
 			margin-bottom: 0.8rem;
+		}
+
+		.callout-icon {
+			display: table-cell;
+			width: 1.45rem;
+			padding-right: 0.55rem;
+			vertical-align: top;
+			color: var(--accent);
+		}
+
+		.callout-text {
+			display: table-cell;
+			vertical-align: top;
 		}
 
 		.callout.success {
@@ -134,9 +172,17 @@
 			border-left-color: #2f855a;
 		}
 
+		.callout.success .callout-icon {
+			color: #2f855a;
+		}
+
 		.callout.warning {
 			background: var(--warning);
 			border-left-color: #b7791f;
+		}
+
+		.callout.warning .callout-icon {
+			color: #b7791f;
 		}
 
 		.two-col {
@@ -261,14 +307,76 @@
 	{% set step_up = section_map.step_up|default(none, true) %}
 	{% set self_assessment = section_map.self_assessment|default(none, true) %}
 	{% set answer_key = section_map.answer_key|default(none, true) %}
+	{% set section_icons = section_icons|default({}, true) %}
+	{% set ui_icons = ui_icons|default({}, true) %}
+
+	{% macro icon_svg(icon_key) -%}
+		{%- if icon_key == "spark" -%}
+			<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 13.9 8.1 19 10 13.9 11.9 12 17 10.1 11.9 5 10 10.1 8.1Z" /></svg>
+		{%- elif icon_key == "target" -%}
+			<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="4" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></svg>
+		{%- elif icon_key == "lightning" -%}
+			<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 5 14h5l-1 8 8-12h-5Z" /></svg>
+		{%- elif icon_key == "book" -%}
+			<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5C4 4.7 4.7 4 5.5 4H11v16H5.5C4.7 20 4 19.3 4 18.5Z" /><path d="M20 5.5C20 4.7 19.3 4 18.5 4H13v16h5.5c.8 0 1.5-.7 1.5-1.5Z" /><path d="M11 6h2" /></svg>
+		{%- elif icon_key == "compass" -%}
+			<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" /><path d="m15.5 8.5-2.5 7-4 2 2.5-7Z" /></svg>
+		{%- elif icon_key == "layers" -%}
+			<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 4 8 4-8 4-8-4Z" /><path d="m4 12 8 4 8-4" /><path d="m4 16 8 4 8-4" /></svg>
+		{%- elif icon_key == "map" -%}
+			<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5 8 4l8 2.5L21 4v13.5L16 20l-8-2.5L3 20Z" /><path d="M8 4v13.5" /><path d="M16 6.5V20" /></svg>
+		{%- elif icon_key == "search" -%}
+			<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6" /><path d="m20 20-4.2-4.2" /></svg>
+		{%- elif icon_key == "glasses" -%}
+			<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="7.5" cy="13" r="3.5" /><circle cx="16.5" cy="13" r="3.5" /><path d="M11 13h2M3.5 11l1-4h5l1 4M13.5 11l1-4h5l1 4" /></svg>
+		{%- elif icon_key == "message-check" -%}
+			<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6.5h14v9H9l-4 3z" /><path d="m10 11 2 2 4-4" /></svg>
+		{%- elif icon_key == "pin" -%}
+			<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21v-6" /><path d="M8 10V4h8v6l2 2H6Z" /></svg>
+		{%- elif icon_key == "clipboard" -%}
+			<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6" /><rect x="6" y="5" width="12" height="15" rx="1.5" /><path d="M9 8h6" /></svg>
+		{%- elif icon_key == "checklist" -%}
+			<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 7 1.5 1.5L9 6" /><path d="M11 7h8" /><path d="m5 12 1.5 1.5L9 11" /><path d="M11 12h8" /><path d="m5 17 1.5 1.5L9 16" /><path d="M11 17h8" /></svg>
+		{%- elif icon_key == "stairs" -%}
+			<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18h4v-4h4v-4h4V6h4" /></svg>
+		{%- elif icon_key == "gauge" -%}
+			<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 16a7 7 0 1 1 14 0" /><path d="m12 12 4-3" /><path d="M12 16h.01" /></svg>
+		{%- elif icon_key == "key" -%}
+			<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="12" r="3" /><path d="M11 12h9" /><path d="M17 12v3" /><path d="M14 12v2" /></svg>
+		{%- elif icon_key == "alert" -%}
+			<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 20 19H4Z" /><path d="M12 9v4" /><path d="M12 16h.01" /></svg>
+		{%- elif icon_key == "check-badge" -%}
+			<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" /><path d="m8.5 12 2.5 2.5 4.5-5" /></svg>
+		{%- endif -%}
+	{%- endmacro %}
+
+	{% macro render_section_heading(title, icon_key) -%}
+		<h2 class="section-heading">
+			{% set rendered_icon = icon_svg(icon_key)|trim %}
+			{% if rendered_icon %}
+				<span class="heading-icon" aria-hidden="true">{{ rendered_icon|safe }}</span>
+			{% endif %}
+			<span>{{ title }}</span>
+		</h2>
+	{%- endmacro %}
+
+	{% macro render_callout(icon_key, variant='default') -%}
+		<div class="callout{% if variant != 'default' %} {{ variant }}{% endif %}">
+			{% set rendered_icon = icon_svg(icon_key)|trim %}
+			{% if rendered_icon %}
+				<span class="callout-icon" aria-hidden="true">{{ rendered_icon|safe }}</span>
+			{% endif %}
+			<div class="callout-text">{{ caller() }}</div>
+		</div>
+	{%- endmacro %}
 
 	<section class="cover">
 		<div class="eyebrow">Curriculum-Aligned Study Guide</div>
 		<h1>{{ blueprint.title }}</h1>
 		<p>{{ blueprint.core_concept }}</p>
-		<div class="callout">
+		{% call render_callout(ui_icons.callout_default|default(none, true)) %}
 			<strong>Essential Question:</strong> {{ blueprint.essential_question }}
-		</div>
+		{% endcall %}
 		<div class="cover-meta">
 			<div class="cover-meta-item">
 				<div class="eyebrow">Lesson</div>
@@ -285,17 +393,19 @@
 
 	{% if validation_result and validation_result.warnings %}
 		<section class="section">
-			<h2>Validation Notes</h2>
+			{{ render_section_heading("Validation Notes", section_icons.validation_notes|default(none, true)) }}
 			{% for warning in validation_result.warnings %}
-				<div class="callout warning">{{ warning }}</div>
+				{% call render_callout(ui_icons.callout_warning|default(none, true), 'warning') %}
+					{{ warning }}
+				{% endcall %}
 			{% endfor %}
 		</section>
 	{% endif %}
 
 	{% if intro %}
 		<section class="section" id="intro">
-			<h2>{{ intro.title }}</h2>
-			<div class="callout">{{ intro.hook }}</div>
+			{{ render_section_heading(intro.title, section_icons.intro|default(none, true)) }}
+			{% call render_callout(ui_icons.callout_default|default(none, true)) %}{{ intro.hook }}{% endcall %}
 			<p><strong>Essential Question:</strong> {{ intro.essential_question }}</p>
 			{% for paragraph in intro.paragraphs %}
 				<p>{{ paragraph }}</p>
@@ -306,11 +416,11 @@
 
 	{% if learning_targets %}
 		<section class="section" id="learning-targets">
-			<h2>{{ learning_targets.title }}</h2>
-			<div class="callout success">
+			{{ render_section_heading(learning_targets.title, section_icons.learning_targets|default(none, true)) }}
+			{% call render_callout(ui_icons.callout_success|default(none, true), 'success') %}
 				<strong>Competency Focus:</strong>
 				{{ learning_targets.competency_focus.core_concept }}
-			</div>
+			{% endcall %}
 			{% for target in learning_targets.targets %}
 				<div class="target-item">
 					<h3>Target {{ target.number }}</h3>
@@ -324,7 +434,7 @@
 
 	{% if warmup %}
 		<section class="section" id="warmup">
-			<h2>{{ warmup.title }}</h2>
+			{{ render_section_heading(warmup.title, section_icons.warmup|default(none, true)) }}
 			<div class="two-col">
 				<div>
 					<div class="boxed-list">
@@ -354,7 +464,7 @@
 
 	{% if vocabulary %}
 		<section class="section" id="vocabulary">
-			<h2>{{ vocabulary.title }}</h2>
+			{{ render_section_heading(vocabulary.title, section_icons.vocabulary|default(none, true)) }}
 			<table>
 				<thead>
 					<tr>
@@ -380,7 +490,7 @@
 
 	{% if core_explainer %}
 		<section class="section" id="core-explainer">
-			<h2>{{ core_explainer.title }}</h2>
+			{{ render_section_heading(core_explainer.title, section_icons.core_explainer|default(none, true)) }}
 			<p>{{ core_explainer.overview }}</p>
 			{% for point in core_explainer.explained_points %}
 				<div class="point-card">
@@ -390,29 +500,29 @@
 					<p><strong>Real-world connection:</strong> {{ point.real_world_connection }}</p>
 				</div>
 			{% endfor %}
-			<div class="callout success">{{ core_explainer.closing_summary }}</div>
+			{% call render_callout(ui_icons.callout_success|default(none, true), 'success') %}{{ core_explainer.closing_summary }}{% endcall %}
 		</section>
 	{% endif %}
 
 	{% for subconcept in subconcepts %}
 		<section class="section" id="subconcept-{{ loop.index }}">
-			<h2>{{ subconcept.title }}</h2>
+			{{ render_section_heading(subconcept.title, section_icons.subconcept|default(none, true)) }}
 			<div class="subconcept-card">
 				<div class="small-meta">{{ subconcept.sub_competency_id }} | {{ subconcept.sub_competency_label }}</div>
 				<p>{{ subconcept.explanation }}</p>
 				<p><strong>Worked example:</strong> {{ subconcept.worked_example }}</p>
-				<div class="callout">
+				{% call render_callout(ui_icons.callout_default|default(none, true)) %}
 					<strong>Quick Check:</strong> {{ subconcept.quick_check.question }}
 					<br />
 					<span class="quote">Expected answer: {{ subconcept.quick_check.expected_answer }}</span>
-				</div>
+				{% endcall %}
 			</div>
 		</section>
 	{% endfor %}
 
 	{% if strategy_list %}
 		<section class="section" id="strategy-list">
-			<h2>{{ strategy_list.title }}</h2>
+			{{ render_section_heading(strategy_list.title, section_icons.strategy_list|default(none, true)) }}
 			{% for strategy in strategy_list.strategies %}
 				<div class="strategy-card">
 					<h3>{{ strategy.name }}</h3>
@@ -429,7 +539,7 @@
 
 	{% if deep_dive %}
 		<section class="section" id="deep-dive">
-			<h2>{{ deep_dive.title }}</h2>
+			{{ render_section_heading(deep_dive.title, section_icons.deep_dive|default(none, true)) }}
 			<p><strong>Compare focus:</strong> {{ deep_dive.compare_focus }}</p>
 			{% for example in deep_dive.examples %}
 				<div class="example-card">
@@ -439,13 +549,13 @@
 					<p><strong>Signal words:</strong> {{ example.signal_words|join(', ') }}</p>
 				</div>
 			{% endfor %}
-			<div class="callout success">{{ deep_dive.takeaway }}</div>
+			{% call render_callout(ui_icons.callout_success|default(none, true), 'success') %}{{ deep_dive.takeaway }}{% endcall %}
 		</section>
 	{% endif %}
 
 	{% if model_passage %}
 		<section class="section" id="model-passage">
-			<h2>{{ model_passage.title }}</h2>
+			{{ render_section_heading(model_passage.title, section_icons.model_passage|default(none, true)) }}
 			<p>
 				<span class="badge">{{ model_passage.genre }}</span>
 				<span class="badge">{{ model_passage.topic_domain }}</span>
@@ -462,7 +572,7 @@
 
 	{% if check_in %}
 		<section class="section" id="check-in">
-			<h2>{{ check_in.title }}</h2>
+			{{ render_section_heading(check_in.title, section_icons.check_in|default(none, true)) }}
 			{% if check_in.passage_title is defined %}
 				<p><strong>Passage:</strong> {{ check_in.passage_title }}</p>
 			{% endif %}
@@ -479,7 +589,7 @@
 
 	{% if key_points %}
 		<section class="section" id="key-points">
-			<h2>{{ key_points.title }}</h2>
+			{{ render_section_heading(key_points.title, section_icons.key_points|default(none, true)) }}
 			{% for point in key_points.points %}
 				<div class="point-card">
 					<h3>Key Point {{ point.number }}</h3>
@@ -492,7 +602,7 @@
 
 	{% if assessment_passage %}
 		<section class="section page-break" id="assessment-passage">
-			<h2>{{ assessment_passage.title }}</h2>
+			{{ render_section_heading(assessment_passage.title, section_icons.assessment_passage|default(none, true)) }}
 			{% if assessment_passage.genre is defined %}
 				<p>
 					<span class="badge">{{ assessment_passage.genre }}</span>
@@ -515,7 +625,7 @@
 
 	{% if assessment_questions %}
 		<section class="section" id="assessment-questions">
-			<h2>{{ assessment_questions.title }}</h2>
+			{{ render_section_heading(assessment_questions.title, section_icons.assessment_questions|default(none, true)) }}
 			{% if assessment_questions.passage_title is defined %}
 				<p><strong>Passage:</strong> {{ assessment_questions.passage_title }}</p>
 			{% endif %}
@@ -533,10 +643,10 @@
 
 	{% if step_up %}
 		<section class="section" id="step-up">
-			<h2>{{ step_up.title }}</h2>
-			<div class="callout">
+			{{ render_section_heading(step_up.title, section_icons.step_up|default(none, true)) }}
+			{% call render_callout(ui_icons.callout_default|default(none, true)) %}
 				<strong>Challenge prompt:</strong> {{ step_up.challenge_prompt }}
-			</div>
+			{% endcall %}
 			<h3>Required Evidence</h3>
 			<ul>
 				{% for evidence in step_up.required_evidence %}
@@ -554,7 +664,7 @@
 
 	{% if self_assessment %}
 		<section class="section" id="self-assessment">
-			<h2>{{ self_assessment.title }}</h2>
+			{{ render_section_heading(self_assessment.title, section_icons.self_assessment|default(none, true)) }}
 			<table>
 				<thead>
 					<tr>
@@ -582,7 +692,7 @@
 
 	{% if answer_key %}
 		<section class="section page-break" id="answer-key">
-			<h2>{{ answer_key.title }}</h2>
+			{{ render_section_heading(answer_key.title, section_icons.answer_key|default(none, true)) }}
 
 			{% if answer_key.check_in_answers %}
 				<h3>Check-In Answers</h3>
@@ -609,7 +719,7 @@
 			{% endif %}
 
 			{% if answer_key.step_up_answer is defined %}
-				<div class="callout success">
+				{% call render_callout(ui_icons.callout_success|default(none, true), 'success') %}
 					<strong>Step-Up Response:</strong>
 					{% if answer_key.step_up_answer.challenge_response is defined %}
 						{{ answer_key.step_up_answer.challenge_response }}
@@ -620,7 +730,7 @@
 						<br />
 						<span class="quote">Required evidence: {{ answer_key.step_up_answer.required_evidence|join(', ') }}</span>
 					{% endif %}
-				</div>
+				{% endcall %}
 			{% endif %}
 
 			<p><strong>Teacher note:</strong> {{ answer_key.teacher_note }}</p>
