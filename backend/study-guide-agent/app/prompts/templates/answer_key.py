@@ -62,6 +62,8 @@ def build_prompt(
         for item in check_in.get("questions", [])
     )
     model_passage_text = "\n".join(model_passage.get("passage", []))
+    model_quote_bank = _build_quote_bank(model_passage)
+    model_quote_bank_text = "\n".join(f'- "{quote}"' for quote in model_quote_bank)
     assessment_passage_text = "\n".join(assessment_passage.get("passage", []))
     assessment_questions_text = "\n".join(
         f"- Q{item.get('number', '?')}: {item.get('question', '')}"
@@ -99,6 +101,8 @@ def build_prompt(
         f"- Essential question: {blueprint.essential_question}",
         "- Model passage text for check-in answers:",
         model_passage_text or "- none provided",
+        "- Exact quote bank for check-in answers (choose exactly one per question):",
+        model_quote_bank_text or "- none provided",
         "- Check-in questions:",
         check_in_questions or "- none provided",
         "- Assessment passage text:",
@@ -114,6 +118,9 @@ def build_prompt(
         "Requirements:",
         "- Provide one answer-key entry per check-in question.",
         "- For check_in_answers, use the model passage text above as the sole source of truth.",
+        "- For each check_in_answers entry, choose exactly one evidence_quote from the check-in quote bank above and copy it verbatim.",
+        "- Use the evidence hint to choose the most specific supporting quote before writing possible_answer.",
+        "- Do not reuse a generic check-in evidence_quote for multiple different questions when a more specific quote is available.",
         "- Keep check_in_answers in the exact same order as the check-in questions above.",
         "- Copy each check_in_answers.question_number and check_in_answers.question exactly from the check-in questions above.",
         "- Answer only the specific check-in question attached to that entry; never swap or reuse an answer for a different check-in question.",

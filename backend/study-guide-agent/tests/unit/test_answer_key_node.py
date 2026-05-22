@@ -148,11 +148,20 @@ async def test_generate_answer_key_returns_structured_json(
         assert str(check_in_questions[0]["question"]) in user_prompt
         assert "Model passage text for check-in answers:" in user_prompt
         assert "school talent show announcement uses an encouraging tone" in user_prompt
+        assert "Exact quote bank for check-in answers" in user_prompt
+        assert (
+            '"The school talent show announcement uses an encouraging tone to encourage students to join."'
+            in user_prompt
+        )
         assert str(assessment_question_list[0]["question"]) in user_prompt
         assert str(step_up["challenge_prompt"]) in user_prompt
         assert '"Mangrove forests protect coastlines from strong waves."' in user_prompt
         assert "Mangrove forests protect coastlines from strong waves." in user_prompt
         assert '"protect coastlines"' in user_prompt
+        assert (
+            "Do not reuse a generic check-in evidence_quote for multiple different questions"
+            in user_prompt
+        )
         assert "Do not include assessment_answers in the JSON payload" in user_prompt
         assert '"assessment_answers"' not in user_prompt
         assert temperature == answer_key_module.TEMP_ANSWER_KEY
@@ -721,6 +730,111 @@ async def test_generate_answer_key_normalizes_nonverbatim_check_in_evidence_quot
         '"Before entering Mr. Reyes\'s room, perform hand hygiene."',
         '"After providing care, remove your PPE carefully and perform hand hygiene again."',
     }
+
+
+@pytest.mark.asyncio
+async def test_generate_answer_key_realigns_swapped_check_in_answers_by_content(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = _load_request_from_fixture()
+    blueprint = _build_blueprint(request)
+    model_passage = {
+        "title": "Model Passage",
+        "passage": [
+            "Before entering Mr. Reyes's room, Nurse Maria performs hand hygiene and prepares the needed supplies.",
+            "Inside the room, Nurse Maria wears gloves and eye protection to avoid contact with potentially infectious materials.",
+            "After the assessment, Nurse Maria removes her gloves carefully and performs hand hygiene again to avoid self-contamination.",
+        ],
+    }
+    check_in = {
+        "title": "Check-In",
+        "questions": [
+            {
+                "number": 1,
+                "question": "What specific actions does Nurse Maria take before even entering Mr. Reyes's room, and why are these actions important?",
+                "evidence_hint": "Look for the sentence describing what Maria does immediately before entering the room.",
+                "expected_response_type": "text",
+            },
+            {
+                "number": 2,
+                "question": "Identify two pieces of personal protective equipment (PPE) Nurse Maria uses when assessing Mr. Reyes. According to the passage, what is the purpose of using PPE in this scenario?",
+                "evidence_hint": "Focus on the paragraph describing Maria's interaction with Mr. Reyes inside the room.",
+                "expected_response_type": "text",
+            },
+            {
+                "number": 3,
+                "question": "Explain how Nurse Maria prevents self-contamination after assessing Mr. Reyes's wound. Why is this step crucial in preventing the spread of infection?",
+                "evidence_hint": "Find the sentences that discuss removing gloves and performing hand hygiene.",
+                "expected_response_type": "text",
+            },
+        ],
+    }
+
+    async def fake_call_gemini(**_: object) -> str:
+        return json.dumps(
+            {
+                "title": "Answer Key",
+                "check_in_answers": [
+                    {
+                        "question_number": 1,
+                        "question": "What specific actions does Nurse Maria take before even entering Mr. Reyes's room, and why are these actions important?",
+                        "possible_answer": "She performs hand hygiene and prepares supplies before entering, which reduces the risk of bringing germs into the room.",
+                        "evidence_quote": '"Before entering Mr. Reyes\'s room, Nurse Maria performs hand hygiene and prepares the needed supplies."',
+                    },
+                    {
+                        "question_number": 2,
+                        "question": "Why is infection prevention important?",
+                        "possible_answer": "After the assessment, Nurse Maria removes her gloves carefully and performs hand hygiene again to avoid self-contamination.",
+                        "evidence_quote": '"After the assessment, Nurse Maria removes her gloves carefully and performs hand hygiene again to avoid self-contamination."',
+                    },
+                    {
+                        "question_number": 3,
+                        "question": "What equipment helps prevent exposure?",
+                        "possible_answer": "She wears gloves and eye protection to avoid contact with potentially infectious materials.",
+                        "evidence_quote": '"Inside the room, Nurse Maria wears gloves and eye protection to avoid contact with potentially infectious materials."',
+                    },
+                ],
+                "assessment_answers": [],
+                "step_up_answer": {
+                    "challenge_response": "The passage explains why the evidence matters.",
+                    "required_evidence": ["protect coastlines"],
+                },
+                "teacher_note": "Accept concise answers that explain the purpose and cite evidence.",
+            }
+        )
+
+    monkeypatch.setattr(answer_key_module, "call_gemini", fake_call_gemini)
+
+    result = await answer_key_module.generate_answer_key(
+        request,
+        blueprint,
+        model_passage,
+        check_in,
+        _build_assessment_passage(),
+        _build_assessment_questions(),
+        _build_step_up(),
+    )
+
+    assert result["check_in_answers"] == [
+        {
+            "question_number": 1,
+            "question": "What specific actions does Nurse Maria take before even entering Mr. Reyes's room, and why are these actions important?",
+            "possible_answer": "She performs hand hygiene and prepares supplies before entering, which reduces the risk of bringing germs into the room.",
+            "evidence_quote": '"Before entering Mr. Reyes\'s room, Nurse Maria performs hand hygiene and prepares the needed supplies."',
+        },
+        {
+            "question_number": 2,
+            "question": "Identify two pieces of personal protective equipment (PPE) Nurse Maria uses when assessing Mr. Reyes. According to the passage, what is the purpose of using PPE in this scenario?",
+            "possible_answer": "She wears gloves and eye protection to avoid contact with potentially infectious materials.",
+            "evidence_quote": '"Inside the room, Nurse Maria wears gloves and eye protection to avoid contact with potentially infectious materials."',
+        },
+        {
+            "question_number": 3,
+            "question": "Explain how Nurse Maria prevents self-contamination after assessing Mr. Reyes's wound. Why is this step crucial in preventing the spread of infection?",
+            "possible_answer": "After the assessment, Nurse Maria removes her gloves carefully and performs hand hygiene again to avoid self-contamination.",
+            "evidence_quote": '"After the assessment, Nurse Maria removes her gloves carefully and performs hand hygiene again to avoid self-contamination."',
+        },
+    ]
 
 
 @pytest.mark.asyncio

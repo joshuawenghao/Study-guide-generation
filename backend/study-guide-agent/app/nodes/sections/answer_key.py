@@ -182,40 +182,66 @@ def _find_assessment_answer_source(
 
 
 def _find_check_in_answer_source(
-    raw_answers: list[dict[str, Any]], index: int, question_spec: dict[str, Any]
-) -> dict[str, Any]:
+    raw_answers: list[dict[str, Any]],
+    index: int,
+    question_spec: dict[str, Any],
+    used_indices: set[int],
+) -> tuple[int | None, dict[str, Any]]:
     question_number = question_spec.get("number")
     question_text = str(question_spec.get("question", "")).strip()
+    evidence_hint = str(question_spec.get("evidence_hint", "")).strip()
 
-    for answer in raw_answers:
-        if str(answer.get("question", "")).strip() == question_text:
-            return answer
-
-    for answer in raw_answers:
-        if answer.get("question_number") == question_number:
-            return answer
-
-    best_answer: dict[str, Any] | None = None
-    best_score = 0.0
-
-    for answer in raw_answers:
-        candidate_question = str(answer.get("question", "")).strip()
-        if not candidate_question or not question_text:
+    for answer_index, answer in enumerate(raw_answers):
+        if answer_index in used_indices:
             continue
-        score = SequenceMatcher(
-            None, candidate_question.lower(), question_text.lower()
-        ).ratio()
+        if str(answer.get("question", "")).strip() == question_text:
+            return answer_index, answer
+
+    best_answer_index: int | None = None
+    best_answer: dict[str, Any] | None = None
+    best_score = -1.0
+
+    for answer_index, answer in enumerate(raw_answers):
+        if answer_index in used_indices:
+            continue
+
+        candidate_question = str(answer.get("question", "")).strip()
+        possible_answer = str(answer.get("possible_answer", "")).strip()
+        evidence_quote = str(answer.get("evidence_quote", "")).strip()
+        combined_source = " ".join(
+            part
+            for part in [candidate_question, possible_answer, evidence_quote]
+            if part
+        )
+
+        score = 0.0
+        if answer.get("question_number") == question_number:
+            score += 0.2
+        if candidate_question and question_text:
+            score += SequenceMatcher(
+                None, candidate_question.lower(), question_text.lower()
+            ).ratio()
+        if combined_source and question_text:
+            score += _quote_token_overlap_score(combined_source, question_text) * 2.0
+        if combined_source and evidence_hint:
+            score += _quote_token_overlap_score(combined_source, evidence_hint) * 1.5
+
         if score > best_score:
             best_score = score
             best_answer = answer
+            best_answer_index = answer_index
 
     if best_answer is not None and best_score >= 0.6:
-        return best_answer
+        return best_answer_index, best_answer
 
-    if 0 <= index < len(raw_answers):
-        return raw_answers[index]
+    if 0 <= index < len(raw_answers) and index not in used_indices:
+        return index, raw_answers[index]
 
-    return {}
+    for answer_index, answer in enumerate(raw_answers):
+        if answer_index not in used_indices:
+            return answer_index, answer
+
+    return None, {}
 
 
 def _build_assessment_possible_answer(
@@ -253,11 +279,19 @@ def _normalize_check_in_answers(
         "\n".join(model_passage.get("passage", [])) if model_passage else ""
     )
     quote_candidates = _collect_quote_candidates(model_passage or {})
+    used_indices: set[int] = set()
     used_candidates: set[str] = set()
 
     for index, raw_question_spec in enumerate(check_in.get("questions", [])):
         question_spec = dict(raw_question_spec)
-        answer = _find_check_in_answer_source(raw_answers, index, question_spec)
+        answer_index, answer = _find_check_in_answer_source(
+            raw_answers,
+            index,
+            question_spec,
+            used_indices,
+        )
+        if answer_index is not None:
+            used_indices.add(answer_index)
         possible_answer = str(answer.get("possible_answer", "")).strip()
         raw_evidence_quote = answer.get("evidence_quote")
         evidence_quote = (
