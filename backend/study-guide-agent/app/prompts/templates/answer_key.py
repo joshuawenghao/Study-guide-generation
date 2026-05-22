@@ -46,14 +46,22 @@ def build_prompt(
     del request
 
     check_in = spec.get("check_in", {})
+    model_passage = spec.get("model_passage", {})
     assessment_passage = spec.get("assessment_passage", {})
     assessment_questions = spec.get("assessment_questions", {})
     step_up = spec.get("step_up", {})
 
     check_in_questions = "\n".join(
-        f"- Q{item.get('number', '?')}: {item.get('question', '')}"
+        "\n".join(
+            [
+                f"Q{item.get('number', '?')}: {item.get('question', '')}",
+                f"  - Evidence hint: {item.get('evidence_hint', '')}",
+                f"  - Expected response type: {item.get('expected_response_type', '')}",
+            ]
+        )
         for item in check_in.get("questions", [])
     )
+    model_passage_text = "\n".join(model_passage.get("passage", []))
     assessment_passage_text = "\n".join(assessment_passage.get("passage", []))
     assessment_questions_text = "\n".join(
         f"- Q{item.get('number', '?')}: {item.get('question', '')}"
@@ -89,6 +97,8 @@ def build_prompt(
         "Create the answer key section for a K-12 study guide.",
         f"- Lesson title: {blueprint.title}",
         f"- Essential question: {blueprint.essential_question}",
+        "- Model passage text for check-in answers:",
+        model_passage_text or "- none provided",
         "- Check-in questions:",
         check_in_questions or "- none provided",
         "- Assessment passage text:",
@@ -103,6 +113,10 @@ def build_prompt(
         step_up_evidence or "- none provided",
         "Requirements:",
         "- Provide one answer-key entry per check-in question.",
+        "- For check_in_answers, use the model passage text above as the sole source of truth.",
+        "- Keep check_in_answers in the exact same order as the check-in questions above.",
+        "- Copy each check_in_answers.question_number and check_in_answers.question exactly from the check-in questions above.",
+        "- Answer only the specific check-in question attached to that entry; never swap or reuse an answer for a different check-in question.",
         "- Do not include assessment_answers in the JSON payload. Assessment answers are derived downstream from the assessment questions and exact quote bank above.",
         "- Do not place raw double-quoted evidence inside free-text fields such as check-in answers, step_up_answer.challenge_response, or teacher_note.",
         "- Provide a step_up_answer object that answers the step-up prompt directly and repeats the required_evidence list.",

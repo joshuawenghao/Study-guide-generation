@@ -19,6 +19,19 @@ _INLINE_QUOTED_LIST_ANNOTATION_PATTERN = re.compile(
 _CODE_LIKE_INLINE_ANNOTATION_PATTERN = re.compile(
     r"\[(?=[^\]\n]*\+)(?:\s*(?:\"(?:\\.|[^\"\n])*\"|'(?:\\.|[^'\n])*'|\+)\s*)+\]"
 )
+_MIXED_QUOTE_CONCATENATION_ANNOTATION_PATTERN = re.compile(
+    r"\[\s*(?:(?:\"(?:\\.|[^\"\n])*\"|'(?:\\.|[^'\n])*')\s*\+\s*)+(?:\"(?:\\.|[^\"\n])*\"|'(?:\\.|[^'\n])*')\s*\]"
+)
+_UNMATCHED_MIXED_QUOTE_CONCATENATION_PREFIX_PATTERN = re.compile(
+    r"\[\s*\"\s*\+\s*'\"'\s*\+\s*\"(?:\\.|[^\"\n])*\"\s*\+\s*'\"'\s*\+\s*\""
+)
+_ESCAPED_QUOTE_CONCATENATION_ANNOTATION_PATTERN = re.compile(
+    r"\[\\\"(?:\s*\+\s*'[^'\n]+'\s*\+\s*\\\")+\]"
+)
+_ADJACENT_ESCAPED_STRING_ANNOTATION_PATTERN = re.compile(
+    r"\[\\\"(?:\s*\\\"[^\]\n]*)+\]"
+)
+_PARSED_STRING_PLACEHOLDER_ANNOTATION_PATTERN = re.compile(r'\s*\[\s*"[^\]\n]*\]')
 _CONCATENATED_QUOTED_LIST_ANNOTATION_PATTERN = re.compile(
     r'\[\s*"\s*(?:\+\s*"(?:\\.|[^"\n])*"\s*)+\+\s*"\s*\]'
 )
@@ -44,6 +57,22 @@ def _strip_inline_quoted_list_annotations(response_text: str) -> str:
 
 def _strip_code_like_inline_annotations(response_text: str) -> str:
     return _CODE_LIKE_INLINE_ANNOTATION_PATTERN.sub("", response_text)
+
+
+def _strip_mixed_quote_concatenation_annotations(response_text: str) -> str:
+    return _MIXED_QUOTE_CONCATENATION_ANNOTATION_PATTERN.sub("", response_text)
+
+
+def _strip_unmatched_mixed_quote_concatenation_prefixes(response_text: str) -> str:
+    return _UNMATCHED_MIXED_QUOTE_CONCATENATION_PREFIX_PATTERN.sub("", response_text)
+
+
+def _strip_escaped_quote_concatenation_annotations(response_text: str) -> str:
+    return _ESCAPED_QUOTE_CONCATENATION_ANNOTATION_PATTERN.sub("", response_text)
+
+
+def _strip_adjacent_escaped_string_annotations(response_text: str) -> str:
+    return _ADJACENT_ESCAPED_STRING_ANNOTATION_PATTERN.sub("", response_text)
 
 
 def _strip_concatenated_quoted_list_annotations(response_text: str) -> str:
@@ -115,9 +144,17 @@ def _strip_html_like_markup(text: str) -> str:
     return normalized.strip()
 
 
+def _strip_parsed_string_placeholder_annotations(text: str) -> str:
+    cleaned = _PARSED_STRING_PLACEHOLDER_ANNOTATION_PATTERN.sub("", text)
+    cleaned = re.sub(r" {2,}", " ", cleaned)
+    return cleaned.strip()
+
+
 def _normalize_payload_value(value: Any) -> Any:
     if isinstance(value, str):
-        return _strip_html_like_markup(_restore_control_escapes(value))
+        return _strip_parsed_string_placeholder_annotations(
+            _strip_html_like_markup(_restore_control_escapes(value))
+        )
     if isinstance(value, list):
         return [_normalize_payload_value(item) for item in value]
     if isinstance(value, dict):
@@ -142,6 +179,20 @@ def _parse_section_response(response_text: str, context_label: str) -> dict[str,
             repaired_response
         )
         annotation_stripped_response = _strip_code_like_inline_annotations(
+            annotation_stripped_response
+        )
+        annotation_stripped_response = _strip_mixed_quote_concatenation_annotations(
+            annotation_stripped_response
+        )
+        annotation_stripped_response = (
+            _strip_unmatched_mixed_quote_concatenation_prefixes(
+                annotation_stripped_response
+            )
+        )
+        annotation_stripped_response = _strip_escaped_quote_concatenation_annotations(
+            annotation_stripped_response
+        )
+        annotation_stripped_response = _strip_adjacent_escaped_string_annotations(
             annotation_stripped_response
         )
         annotation_stripped_response = _strip_concatenated_quoted_list_annotations(

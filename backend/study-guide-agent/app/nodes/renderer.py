@@ -199,11 +199,13 @@ async def generate_rendered_response(
     assessment_questions_payload = normalized_sections.get("assessment_questions")
     if (
         isinstance(answer_key_payload, Mapping)
+        and isinstance(normalized_sections.get("check_in"), Mapping)
         and isinstance(assessment_passage_payload, Mapping)
         and isinstance(assessment_questions_payload, Mapping)
     ):
         normalized_sections["answer_key"] = normalize_answer_key_payload(
             dict(answer_key_payload),
+            dict(cast(Mapping[str, Any], normalized_sections["check_in"])),
             dict(assessment_passage_payload),
             dict(assessment_questions_payload),
         )

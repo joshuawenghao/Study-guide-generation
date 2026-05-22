@@ -59,9 +59,52 @@ def build_validation() -> ValidationResult:
 
 def build_sections() -> dict[str, object]:
     return {
+        "check_in": {
+            "title": "Check-In",
+            "passage_title": "Model Passage",
+            "questions": [
+                {
+                    "number": 1,
+                    "question": "What clues show the author's purpose?",
+                    "evidence_hint": "Look at the encouraging language.",
+                    "expected_response_type": "short_response",
+                }
+            ],
+        },
+        "assessment_passage": {
+            "title": "Assessment Passage",
+            "topic_domain": "mangrove forest protection article",
+            "genre": "informational article",
+            "passage": [
+                "Mangrove forests protect coastlines from strong waves.",
+                "They help both people and wildlife stay safe.",
+            ],
+            "evidence_clues": ["protect coastlines", "stay safe"],
+            "answerability_note": "Each question can be answered using direct evidence from the passage.",
+        },
+        "assessment_questions": {
+            "title": "Assessment Questions",
+            "passage_title": "Assessment Passage",
+            "questions": [
+                {
+                    "number": 1,
+                    "question": "What is the author's purpose in this article?",
+                    "question_type": "short_response",
+                    "answer_expectation": "Identify the purpose and explain it.",
+                    "evidence_requirement": "Quote a phrase that explains why mangroves matter.",
+                }
+            ],
+        },
         "answer_key": {
             "title": "Answer Key",
-            "check_in_answers": [],
+            "check_in_answers": [
+                {
+                    "question_number": 99,
+                    "question": "What details were most convincing?",
+                    "possible_answer": "The encouraging language shows the author's purpose clearly.",
+                    "evidence_quote": '"encouraging tone"',
+                }
+            ],
             "assessment_answers": [],
             "step_up_answer": {
                 "challenge_response": "Use passage evidence to explain the purpose.",
@@ -172,6 +215,12 @@ async def test_generate_rendered_response_returns_pdf_bytes(
     assert response.success is True
     assert pdf_bytes.startswith(b"%PDF")
     assert "value" in captured_html
+    assert "Validation Notes" not in captured_html["value"]
+    assert (
+        "Reading level slightly above target for intro." not in captured_html["value"]
+    )
+    assert "What clues show the author" in captured_html["value"]
+    assert "What details were most convincing?" not in captured_html["value"]
 
 
 @pytest.mark.asyncio
@@ -194,12 +243,18 @@ async def test_generate_rendered_response_orders_preview_sections_canonically(
         "intro",
         "subconcept-1",
         "subconcept-2",
+        "check_in",
+        "assessment_passage",
+        "assessment_questions",
         "answer_key",
     ]
     assert [section.icon_key for section in response.preview.sections] == [
         "spark",
         "layers",
         "layers",
+        "message-check",
+        "clipboard-notes",
+        "pencil",
         "key",
     ]
 

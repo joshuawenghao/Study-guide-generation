@@ -444,3 +444,114 @@ async def test_wave2_section_nodes_strip_mixed_quote_code_like_annotations_from_
         "Standard precautions are a set of infection control practices used to prevent transmission of diseases",
         "She washes her hands thoroughly with soap and water",
     ]
+
+
+@pytest.mark.asyncio
+async def test_wave2_section_nodes_strip_live_style_mixed_quote_concat_annotations(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = _load_request_from_fixture()
+    blueprint = _build_blueprint(request)
+
+    async def fake_call_gemini(**_: object) -> str:
+        return """{
+    \"title\": \"Assessment Passage\",
+    \"topic_domain\": \"community clinic handwashing campaign\",
+    \"genre\": \"Informative Article\",
+    \"passage\": [
+        \"Barangay Maligaya's community clinic launched a hand hygiene campaign during flu season. [\" + '\"' + \"Handwashing with soap and water is a simple yet highly effective way to prevent infections,\" + '\"' + \" stated Dr. Reyes, the clinic's head physician. This campaign aims to reduce illness in the barangay.\",
+        \"The campaign includes pamphlets and demonstrations. [\" + '\"' + \"Consistent hand hygiene practices are a key component of infection control,\" + '\"' + \" explained Nurse Santos, the lead nurse for the campaign.\"
+    ],
+    \"evidence_clues\": [
+        \"Handwashing with soap and water is a simple yet highly effective way to prevent infections,\",
+        \"Consistent hand hygiene practices are a key component of infection control,\"
+    ],
+    \"answerability_note\": \"The passage provides direct evidence about the effectiveness of handwashing and infection control.\"
+}"""
+
+    monkeypatch.setattr(sections_module, "call_gemini", fake_call_gemini)
+
+    result = await assessment_passage_module.generate_assessment_passage(
+        request, blueprint
+    )
+
+    assert result["passage"] == [
+        "Barangay Maligaya's community clinic launched a hand hygiene campaign during flu season. stated Dr. Reyes, the clinic's head physician. This campaign aims to reduce illness in the barangay.",
+        "The campaign includes pamphlets and demonstrations. explained Nurse Santos, the lead nurse for the campaign.",
+    ]
+    assert result["evidence_clues"] == [
+        "Handwashing with soap and water is a simple yet highly effective way to prevent infections,",
+        "Consistent hand hygiene practices are a key component of infection control,",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_wave2_section_nodes_strip_escaped_quote_concat_annotations(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = _load_request_from_fixture()
+    blueprint = _build_blueprint(request)
+
+    async def fake_call_gemini(**_: object) -> str:
+        return """{
+    \"title\": \"Assessment Passage\",
+    \"topic_domain\": \"community clinic campaign\",
+    \"genre\": \"Informative\",
+    \"passage\": [
+        \"The clinic launched a hand hygiene campaign this month. [\\\" + '\"campaign focus\"' + \\\"]. The campaign includes posters and demonstrations.\",
+        \"Handwashing is everyone's responsibility. [\\\" + '\"shared responsibility\"' + \\\"]. Patients and visitors are encouraged to sanitize their hands.\"
+    ],
+    \"evidence_clues\": [
+        \"campaign focus\",
+        \"shared responsibility\"
+    ],
+    \"answerability_note\": \"All passage claims are directly attributable to the text.\"
+}"""
+
+    monkeypatch.setattr(sections_module, "call_gemini", fake_call_gemini)
+
+    result = await assessment_passage_module.generate_assessment_passage(
+        request, blueprint
+    )
+
+    assert result["passage"] == [
+        "The clinic launched a hand hygiene campaign this month. . The campaign includes posters and demonstrations.",
+        "Handwashing is everyone's responsibility. . Patients and visitors are encouraged to sanitize their hands.",
+    ]
+    assert result["evidence_clues"] == ["campaign focus", "shared responsibility"]
+
+
+@pytest.mark.asyncio
+async def test_wave2_section_nodes_strip_adjacent_escaped_string_annotations(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = _load_request_from_fixture()
+    blueprint = _build_blueprint(request)
+
+    async def fake_call_gemini(**_: object) -> str:
+        return """{
+    \"title\": \"Assessment Passage\",
+    \"topic_domain\": \"community clinic campaign\",
+    \"genre\": \"Explanatory\",
+    \"passage\": [
+        \"The clinic launched a hand hygiene campaign this month. [\\\" \\\"evidence_clues: campaign launch]\",
+        \"The goal is to reduce the spread of infections. [\\\" \\\"evidence_clues: reduce infection]\"
+    ],
+    \"evidence_clues\": [
+        \"campaign launch\",
+        \"reduce infection\"
+    ],
+    \"answerability_note\": \"All questions should be answerable from the passage.\"
+}"""
+
+    monkeypatch.setattr(sections_module, "call_gemini", fake_call_gemini)
+
+    result = await assessment_passage_module.generate_assessment_passage(
+        request, blueprint
+    )
+
+    assert result["passage"] == [
+        "The clinic launched a hand hygiene campaign this month.",
+        "The goal is to reduce the spread of infections.",
+    ]
+    assert result["evidence_clues"] == ["campaign launch", "reduce infection"]

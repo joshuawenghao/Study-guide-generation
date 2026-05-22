@@ -403,17 +403,6 @@
 		</div>
 	</section>
 
-	{% if validation_result and validation_result.warnings %}
-		<section class="section">
-			{{ render_section_heading("Validation Notes", section_icons.validation_notes|default(none, true)) }}
-			{% for warning in validation_result.warnings %}
-				{% call render_callout(ui_icons.callout_warning|default(none, true), 'warning') %}
-					{{ warning }}
-				{% endcall %}
-			{% endfor %}
-		</section>
-	{% endif %}
-
 	{% if intro %}
 		<section class="section" id="intro">
 			{{ render_section_heading(intro.title, section_icons.intro|default(none, true)) }}

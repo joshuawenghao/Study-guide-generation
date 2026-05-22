@@ -87,6 +87,16 @@ def _build_check_in() -> dict[str, object]:
     }
 
 
+def _build_model_passage() -> dict[str, object]:
+    return {
+        "title": "Model Passage",
+        "passage": [
+            "The school talent show announcement uses cheerful language to encourage students to join.",
+            "It highlights fun activities and invites readers to participate.",
+        ],
+    }
+
+
 def _build_assessment_passage() -> dict[str, object]:
     return {
         "title": "Assessment Passage",
@@ -236,6 +246,8 @@ async def test_answer_key_output_shape(
 
         assert "PH Grade 6 English" in system_prompt
         assert str(check_in_questions[0]["question"]) in user_prompt
+        assert "Model passage text for check-in answers:" in user_prompt
+        assert "school talent show announcement uses cheerful language" in user_prompt
         assert str(assessment_question_list[0]["question"]) in user_prompt
         assert str(step_up["challenge_prompt"]) in user_prompt
         assert temperature == answer_key_module.TEMP_ANSWER_KEY
@@ -274,6 +286,7 @@ async def test_answer_key_output_shape(
     result = await answer_key_module.generate_answer_key(
         request,
         blueprint,
+        _build_model_passage(),
         check_in,
         assessment_passage,
         assessment_questions,

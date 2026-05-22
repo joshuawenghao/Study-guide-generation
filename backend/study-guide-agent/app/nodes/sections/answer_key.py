@@ -181,6 +181,43 @@ def _find_assessment_answer_source(
     return {}
 
 
+def _find_check_in_answer_source(
+    raw_answers: list[dict[str, Any]], index: int, question_spec: dict[str, Any]
+) -> dict[str, Any]:
+    question_number = question_spec.get("number")
+    question_text = str(question_spec.get("question", "")).strip()
+
+    for answer in raw_answers:
+        if str(answer.get("question", "")).strip() == question_text:
+            return answer
+
+    for answer in raw_answers:
+        if answer.get("question_number") == question_number:
+            return answer
+
+    best_answer: dict[str, Any] | None = None
+    best_score = 0.0
+
+    for answer in raw_answers:
+        candidate_question = str(answer.get("question", "")).strip()
+        if not candidate_question or not question_text:
+            continue
+        score = SequenceMatcher(
+            None, candidate_question.lower(), question_text.lower()
+        ).ratio()
+        if score > best_score:
+            best_score = score
+            best_answer = answer
+
+    if best_answer is not None and best_score >= 0.6:
+        return best_answer
+
+    if 0 <= index < len(raw_answers):
+        return raw_answers[index]
+
+    return {}
+
+
 def _build_assessment_possible_answer(
     *,
     answer_expectation: str,
@@ -205,8 +242,32 @@ def _build_assessment_possible_answer(
     return f"{trimmed_base}. Evidence from the passage: {_quote_text(quote_candidate)}."
 
 
-def _normalize_check_in_answers(answer_key: dict[str, Any]) -> list[dict[str, Any]]:
+def _normalize_check_in_answers(
+    answer_key: dict[str, Any], check_in: dict[str, Any]
+) -> list[dict[str, Any]]:
     normalized_answers: list[dict[str, Any]] = []
+    raw_answers = [dict(answer) for answer in answer_key.get("check_in_answers", [])]
+
+    for index, raw_question_spec in enumerate(check_in.get("questions", [])):
+        question_spec = dict(raw_question_spec)
+        answer = _find_check_in_answer_source(raw_answers, index, question_spec)
+        evidence_quote = answer.get("evidence_quote")
+        normalized_answers.append(
+            {
+                "question_number": question_spec.get(
+                    "number", answer.get("question_number", index + 1)
+                ),
+                "question": str(question_spec.get("question", "")).strip()
+                or str(answer.get("question", "")).strip(),
+                "possible_answer": str(answer.get("possible_answer", "")).strip(),
+                "evidence_quote": str(evidence_quote).strip()
+                if evidence_quote
+                else "N/A",
+            }
+        )
+
+    if normalized_answers:
+        return normalized_answers
 
     for index, raw_answer in enumerate(answer_key.get("check_in_answers", [])):
         answer = dict(raw_answer)
@@ -227,6 +288,7 @@ def _normalize_check_in_answers(answer_key: dict[str, Any]) -> list[dict[str, An
 
 def normalize_answer_key_payload(
     answer_key: dict[str, Any],
+    check_in: dict[str, Any],
     assessment_passage: dict[str, Any],
     assessment_questions: dict[str, Any],
 ) -> dict[str, Any]:
@@ -302,18 +364,20 @@ def normalize_answer_key_payload(
 
     return {
         **answer_key,
-        "check_in_answers": _normalize_check_in_answers(answer_key),
+        "check_in_answers": _normalize_check_in_answers(answer_key, check_in),
         "assessment_answers": normalized_answers,
     }
 
 
 def _normalize_assessment_answer_quotes(
     answer_key: dict[str, Any],
+    check_in: dict[str, Any],
     assessment_passage: dict[str, Any],
     assessment_questions: dict[str, Any],
 ) -> dict[str, Any]:
     return normalize_answer_key_payload(
         answer_key,
+        check_in,
         assessment_passage,
         assessment_questions,
     )
@@ -322,6 +386,7 @@ def _normalize_assessment_answer_quotes(
 async def generate_answer_key(
     request: GenerateRequest,
     blueprint: Blueprint,
+    model_passage: dict[str, Any],
     check_in: dict[str, Any],
     assessment_passage: dict[str, Any],
     assessment_questions: dict[str, Any],
@@ -330,6 +395,7 @@ async def generate_answer_key(
     system_prompt = build_system_prompt(request)
     user_prompt = build_answer_key_prompt(
         {
+            "model_passage": model_passage,
             "check_in": check_in,
             "assessment_passage": assessment_passage,
             "assessment_questions": assessment_questions,
@@ -347,6 +413,7 @@ async def generate_answer_key(
     parsed_response = _parse_section_response(response_text, "answer_key")
     return _normalize_assessment_answer_quotes(
         parsed_response,
+        check_in,
         assessment_passage,
         assessment_questions,
     )
@@ -357,6 +424,7 @@ answer_key_node = cast(
         [
             GenerateRequest,
             Blueprint,
+            dict[str, Any],
             dict[str, Any],
             dict[str, Any],
             dict[str, Any],

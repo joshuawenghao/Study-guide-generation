@@ -73,6 +73,16 @@ def _build_check_in() -> dict[str, object]:
     }
 
 
+def _build_model_passage() -> dict[str, object]:
+    return {
+        "title": "Model Passage",
+        "passage": [
+            "The school talent show announcement uses cheerful language to encourage students to join.",
+            "It highlights fun activities and invites readers to participate.",
+        ],
+    }
+
+
 def _build_assessment_passage() -> dict[str, object]:
     return {
         "title": "Assessment Passage",
@@ -136,6 +146,8 @@ async def test_generate_answer_key_returns_structured_json(
         )
         assert "PH Grade 6 English" in system_prompt
         assert str(check_in_questions[0]["question"]) in user_prompt
+        assert "Model passage text for check-in answers:" in user_prompt
+        assert "school talent show announcement uses cheerful language" in user_prompt
         assert str(assessment_question_list[0]["question"]) in user_prompt
         assert str(step_up["challenge_prompt"]) in user_prompt
         assert '"Mangrove forests protect coastlines from strong waves."' in user_prompt
@@ -179,6 +191,7 @@ async def test_generate_answer_key_returns_structured_json(
     result = await answer_key_module.generate_answer_key(
         request,
         blueprint,
+        _build_model_passage(),
         check_in,
         assessment_passage,
         assessment_questions,
@@ -209,6 +222,7 @@ async def test_generate_answer_key_raises_on_malformed_json(
         await answer_key_module.generate_answer_key(
             request,
             blueprint,
+            _build_model_passage(),
             _build_check_in(),
             _build_assessment_passage(),
             _build_assessment_questions(),
@@ -249,6 +263,7 @@ async def test_generate_answer_key_repairs_missing_assessment_quote_from_evidenc
     result = await answer_key_module.generate_answer_key(
         request,
         blueprint,
+        _build_model_passage(),
         _build_check_in(),
         _build_assessment_passage(),
         _build_assessment_questions(),
@@ -291,6 +306,7 @@ async def test_generate_answer_key_repairs_nonverbatim_quote_to_exact_passage_ph
     result = await answer_key_module.generate_answer_key(
         request,
         blueprint,
+        _build_model_passage(),
         _build_check_in(),
         _build_assessment_passage(),
         _build_assessment_questions(),
@@ -338,6 +354,7 @@ async def test_generate_answer_key_realigns_assessment_answers_to_upstream_quest
     result = await answer_key_module.generate_answer_key(
         request,
         blueprint,
+        _build_model_passage(),
         _build_check_in(),
         _build_assessment_passage(),
         _build_assessment_questions(),
@@ -399,6 +416,7 @@ async def test_generate_answer_key_strips_nonverbatim_quotes_from_answer_expecta
     result = await answer_key_module.generate_answer_key(
         request,
         blueprint,
+        _build_model_passage(),
         _build_check_in(),
         _build_assessment_passage(),
         assessment_questions,
@@ -444,6 +462,7 @@ async def test_generate_answer_key_derives_assessment_answers_when_model_omits_t
     result = await answer_key_module.generate_answer_key(
         request,
         blueprint,
+        _build_model_passage(),
         _build_check_in(),
         _build_assessment_passage(),
         _build_assessment_questions(),
@@ -492,6 +511,7 @@ async def test_generate_answer_key_normalizes_null_check_in_evidence_quote(
     result = await answer_key_module.generate_answer_key(
         request,
         blueprint,
+        _build_model_passage(),
         _build_check_in(),
         _build_assessment_passage(),
         _build_assessment_questions(),
@@ -499,6 +519,135 @@ async def test_generate_answer_key_normalizes_null_check_in_evidence_quote(
     )
 
     assert result["check_in_answers"][0]["evidence_quote"] == "N/A"
+
+
+@pytest.mark.asyncio
+async def test_generate_answer_key_realigns_check_in_answers_to_upstream_questions(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = _load_request_from_fixture()
+    blueprint = _build_blueprint(request)
+
+    async def fake_call_gemini(**_: object) -> str:
+        return json.dumps(
+            {
+                "title": "Answer Key",
+                "check_in_answers": [
+                    {
+                        "question_number": 99,
+                        "question": "What details were most convincing?",
+                        "possible_answer": "The encouraging language shows the author's purpose clearly.",
+                        "evidence_quote": '"encouraging tone"',
+                    }
+                ],
+                "assessment_answers": [],
+                "step_up_answer": {
+                    "challenge_response": "The passage explains why the evidence matters.",
+                    "required_evidence": ["protect coastlines"],
+                },
+                "teacher_note": "Accept concise answers that explain the purpose and cite evidence.",
+            }
+        )
+
+    monkeypatch.setattr(answer_key_module, "call_gemini", fake_call_gemini)
+
+    result = await answer_key_module.generate_answer_key(
+        request,
+        blueprint,
+        _build_model_passage(),
+        _build_check_in(),
+        _build_assessment_passage(),
+        _build_assessment_questions(),
+        _build_step_up(),
+    )
+
+    assert result["check_in_answers"] == [
+        {
+            "question_number": 1,
+            "question": "What clues show the author's purpose?",
+            "possible_answer": "The encouraging language shows the author's purpose clearly.",
+            "evidence_quote": '"encouraging tone"',
+        }
+    ]
+
+
+@pytest.mark.asyncio
+async def test_generate_answer_key_prefers_check_in_question_text_over_wrong_number(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = _load_request_from_fixture()
+    blueprint = _build_blueprint(request)
+    check_in = {
+        "title": "Check-In",
+        "questions": [
+            {
+                "number": 1,
+                "question": "What clues show the author's purpose?",
+                "evidence_hint": "Look at the encouraging language.",
+                "expected_response_type": "short_response",
+            },
+            {
+                "number": 2,
+                "question": "What details teach the reader important facts?",
+                "evidence_hint": "Look for factual statements.",
+                "expected_response_type": "short_response",
+            },
+        ],
+    }
+
+    async def fake_call_gemini(**_: object) -> str:
+        return json.dumps(
+            {
+                "title": "Answer Key",
+                "check_in_answers": [
+                    {
+                        "question_number": 1,
+                        "question": "What details teach the reader important facts?",
+                        "possible_answer": "The factual details help the reader learn key information.",
+                        "evidence_quote": "N/A",
+                    },
+                    {
+                        "question_number": 2,
+                        "question": "What clues show the author's purpose?",
+                        "possible_answer": "The encouraging language shows the author's purpose clearly.",
+                        "evidence_quote": '"encouraging tone"',
+                    },
+                ],
+                "assessment_answers": [],
+                "step_up_answer": {
+                    "challenge_response": "The passage explains why the evidence matters.",
+                    "required_evidence": ["protect coastlines"],
+                },
+                "teacher_note": "Accept concise answers that explain the purpose and cite evidence.",
+            }
+        )
+
+    monkeypatch.setattr(answer_key_module, "call_gemini", fake_call_gemini)
+
+    result = await answer_key_module.generate_answer_key(
+        request,
+        blueprint,
+        _build_model_passage(),
+        check_in,
+        _build_assessment_passage(),
+        _build_assessment_questions(),
+        _build_step_up(),
+    )
+
+    assert result["check_in_answers"] == [
+        {
+            "question_number": 1,
+            "question": "What clues show the author's purpose?",
+            "possible_answer": "The encouraging language shows the author's purpose clearly.",
+            "evidence_quote": '"encouraging tone"',
+        },
+        {
+            "question_number": 2,
+            "question": "What details teach the reader important facts?",
+            "possible_answer": "The factual details help the reader learn key information.",
+            "evidence_quote": "N/A",
+        },
+    ]
 
 
 @pytest.mark.asyncio
@@ -534,6 +683,7 @@ async def test_generate_answer_key_ignores_model_paraphrase_when_selecting_asses
     result = await answer_key_module.generate_answer_key(
         request,
         blueprint,
+        _build_model_passage(),
         _build_check_in(),
         _build_assessment_passage(),
         _build_assessment_questions(),

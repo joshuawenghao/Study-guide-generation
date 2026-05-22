@@ -162,11 +162,13 @@ async def generate_validation(
     normalized_answer_key_payload = answer_key_payload
     if (
         answer_key_payload is not None
+        and sections.get("check_in") is not None
         and validated_assessment_passage is not None
         and validated_assessment_questions is not None
     ):
         normalized_answer_key_payload = normalize_answer_key_payload(
             dict(answer_key_payload),
+            dict(cast(dict[str, Any], sections["check_in"])),
             validated_assessment_passage.model_dump(mode="json"),
             validated_assessment_questions.model_dump(mode="json"),
         )

@@ -113,6 +113,7 @@ class StepUpNodeInput(AssessmentQuestionsNodeInput):
 class AnswerKeyNodeInput(AssessmentQuestionsNodeInput):
     request: GenerateRequest
     blueprint: Blueprint
+    model_passage: dict[str, Any]
     assessment_passage: dict[str, Any]
     check_in: dict[str, Any]
     assessment_questions: dict[str, Any]
@@ -188,6 +189,7 @@ def _retry_prompt_builder(
         return build_self_assessment_prompt, None
     if section_key == "answer_key":
         return build_answer_key_prompt, {
+            "model_passage": sections["model_passage"],
             "check_in": sections["check_in"],
             "assessment_passage": sections["assessment_passage"],
             "assessment_questions": sections["assessment_questions"],
@@ -244,6 +246,7 @@ async def _generate_retry_payload(node_input: RetryNodeInput) -> Any:
     if node_input.section_key == "answer_key":
         return normalize_answer_key_payload(
             parsed_response,
+            node_input.sections["check_in"],
             node_input.sections["assessment_passage"],
             node_input.sections["assessment_questions"],
         )
@@ -359,6 +362,7 @@ async def _generate_answer_key_node(
     return await generate_answer_key(
         node_input.request,
         node_input.blueprint,
+        node_input.model_passage,
         node_input.check_in,
         node_input.assessment_passage,
         node_input.assessment_questions,
@@ -542,6 +546,7 @@ async def study_guide_workflow(
         AnswerKeyNodeInput(
             request=request,
             blueprint=blueprint,
+            model_passage=model_passage,
             check_in=check_in,
             assessment_passage=assessment_passage,
             assessment_questions=assessment_questions,
@@ -569,6 +574,7 @@ async def study_guide_workflow(
     }
     sections["answer_key"] = normalize_answer_key_payload(
         sections["answer_key"],
+        sections["check_in"],
         assessment_passage,
         assessment_questions,
     )
@@ -599,6 +605,7 @@ async def study_guide_workflow(
             if section_key == "answer_key":
                 sections[section_key] = normalize_answer_key_payload(
                     sections[section_key],
+                    sections["check_in"],
                     sections["assessment_passage"],
                     sections["assessment_questions"],
                 )

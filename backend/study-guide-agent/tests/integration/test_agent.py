@@ -276,6 +276,7 @@ async def test_study_guide_workflow_runs_sections_validation_retry_and_render(
     async def fake_generate_answer_key(
         request_input: GenerateRequest,
         blueprint_input: Blueprint,
+        model_passage: dict[str, Any],
         check_in: dict[str, Any],
         assessment_passage: dict[str, Any],
         assessment_questions: dict[str, Any],
@@ -283,6 +284,7 @@ async def test_study_guide_workflow_runs_sections_validation_retry_and_render(
     ) -> dict[str, Any]:
         assert request_input == request
         assert blueprint_input == blueprint
+        assert model_passage["section"] == "model_passage"
         assert check_in["section"] == "check_in"
         assert assessment_passage["section"] == "assessment_passage"
         assert assessment_questions["section"] == "assessment_questions"
@@ -531,6 +533,7 @@ async def test_study_guide_workflow_normalizes_answer_key_before_validation(
     async def fake_generate_answer_key(
         request_input: GenerateRequest,
         blueprint_input: Blueprint,
+        model_passage: dict[str, Any],
         check_in: dict[str, Any],
         assessment_passage: dict[str, Any],
         assessment_questions: dict[str, Any],
@@ -538,6 +541,7 @@ async def test_study_guide_workflow_normalizes_answer_key_before_validation(
     ) -> dict[str, Any]:
         assert request_input == request
         assert blueprint_input == blueprint
+        assert model_passage["title"] == "Model Passage"
         assert check_in["title"] == "Check In"
         assert assessment_passage["title"] == "Assessment Passage"
         assert assessment_questions["title"] == "Assessment Questions"
