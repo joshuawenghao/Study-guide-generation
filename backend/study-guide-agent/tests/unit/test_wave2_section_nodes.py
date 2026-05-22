@@ -555,3 +555,42 @@ async def test_wave2_section_nodes_strip_adjacent_escaped_string_annotations(
         "The goal is to reduce the spread of infections.",
     ]
     assert result["evidence_clues"] == ["campaign launch", "reduce infection"]
+
+
+@pytest.mark.asyncio
+async def test_wave2_section_nodes_strip_double_quote_placeholder_annotations(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = _load_request_from_fixture()
+    blueprint = _build_blueprint(request)
+
+    async def fake_call_gemini(**_: object) -> str:
+        return """{
+    \"title\": \"Assessment Passage\",
+    \"topic_domain\": \"hospital emergency room triage\",
+    \"genre\": \"narrative\",
+    \"passage\": [
+        \"Nurse Ella works triage in a busy hospital emergency room. [\"\"quote one\"\"] Many patients arrive with unknown conditions. [\" \"quote two\"\"] Ella must quickly assess each person and decide the order they will see a doctor.\",
+        \"Ella knows that any patient could have an infection, even if they don't show obvious signs. That's why she always follows standard precautions. [\" \"quote three\"\"] Before touching each patient, Ella performs hand hygiene.\"
+    ],
+    \"evidence_clues\": [
+        \"Many patients arrive with unknown conditions.\",
+        \"That's why she always follows standard precautions.\"
+    ],
+    \"answerability_note\": \"All passage claims are directly answerable.\"
+}"""
+
+    monkeypatch.setattr(sections_module, "call_gemini", fake_call_gemini)
+
+    result = await assessment_passage_module.generate_assessment_passage(
+        request, blueprint
+    )
+
+    assert result["passage"] == [
+        "Nurse Ella works triage in a busy hospital emergency room. Many patients arrive with unknown conditions. Ella must quickly assess each person and decide the order they will see a doctor.",
+        "Ella knows that any patient could have an infection, even if they don't show obvious signs. That's why she always follows standard precautions. Before touching each patient, Ella performs hand hygiene.",
+    ]
+    assert result["evidence_clues"] == [
+        "Many patients arrive with unknown conditions.",
+        "That's why she always follows standard precautions.",
+    ]

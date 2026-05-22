@@ -31,6 +31,9 @@ _ESCAPED_QUOTE_CONCATENATION_ANNOTATION_PATTERN = re.compile(
 _ADJACENT_ESCAPED_STRING_ANNOTATION_PATTERN = re.compile(
     r"\[\\\"(?:\s*\\\"[^\]\n]*)+\]"
 )
+_DOUBLE_QUOTE_PLACEHOLDER_ANNOTATION_PATTERN = re.compile(
+    r'\[\s*(?:"\s*){2,}[^"\]\n]+(?:\s*"){2,}\s*\]'
+)
 _PARSED_STRING_PLACEHOLDER_ANNOTATION_PATTERN = re.compile(r'\s*\[\s*"[^\]\n]*\]')
 _CONCATENATED_QUOTED_LIST_ANNOTATION_PATTERN = re.compile(
     r'\[\s*"\s*(?:\+\s*"(?:\\.|[^"\n])*"\s*)+\+\s*"\s*\]'
@@ -73,6 +76,10 @@ def _strip_escaped_quote_concatenation_annotations(response_text: str) -> str:
 
 def _strip_adjacent_escaped_string_annotations(response_text: str) -> str:
     return _ADJACENT_ESCAPED_STRING_ANNOTATION_PATTERN.sub("", response_text)
+
+
+def _strip_double_quote_placeholder_annotations(response_text: str) -> str:
+    return _DOUBLE_QUOTE_PLACEHOLDER_ANNOTATION_PATTERN.sub("", response_text)
 
 
 def _strip_concatenated_quoted_list_annotations(response_text: str) -> str:
@@ -120,6 +127,52 @@ def _strip_multiline_quoted_list_annotations(response_text: str) -> str:
         index = end_index + 1
 
     return "\n".join(repaired_lines)
+
+
+def _repair_mismatched_json_closers(response_text: str) -> str:
+    repaired: list[str] = []
+    stack: list[str] = []
+    in_string = False
+    is_escaped = False
+
+    for character in response_text:
+        repaired.append(character)
+
+        if in_string:
+            if is_escaped:
+                is_escaped = False
+                continue
+            if character == "\\":
+                is_escaped = True
+                continue
+            if character == '"':
+                in_string = False
+            continue
+
+        if character == '"':
+            in_string = True
+            continue
+        if character in "[{":
+            stack.append(character)
+            continue
+        if character == "]":
+            while stack and stack[-1] == "{":
+                repaired.insert(len(repaired) - 1, "}")
+                stack.pop()
+            if stack and stack[-1] == "[":
+                stack.pop()
+            continue
+        if character == "}":
+            while stack and stack[-1] == "[":
+                repaired.insert(len(repaired) - 1, "]")
+                stack.pop()
+            if stack and stack[-1] == "{":
+                stack.pop()
+
+    while stack:
+        repaired.append("}" if stack.pop() == "{" else "]")
+
+    return "".join(repaired)
 
 
 def _restore_control_escapes(text: str) -> str:
@@ -195,6 +248,9 @@ def _parse_section_response(response_text: str, context_label: str) -> dict[str,
         annotation_stripped_response = _strip_adjacent_escaped_string_annotations(
             annotation_stripped_response
         )
+        annotation_stripped_response = _strip_double_quote_placeholder_annotations(
+            annotation_stripped_response
+        )
         annotation_stripped_response = _strip_concatenated_quoted_list_annotations(
             annotation_stripped_response
         )
@@ -204,6 +260,19 @@ def _parse_section_response(response_text: str, context_label: str) -> dict[str,
         if multiline_annotation_stripped_response != repaired_response:
             try:
                 payload = json.loads(multiline_annotation_stripped_response)
+            except json.JSONDecodeError:
+                pass
+            else:
+                if isinstance(payload, dict):
+                    normalized_payload = _normalize_payload_value(payload)
+                    if isinstance(normalized_payload, dict):
+                        return normalized_payload
+        balanced_response = _repair_mismatched_json_closers(
+            multiline_annotation_stripped_response
+        )
+        if balanced_response != multiline_annotation_stripped_response:
+            try:
+                payload = json.loads(balanced_response)
             except json.JSONDecodeError:
                 pass
             else:

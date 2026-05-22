@@ -174,3 +174,39 @@ async def test_wave1_section_nodes_raise_on_malformed_json(
 
     with pytest.raises(RuntimeError, match="Failed to parse intro response as JSON"):
         await intro_module.generate_intro(request, blueprint)
+
+
+@pytest.mark.asyncio
+async def test_wave1_section_nodes_repair_mismatched_json_closers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = _load_request_from_fixture()
+    blueprint = _build_blueprint(request)
+
+    async def fake_call_gemini(**_: object) -> str:
+        return (
+            '{ "title": "Key Points", "points": [ '
+            '{ "number": 1, '
+            '"sub_competency_id": "SC-1", '
+            '"sub_competency_label": '
+            '"Identify and apply hand hygiene, PPE, and aseptic handling steps in routine nursing tasks.", '
+            '"statement": '
+            '"Consistently perform hand hygiene, use appropriate personal protective equipment (PPE) like gloves and masks, and follow aseptic techniques to prevent infection during all nursing tasks." '
+            "] }"
+        )
+
+    monkeypatch.setattr(sections_module, "call_gemini", fake_call_gemini)
+
+    result = await key_points_module.generate_key_points(request, blueprint)
+
+    assert result == {
+        "title": "Key Points",
+        "points": [
+            {
+                "number": 1,
+                "sub_competency_id": "SC-1",
+                "sub_competency_label": "Identify and apply hand hygiene, PPE, and aseptic handling steps in routine nursing tasks.",
+                "statement": "Consistently perform hand hygiene, use appropriate personal protective equipment (PPE) like gloves and masks, and follow aseptic techniques to prevent infection during all nursing tasks.",
+            }
+        ],
+    }
