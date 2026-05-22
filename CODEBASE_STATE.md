@@ -1,6 +1,6 @@
 # Codebase State
 
-Last updated: 2026-05-21
+Last updated: 2026-05-22
 
 This document is the live plain-language summary of the shipped codebase.
 It is intended to answer, in words, what currently exists in the repository without requiring a reader to inspect source files directly.
@@ -19,6 +19,8 @@ It is intended to answer, in words, what currently exists in the repository with
 - The validation layer now has a working validator node that aggregates six hard validators and two soft validators into a single `ValidationResult` for the orchestrator retry loop and preview warnings.
 - The ADK FastAPI loader now has a compatibility adapter so the server integration path can locate `study_guide_agent.root_agent` correctly.
 - The repo documentation now includes an explicit deployment plan and task phase covering Vercel, Cloud Run, and a production-like local parity mode.
+- The shared preview contract now includes optional renderer-owned `icon_key` metadata so presentation-only iconography can flow from the backend to the frontend without changing teacher input payloads.
+- The backend renderer and PDF template now include a first-pass deterministic iconography system for section headers and repeated callouts using inline SVG markup that survives WeasyPrint.
 
 ## Repository Shape
 
@@ -63,6 +65,7 @@ It is intended to answer, in words, what currently exists in the repository with
 - Task 6.1 is now implemented: `backend/study-guide-agent/app/templates/study_guide.html.j2` defines the canonical PDF layout in Jinja2 for WeasyPrint, including the fixed study-guide section order, vocabulary and self-assessment tables, validation warning callouts, and explicit page breaks for the assessment passage and answer key.
 - Task 6.2 is now implemented: `backend/study-guide-agent/app/nodes/renderer.py` renders the study-guide template with explicit `blueprint`, `sections`, and `validation` inputs, converts the HTML to PDF through WeasyPrint, base64-encodes the PDF bytes, and returns a `GenerateResponse` that includes a canonical-order `WebPreviewPayload` for the frontend.
 - Task 6.3 is now implemented: `backend/study-guide-agent/tests/unit/test_renderer.py` exercises the renderer directly with a minimal valid blueprint and section payloads, checks that the emitted PDF artifact decodes to bytes beginning with a PDF header, and verifies that preview sections are returned in canonical order.
+- Task 6.4 is now implemented: `backend/study-guide-agent/app/nodes/renderer.py` now owns a deterministic icon allowlist for preview sections and passes section/UI icon context into `backend/study-guide-agent/app/templates/study_guide.html.j2`, while the template now renders inline SVG icons for section headers and repeated callout variants with text-only fallback for unsupported keys.
 - Task 7.1 is now implemented: `backend/study-guide-agent/app/agent.py` exports a `Workflow` root agent whose orchestrator node runs blueprint generation first, fans out Wave 1 and Wave 2 with `asyncio.gather()`, runs Wave 3 with explicit upstream section inputs, generates the answer key last, validates all sections, retries failed sections once with failure-specific retry guidance at `TEMP_RETRY`, and renders the final `GenerateResponse`.
 - Task 7.2 is now implemented: `backend/study-guide-agent/tests/integration/test_agent.py` adds a focused backend-only integration test that executes the real orchestrator function through a fake ADK context, stubs the generation and rendering edges, and verifies dependency ordering plus the single retry pass from validation failure to successful render.
 - Because ADK `ctx.run_node()` accepts a single node input rather than unpacking multiple function parameters, `app/agent.py` now owns workflow-local adapter nodes that translate composite workflow inputs into the existing section, validator, and renderer generator functions without introducing session-state dictionaries.
@@ -90,6 +93,7 @@ It is intended to answer, in words, what currently exists in the repository with
 - The lower-grade readability path is now stricter in prompts but slightly more realistic in scoring: the system prompt adds plain-text math-notation guidance for mathematics requests, the intro and deep-dive prompts add stronger elementary-grade brevity guidance, and the reading-level validator uses a modestly wider tolerance band for lower grades so local demos surface fewer borderline warnings without hiding clearly off-target prose.
 - The backend uses the scaffolded ADK project structure created by `agents-cli`.
 - Core typed contracts are implemented in `backend/study-guide-agent/app/types.py` and mirrored in `frontend/lib/types.ts`.
+- The shared preview contract in those files now includes optional presentation-only `icon_key` metadata on `PreviewSection`, and no teacher-facing request fields were added for icon configuration.
 - `backend/study-guide-agent/app/types.py` now also contains the backend-only section payload models that the validation layer uses as its schema source of truth.
 - The repo includes a compatibility shim in `backend/study-guide-agent/app/app_utils/adk_compat.py` to smooth over current ADK beta import-surface issues before ADK imports are loaded.
 - The repo now includes focused backend integration coverage for both the exported workflow surface and the orchestrator behavior: one integration test validates the `Workflow` export and retry-capable orchestration path, and another validates FastAPI boot plus session creation.
@@ -104,6 +108,8 @@ It is intended to answer, in words, what currently exists in the repository with
 - `DEPLOYMENT.md` and `README.md` now also document the single-command local parity path at `./scripts/run-local-parity.sh`, including the requirement for a running Docker daemon, the backend `.env`, and installed frontend dependencies.
 - `DEPLOYMENT.md` and `backend/study-guide-agent/README.md` now also document the standardized backend Cloud Run deploy command, required env vars and secret sources, CORS origin guidance for preview versus production, and the current timeout/concurrency assumptions for long-running generation requests.
 - `backend/study-guide-agent/app/fast_api_app.py` now also provides a backend-facing SSE compatibility route for the frontend, because the scaffolded ADK `/run_sse` surface only accepts chat-style `Content` input while the shipped study-guide workflow expects a typed `GenerateRequest`.
+- Core typed contracts are implemented in `backend/study-guide-agent/app/types.py` and mirrored in `frontend/lib/types.ts`.
+- The shared preview contract in those files now includes optional presentation-only `icon_key` metadata on `PreviewSection`, and no teacher-facing request fields were added for icon configuration.
 
 ## Shipped Frontend
 
@@ -118,6 +124,7 @@ It is intended to answer, in words, what currently exists in the repository with
 - Task 11.2 is now implemented: `frontend/components/WebPreview.tsx` now acts as the results-preview container, showing high-level validation counts, warning callouts, and the ordered study-guide section list by composing `PreviewSection` across the backend `WebPreviewPayload`.
 - Task 11.3 is now implemented: `frontend/components/DownloadButton.tsx` now provides a browser-side PDF download control that decodes the backend base64 PDF payload, saves it with a sanitized filename, and surfaces simple local error feedback when the file is unavailable.
 - Task 11.4 is now implemented: `frontend/app/page.tsx` now keeps the progress tracker visible after completion and turns the final response into a responsive results workspace with preview and download tabs, repeated validation-warning visibility, result summary cards, and download filename guidance.
+- The frontend does not yet render iconography parity in the web preview; the `icon_key` contract is present, but the current preview components still render text-only section chrome.
 - `frontend/lib/types.ts` now also exports the shared `InputFormProps` contract used by the teacher input form component, keeping frontend component typing aligned with the repo rule that shared types live in the central frontend types module.
 - `frontend/lib/types.ts` now also exports the shared `ProgressTrackerProps` contract used by the streamed progress UI.
 - `frontend/lib/types.ts` now also exports the shared `PreviewSectionProps` contract so preview UI components can stay aligned with the backend preview payload and validation metadata.
@@ -161,5 +168,6 @@ It is intended to answer, in words, what currently exists in the repository with
 
 - Wave 1, Wave 2, Wave 3, and answer-key generation are implemented; the validator layer now includes its aggregator node, six hard validators, two soft validators, broad isolated test coverage, and the complete Phase 6 renderer slice including template, node, and focused renderer tests.
 - Workflow orchestration and focused backend integration coverage are now implemented.
+- Focused renderer assertions for icon metadata and frontend preview iconography parity are still unimplemented follow-up slices.
 - The remaining major gaps now sit in Phase 13 parity and remote deployment work.
 - Deployment is now specified, and the backend image, local parity stack, backend Cloud Run configuration path, and frontend Vercel environment contract are in place, but the staged remote deployment checkpoints in Task 13.6 are still not implemented or validated end to end.
