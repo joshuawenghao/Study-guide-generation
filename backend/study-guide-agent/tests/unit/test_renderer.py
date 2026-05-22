@@ -146,10 +146,19 @@ def build_sections_string_step_up_answer() -> dict[str, object]:
 async def test_generate_rendered_response_returns_pdf_bytes(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    captured_html: dict[str, str] = {}
+
+    def fake_render_pdf_bytes(html: str) -> bytes:
+        captured_html["value"] = html
+        assert '<svg class="icon-svg"' in html
+        assert 'class="heading-icon"' in html
+        assert 'class="callout-icon"' in html
+        return b"%PDF-1.7\nrenderer-test\n"
+
     monkeypatch.setattr(
         renderer_module,
         "_render_pdf_bytes",
-        lambda _html: b"%PDF-1.7\nrenderer-test\n",
+        fake_render_pdf_bytes,
     )
 
     response = await renderer_module.generate_rendered_response(
@@ -162,6 +171,7 @@ async def test_generate_rendered_response_returns_pdf_bytes(
 
     assert response.success is True
     assert pdf_bytes.startswith(b"%PDF")
+    assert "value" in captured_html
 
 
 @pytest.mark.asyncio
@@ -185,6 +195,12 @@ async def test_generate_rendered_response_orders_preview_sections_canonically(
         "subconcept-1",
         "subconcept-2",
         "answer_key",
+    ]
+    assert [section.icon_key for section in response.preview.sections] == [
+        "spark",
+        "layers",
+        "layers",
+        "key",
     ]
 
 

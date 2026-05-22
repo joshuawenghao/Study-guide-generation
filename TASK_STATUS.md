@@ -26,7 +26,7 @@ Status legend:
 - The backend now also grounds `assessment_questions` evidence requirements to exact passage quotes before downstream use, hard-validates that grounding against the assessment passage, and defensively re-normalizes `answer_key` during validation and rendering so raw model assessment answers cannot silently bypass the quote guard
 - The shared section parser now also strips malformed inline quoted-list annotations, multiline placeholder blocks, and code-like bracket annotations built from concatenated quoted fragments before a second parse attempt, and the assessment-passage prompt now explicitly forbids those bracketed or code-like placeholder annotations inside passage paragraphs, closing the live UI parse failure that had been observed in `assessment_passage`
 - Deployment planning is now documented around a recommended Vercel frontend plus Cloud Run backend topology, with a separate local parity mode planned so production issues can be reproduced without changing the app architecture; the backend container now honors the runtime `PORT` environment variable, serves `app.fast_api_app:app` in the same image shape intended for Cloud Run, and now includes environment-driven CORS/runtime config plus a standardized Cloud Run deploy entrypoint in `DEPLOYMENT.md` and `scripts/deploy-backend-cloud-run.sh`
-- `IFC.md` and `ARCHITECTURE.md` now also document a new deterministic iconography requirement for section headers, selected subheaders, and repeated callouts; the shared preview contract in `backend/study-guide-agent/app/types.py` and `frontend/lib/types.ts` now carries optional `icon_key` metadata, the backend renderer now emits deterministic section icon keys and the PDF template now renders inline SVG icons for section headers plus repeated callouts, while focused iconography assertions in renderer tests and frontend preview parity remain unimplemented
+- `IFC.md` and `ARCHITECTURE.md` now also document a new deterministic iconography requirement for section headers, selected subheaders, and repeated callouts; the shared preview contract in `backend/study-guide-agent/app/types.py` and `frontend/lib/types.ts` now carries optional `icon_key` metadata, the backend renderer now emits deterministic section icon keys, the PDF template now renders inline SVG icons for section headers plus repeated callouts, and the focused renderer tests now assert both preview `icon_key` emission and a stable PDF render path with icon markup present, while frontend preview parity remains unimplemented
 
 ## Phase 0 — Repository and tooling setup
 
@@ -219,8 +219,8 @@ Notes: `backend/study-guide-agent/app/nodes/renderer.py` now owns a deterministi
 
 ### Task 6.5 — Add focused renderer iconography tests
 
-Status: `not started`
-Notes: The renderer test suite does not yet assert preview `icon_key` emission or verify the PDF render path with inline icon markup present.
+Status: `complete`
+Notes: `backend/study-guide-agent/tests/unit/test_renderer.py` now asserts preview `icon_key` emission for canonical preview entries and verifies that the HTML handed to the PDF render path still includes inline SVG icon markup for both section headings and callouts. Focused validation passed with `cd backend/study-guide-agent && uv run pytest tests/unit/test_renderer.py -q`, and the repo done gate `./scripts/validate-task.sh` also passed.
 
 ## Phase 7 — Workflow orchestration
 
