@@ -5,7 +5,7 @@ from __future__ import annotations
 from enum import StrEnum
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class LengthPreset(StrEnum):
@@ -75,6 +75,105 @@ class GenerateRequest(BaseModel):
     curriculum: Curriculum
     instructional_design: InstructionalDesign
     optional: OptionalInputs
+
+
+class PromptLabSectionKey(StrEnum):
+    INTRO = "intro"
+    LEARNING_TARGETS = "learning_targets"
+    WARMUP = "warmup"
+    VOCABULARY = "vocabulary"
+    CORE_EXPLAINER = "core_explainer"
+    SUBCONCEPT = "subconcept"
+    STRATEGY_LIST = "strategy_list"
+    DEEP_DIVE = "deep_dive"
+    MODEL_PASSAGE = "model_passage"
+    CHECK_IN = "check_in"
+    KEY_POINTS = "key_points"
+    ASSESSMENT_PASSAGE = "assessment_passage"
+    ASSESSMENT_QUESTIONS = "assessment_questions"
+    STEP_UP = "step_up"
+    SELF_ASSESSMENT = "self_assessment"
+    ANSWER_KEY = "answer_key"
+
+
+PROMPT_LAB_SECTION_KEYS: tuple[PromptLabSectionKey, ...] = (
+    PromptLabSectionKey.INTRO,
+    PromptLabSectionKey.LEARNING_TARGETS,
+    PromptLabSectionKey.WARMUP,
+    PromptLabSectionKey.VOCABULARY,
+    PromptLabSectionKey.CORE_EXPLAINER,
+    PromptLabSectionKey.SUBCONCEPT,
+    PromptLabSectionKey.STRATEGY_LIST,
+    PromptLabSectionKey.DEEP_DIVE,
+    PromptLabSectionKey.MODEL_PASSAGE,
+    PromptLabSectionKey.CHECK_IN,
+    PromptLabSectionKey.KEY_POINTS,
+    PromptLabSectionKey.ASSESSMENT_PASSAGE,
+    PromptLabSectionKey.ASSESSMENT_QUESTIONS,
+    PromptLabSectionKey.STEP_UP,
+    PromptLabSectionKey.SELF_ASSESSMENT,
+    PromptLabSectionKey.ANSWER_KEY,
+)
+
+
+class PromptLabSampleCaseId(StrEnum):
+    ENGLISH_GRADE6_PH = "english_grade6_ph"
+    MATH_GRADE4_VN = "math_grade4_vn"
+
+
+PROMPT_LAB_SAMPLE_CASE_IDS: tuple[PromptLabSampleCaseId, ...] = (
+    PromptLabSampleCaseId.ENGLISH_GRADE6_PH,
+    PromptLabSampleCaseId.MATH_GRADE4_VN,
+)
+
+
+class PromptLabPromptOverrides(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    system_prompt_append: str | None = Field(
+        default=None,
+        description=(
+            "Optional request-scoped instructions appended to the default system "
+            "prompt for a prompt-lab run."
+        ),
+    )
+    section_overrides: dict[PromptLabSectionKey, str] = Field(
+        default_factory=dict,
+        description=(
+            "Request-scoped prompt overrides keyed by the supported prompt-lab "
+            "section allowlist. These overrides do not mutate the default prompt "
+            "templates on disk."
+        ),
+    )
+
+
+class PromptLabGenerateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    base_request: GenerateRequest
+    prompt_overrides: PromptLabPromptOverrides = Field(
+        default_factory=PromptLabPromptOverrides
+    )
+    sample_case_id: PromptLabSampleCaseId | None = Field(
+        default=None,
+        description=(
+            "Optional stable identifier for the curated prompt-lab sample case "
+            "that seeded this request."
+        ),
+    )
+    reviewer_label: str | None = Field(
+        default=None,
+        description="Optional reviewer-supplied label used only for prompt-lab runs.",
+    )
+
+
+class PromptLabSampleInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: PromptLabSampleCaseId
+    label: str
+    description: str
+    request: GenerateRequest
 
 
 class LearningTarget(BaseModel):

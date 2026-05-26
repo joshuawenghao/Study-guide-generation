@@ -36,6 +36,7 @@ Status legend:
 - Deployment planning is now documented around a recommended Vercel frontend plus Cloud Run backend topology, with a separate local parity mode planned so production issues can be reproduced without changing the app architecture; the backend container now honors the runtime `PORT` environment variable, serves `app.fast_api_app:app` in the same image shape intended for Cloud Run, and now includes environment-driven CORS/runtime config plus a standardized Cloud Run deploy entrypoint in `DEPLOYMENT.md` and `scripts/deploy-backend-cloud-run.sh`
 - `IFC.md` and `ARCHITECTURE.md` now also document a new deterministic iconography requirement for section headers, selected subheaders, and repeated callouts; the shared preview contract in `backend/study-guide-agent/app/types.py` and `frontend/lib/types.ts` now carries optional `icon_key` metadata, the backend renderer now emits deterministic section icon keys, the PDF template now renders inline SVG icons for section headers plus repeated callouts using a more literal section-specific icon family, the focused renderer tests now assert both preview `icon_key` emission and a stable PDF render path with icon markup present, and the frontend web preview now maps the same icon family onto section headers plus repeated warning, success, and default callout treatments
 - `IFC.md` and `ARCHITECTURE.md` now also define a prompt-lab MVP for non-technical remote reviewers, including a private reviewer-only page, a request-scoped `PromptLabGenerateRequest` contract, dedicated proxy routing, and explicit MVP boundaries; implementation tasks for that feature have now been added to `TASKS.md`, but no prompt-lab code has been shipped yet
+- Phase 14.1 is now implemented: `backend/study-guide-agent/app/types.py` and `frontend/lib/types.ts` both define the prompt-lab request contract, explicit supported section override allowlists, stable sample-case identifiers, and a shared sample-input model, while `backend/study-guide-agent/tests/unit/test_prompt_lab_types.py` now proves that supported override keys validate and unsupported keys or unknown sample ids fail clearly
 
 ## Phase 0 — Repository and tooling setup
 
@@ -375,8 +376,8 @@ Notes: No remote deployment checkpoints have been recorded yet after Phases 7, 1
 
 ### Task 14.1 — Extend the prompt-lab request contract and sample-input model
 
-Status: `not started`
-Notes: The prompt-lab request shape is now specified in `ARCHITECTURE.md` as `PromptLabGenerateRequest`, but the backend/frontend runtime contracts and sample-input model have not been implemented yet.
+Status: `complete`
+Notes: `backend/study-guide-agent/app/types.py` now defines `PromptLabGenerateRequest`, `PromptLabPromptOverrides`, the explicit `PromptLabSectionKey` allowlist, stable `PromptLabSampleCaseId` values, and `PromptLabSampleInput`, while `frontend/lib/types.ts` mirrors that contract for the frontend. Focused validation passed with `cd backend/study-guide-agent && uv run pytest tests/unit/test_prompt_lab_types.py -q` and `cd frontend && npm run typecheck`, and the repo done gate `./scripts/validate-task.sh` also passed.
 
 ### Task 14.2 — Add backend prompt override resolution for supported sections
 

@@ -53,6 +53,53 @@ export interface GenerateRequest {
   optional: OptionalInputs;
 }
 
+export const PROMPT_LAB_SECTION_KEYS = [
+  "intro",
+  "learning_targets",
+  "warmup",
+  "vocabulary",
+  "core_explainer",
+  "subconcept",
+  "strategy_list",
+  "deep_dive",
+  "model_passage",
+  "check_in",
+  "key_points",
+  "assessment_passage",
+  "assessment_questions",
+  "step_up",
+  "self_assessment",
+  "answer_key",
+] as const;
+
+export type PromptLabSectionKey = (typeof PROMPT_LAB_SECTION_KEYS)[number];
+
+export const PROMPT_LAB_SAMPLE_CASE_IDS = [
+  "english_grade6_ph",
+  "math_grade4_vn",
+] as const;
+
+export type PromptLabSampleCaseId = (typeof PROMPT_LAB_SAMPLE_CASE_IDS)[number];
+
+export interface PromptLabPromptOverrides {
+  system_prompt_append?: string;
+  section_overrides: Partial<Record<PromptLabSectionKey, string>>;
+}
+
+export interface PromptLabGenerateRequest {
+  base_request: GenerateRequest;
+  prompt_overrides: PromptLabPromptOverrides;
+  sample_case_id?: PromptLabSampleCaseId;
+  reviewer_label?: string;
+}
+
+export interface PromptLabSampleInput {
+  id: PromptLabSampleCaseId;
+  label: string;
+  description: string;
+  request: GenerateRequest;
+}
+
 export interface InputFormProps {
   onSubmit: (request: GenerateRequest) => void;
   isLoading: boolean;
