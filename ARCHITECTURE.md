@@ -26,12 +26,15 @@
 
 The system is a web application with two logical layers: a **Next.js frontend** that collects teacher inputs and displays results, and an **ADK agent graph** that drives all generation, validation, and retry logic on the backend.
 
-The frontend and backend communicate over a single HTTP endpoint. The frontend sends a structured lesson request and streams progress events back; the backend runs the full dynamic workflow and returns a completed PDF and a structured web preview payload.
+The frontend and backend communicate over a single HTTP endpoint for the teacher-facing flow. The frontend sends a structured lesson request and streams progress events back; the backend runs the full dynamic workflow and returns a completed PDF and a structured web preview payload.
+
+An internal prompt-lab surface may reuse the same workflow with temporary prompt overrides, but it must remain a reviewer-only experience and must not replace or destabilize the default teacher-facing request path.
 
 ```mermaid
 flowchart LR
     subgraph Frontend ["Next.js Frontend (localhost:3000 / Vercel)"]
         Form["Input Form\n(lesson metadata,\ncurriculum, etc.)"]
+      PromptLab["Prompt Lab\n(private reviewer page)"]
         Tracker["Progress Tracker"]
         Preview["Web Preview"]
         Download["PDF Download"]
@@ -44,6 +47,7 @@ flowchart LR
     end
 
     Form -- "POST /generate\n(GenerateRequest JSON)" --> Workflow
+    PromptLab -- "POST /prompt-lab/generate\n(PromptLabGenerateRequest JSON)" --> Workflow
     Workflow -- "SSE stream\n(ProgressEvents)" --> Tracker
     Workflow -- "GenerateResponse\n(pdf_base64 + preview JSON)" --> Preview
     Preview --> Download
@@ -87,11 +91,18 @@ Dynamic workflows are chosen for this project for three specific reasons:
 │   ├── app/
 │   │   ├── layout.tsx
 │   │   ├── page.tsx                 # Input form + generation UI
+│   │   ├── prompt-lab/
+│   │   │   └── page.tsx             # Private reviewer-only prompt tuning page
 │   │   └── api/
 │   │       └── generate/
 │   │           └── route.ts         # Proxy to ADK backend + SSE stream
+│   │       └── prompt-lab/
+│   │           └── generate/
+│   │               └── route.ts     # Proxy for prompt-lab runs with temporary prompt overrides
 │   ├── components/
 │   │   ├── InputForm.tsx
+│   │   ├── PromptLabEditor.tsx
+│   │   ├── PromptLabSamplePicker.tsx
 │   │   ├── ProgressTracker.tsx
 │   │   ├── WebPreview.tsx           # Renders section JSON as styled HTML
 │   │   └── DownloadButton.tsx
@@ -387,6 +398,29 @@ GenerateRequest
     length_preset?: "short" | "standard" | "long" (default "standard")
 ```
 
+### PromptLabGenerateRequest
+
+Used only by the private reviewer prompt-lab flow. This contract wraps the existing study-guide request and adds temporary prompt overrides for the current run.
+
+```
+PromptLabGenerateRequest
+  base_request: GenerateRequest
+  prompt_overrides:
+    system_prompt_append?: string
+    section_overrides?: Record<string, string>
+      # keyed by supported section key such as
+      # intro, warmup, vocabulary, core_explainer, model_passage, etc.
+  sample_case_id?: string
+  reviewer_label?: string
+```
+
+Rules:
+
+- `base_request` remains the same canonical lesson input shape used by the teacher-facing generator.
+- `prompt_overrides` are request-scoped only; they do not mutate the default prompt templates on disk.
+- Unsupported section keys are rejected by the backend with a clear validation error.
+- The prompt-lab MVP may support only a subset of section overrides initially, but that supported allowlist must be explicit in code and UI.
+
 ### Blueprint
 
 Returned by the blueprint node and passed by the orchestrator to all dependent section nodes as a function argument.
@@ -443,6 +477,8 @@ GenerateResponse
   validation: ValidationResult
   error?: string                  # present only on failure
 ```
+
+The prompt-lab MVP reuses `GenerateResponse` for generation results so reviewers see the same preview, PDF, and validation shape as the teacher-facing flow. No separate result schema is required for the first version.
 
 ### ProgressEvent
 
@@ -546,6 +582,20 @@ The application is a single-page experience on `app/page.tsx`. It has two states
 
 On submit, the form serialises to a `GenerateRequest` and POSTs to `app/api/generate/route.ts`.
 
+### Prompt-lab reviewer page
+
+`app/prompt-lab/page.tsx` is a separate internal-only page for non-technical reviewers. It is not part of the normal teacher-facing landing page and should be hidden from general product navigation in the MVP.
+
+The prompt-lab page should provide:
+
+- a sample-input selector backed by a small curated set of lesson cases
+- a simplified form or preloaded request editor for the underlying `GenerateRequest`
+- plain-text editors for prompt override fields scoped to the supported section allowlist
+- a generate action that POSTs a `PromptLabGenerateRequest` to a dedicated proxy route
+- the same progress, preview, download, and validation-warning experience already used by the main generation flow
+
+The MVP does not require in-UI publishing, approval, or multi-user collaboration. It is a reviewer sandbox for evaluating prompt wording against real study-guide output.
+
 ### Progress tracker
 
 `ProgressTracker.tsx` consumes the SSE stream from the API proxy and renders a vertical step list. Each `node_complete` event checks off the corresponding step. The tracker shows the current active node and elapsed time.
@@ -561,6 +611,10 @@ The Download PDF tab renders `DownloadButton.tsx`, which decodes the `pdf_base64
 ### API proxy route
 
 `app/api/generate/route.ts` is a thin proxy. It forwards the `GenerateRequest` to the ADK backend, receives the SSE stream, and re-streams `ProgressEvent` objects to the browser. On completion it attaches the final `GenerateResponse` as a final SSE event. This layer exists to avoid exposing the ADK backend URL to the browser and to handle CORS and auth headers centrally.
+
+The prompt-lab flow uses a separate thin proxy route, for example `app/api/prompt-lab/generate/route.ts`, so reviewer-only request handling stays isolated from the public teacher path. That route forwards `PromptLabGenerateRequest` to a matching backend endpoint, re-streams the same `ProgressEvent` contract, and returns the same `GenerateResponse` shape on completion.
+
+The backend implementation must continue to use the same workflow orchestration, validators, and renderer. The only prompt-lab-specific behavior is the request-scoped prompt override layer applied when building the system prompt and supported section prompts.
 
 ---
 
@@ -636,6 +690,8 @@ The ADK backend is containerised and deployed to Google Cloud Run. The Next.js f
 
 **Operational rule:** deployment testing should happen in stages, not only at the end of the project. The recommended checkpoints are after backend orchestration is usable, after frontend proxy and streaming are usable, and again after end-to-end QA passes.
 
+For the prompt-lab MVP, the intended remote environment is a private staging or internal deployment rather than the public production teacher flow. The prompt-lab page may share the same deployed frontend and backend services as staging, but access to the page should be limited operationally rather than exposing it as a public product route.
+
 ---
 
 ## 11. Key design decisions and alternatives considered
@@ -693,3 +749,9 @@ Generation takes 30–90 seconds. SSE provides one-directional server-to-browser
 ### Decision: `ADK_BACKEND_URL` environment variable over a separate proxy service
 
 The Next.js API route reads `ADK_BACKEND_URL` and forwards requests directly. In local dev this is `http://localhost:8000`; in production it is the Cloud Run URL. No separate proxy service, gateway, or network configuration change is required when moving between environments. The only addition for production is CORS configuration on the ADK backend allowing the Vercel domain.
+
+### Decision: Request-scoped prompt overrides over direct prompt-file editing by reviewers
+
+The prompt-lab MVP should treat reviewer edits as request-scoped prompt overrides rather than direct writes to prompt template files. This keeps non-technical reviewers out of the repository, preserves a stable default prompt path for the teacher-facing product, and allows the same generation workflow to be exercised safely in a staging environment.
+
+**Alternative considered:** exposing prompt template files or a prompt-pack file editor directly to reviewers. Rejected for the MVP because remote reviewers do not have repo access, and direct file editing would couple reviewer experiments to source control and deployment state too tightly.

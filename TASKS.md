@@ -90,6 +90,7 @@ Phase 10 — API proxy and streaming progress
 Phase 11 — Results experience
 Phase 12 — End-to-end validation and QA
 Phase 13 — Deployment and parity
+Phase 14 — Prompt Lab MVP
 ```
 
 Deployment checkpoints should be exercised before the end of the roadmap:
@@ -1897,6 +1898,178 @@ Record the results in `TASK_STATUS.md` as you go.
 
 ---
 
+## Phase 14 — Prompt Lab MVP
+
+> Goal: add a private reviewer-only prompt-tuning workflow that reuses the shipped study-guide generator with request-scoped prompt overrides, without changing the teacher-facing default generation path.
+
+This phase is product work, not deployment work. It should build on the existing teacher-facing generator, preview, and PDF pipeline instead of duplicating them.
+
+---
+
+### Task 14.1 — Extend the prompt-lab request contract and sample-input model
+
+🧑 **You**
+
+Implement the request shape needed for the private prompt-lab flow.
+
+At minimum:
+
+- add a backend model for `PromptLabGenerateRequest`
+- mirror that contract in `frontend/lib/types.ts`
+- define the supported prompt override shape clearly, including an explicit section allowlist
+- define how curated sample lesson cases are identified in the request path
+
+Keep the existing `GenerateRequest` and `GenerateResponse` contracts intact for the teacher-facing flow.
+
+**Done looks like:**
+
+- Backend and frontend both define the prompt-lab request contract
+- Unsupported override keys are invalid by contract or rejected clearly at runtime
+- The prompt-lab contract is documented as request-scoped only and not a persistent prompt store
+
+---
+
+### Task 14.2 — Add backend prompt override resolution for supported sections
+
+🧑 **You**
+
+Implement the backend layer that applies prompt-lab overrides to the existing workflow without mutating the default prompt templates on disk.
+
+At minimum:
+
+- keep the current system prompt and section prompt builders as the default path
+- add a request-scoped override mechanism for the supported section allowlist
+- allow optional system-prompt append behavior when present in the prompt-lab request
+- keep validators, retry logic, section order, and rendering behavior unchanged
+
+Prefer a narrow abstraction that wraps prompt construction rather than scattering conditionals across every node.
+
+**Done looks like:**
+
+- A prompt-lab request can alter supported prompt text for one run only
+- A normal teacher-facing request still uses the unchanged default prompt path
+- Unsupported or malformed overrides fail clearly without silently changing behavior
+
+---
+
+### Task 14.3 — Add a prompt-lab backend endpoint and thin frontend proxy route
+
+🧑 **You**
+
+Add the dedicated transport layer for the reviewer-only flow.
+
+At minimum:
+
+- expose a backend prompt-lab generate endpoint or equivalent request surface
+- add `frontend/app/api/prompt-lab/generate/route.ts` as a thin proxy
+- stream the same `ProgressEvent` contract used by the teacher flow
+- return the same `GenerateResponse` contract on completion
+
+Do not merge prompt-lab handling into the teacher-facing `/api/generate` route if it makes the public flow harder to reason about.
+
+**Done looks like:**
+
+- Prompt-lab requests can run end to end through a dedicated proxy path
+- SSE progress and final result handling stay contract-compatible with the existing frontend components
+- The teacher-facing route remains thin and behaviorally isolated
+
+---
+
+### Task 14.4 — Add curated prompt-lab sample inputs
+
+🧑 **You**
+
+Create the initial small set of structured lesson cases used for reviewer experiments.
+
+At minimum:
+
+- define a small curated sample set covering representative lesson shapes
+- store the sample data in a stable repo location appropriate for internal reviewer tooling
+- make each sample resolvable by a simple identifier used by the prompt-lab UI
+
+Keep the MVP small. A few representative cases are enough to support reviewer iteration.
+
+**Done looks like:**
+
+- The prompt-lab flow can preload a curated sample by id
+- The sample set is documented and uses the existing study-guide request structure
+- The sample data is clearly separate from teacher-facing runtime defaults
+
+---
+
+### Task 14.5 — Build the private prompt-lab page and reviewer editors
+
+🧑 **You**
+
+Add the dedicated reviewer page in the frontend.
+
+At minimum:
+
+- add `frontend/app/prompt-lab/page.tsx`
+- add UI for selecting a sample case or editing the underlying request values
+- add plain-text prompt editors for the supported override allowlist
+- keep the page out of the main teacher-facing navigation in the MVP
+
+The page should be understandable to non-technical reviewers. Do not expose Python module names or implementation details in the UI.
+
+**Done looks like:**
+
+- A reviewer can choose a sample case, edit supported prompt text, and submit a run from one page
+- The page is clearly separate from the normal teacher generation flow
+- The page is usable without repo or terminal knowledge
+
+---
+
+### Task 14.6 — Reuse progress, preview, download, and validation results in prompt lab
+
+🧑 **You**
+
+Wire the prompt-lab page into the existing generation-result experience wherever reuse is practical.
+
+At minimum:
+
+- show streamed progress during a prompt-lab run
+- render the returned web preview
+- expose the generated PDF download
+- surface validation warnings and best-effort indicators just as clearly as the teacher flow
+
+Prefer reusing existing result components over creating a second results system.
+
+**Done looks like:**
+
+- Prompt-lab results are reviewable with the same core fidelity as the teacher-facing generator
+- Reviewers can assess whether prompt wording improved the output without extra tooling
+- Existing preview and result components remain the canonical rendering path where practical
+
+---
+
+### Task 14.7 — Add focused prompt-lab validation and documentation
+
+🧑 **You**
+
+Validate the new reviewer flow with focused checks and update repo docs where implementation details became real.
+
+At minimum:
+
+- add focused backend tests for prompt override application and rejection of unsupported keys
+- add focused frontend checks for the prompt-lab page state and request shaping
+- run an end-to-end prompt-lab smoke path using at least one curated sample
+- refresh any user-facing or repo-facing docs needed to explain the prompt-lab MVP once implemented
+
+Keep validation scoped to the prompt-lab slice rather than rerunning the entire roadmap without reason.
+
+**Done looks like:**
+
+- Prompt-lab-specific tests or smoke checks exist and pass
+- The reviewer flow is documented at the appropriate level for this repo
+- `TASK_STATUS.md` can record the feature as implemented with a concrete validation trail
+
+---
+
+**✅ Phase 14 done.** The repo includes a private prompt-lab MVP that lets non-technical reviewers test request-scoped prompt variants against the real generator without repo access and without altering the default teacher-facing prompt path.
+
+---
+
 ## Recommended operating pattern for future chats
 
 When starting a new Copilot chat for implementation:
@@ -1912,3 +2085,4 @@ When starting a new Copilot chat for implementation:
 - `TASKS.md` remains the detailed, stable implementation guide.
 - `TASK_STATUS.md` remains the lightweight progress snapshot.
 - The scaffolded backend under `backend/study-guide-agent/` is the only backend target for future work.
+- Prompt-lab MVP work starts only after reading the Phase 14 task slice alongside the prompt-lab requirements now recorded in `IFC.md` and `ARCHITECTURE.md`.

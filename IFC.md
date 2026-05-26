@@ -27,6 +27,8 @@ Teachers in K–12 markets (initially PH, JP, VN) spend disproportionate time ma
 - Their primary goal is either a downloadable PDF document or a web preview they can review and share — the output must be immediately presentable without post-generation formatting work.
 - They benefit from a study guide that is easy to scan visually, not just accurate in content — lightweight iconography around headings, subheadings, and repeated callout patterns can improve readability when it stays consistent and non-distracting.
 - Secondary users are content leads who review output quality; where sections fail validation, the system automatically retries them as part of the validation pass rather than requiring manual intervention.
+- A separate internal reviewer group may need to tune prompt wording remotely without repo access, terminal access, or direct exposure to backend code.
+- Prompt reviewers are non-technical users. They should work through a private web interface that lets them edit plain-language prompt instructions, run the generator, and judge whether outputs improved.
 
 ### The content constraints
 
@@ -50,6 +52,8 @@ Teachers in K–12 markets (initially PH, JP, VN) spend disproportionate time ma
 - The study guide is long enough (17 sections) that a single LLM call cannot produce it reliably — multi-step generation with shared context is required.
 - Some sections have hard dependencies on prior sections (answer key depends on all question sections; check-in depends on the model passage) — naive parallelisation will produce incoherent output.
 - Validators must run programmatically after generation to catch constraint violations before the document is assembled, and must trigger targeted section retries automatically as part of the validation pass — not as a separate manual step.
+- Prompt experimentation must not require code edits in production deployments or access to the repository. Reviewers need a private, browser-based tuning surface that can send temporary prompt overrides to the existing generation workflow.
+- Prompt tuning must remain isolated from the live teacher-facing experience. Experimental prompt sets should be reviewable in a staging or internal environment before any manual promotion to the default prompt set.
 - Deployment should preserve the same two-runtime split in local and remote environments so production issues can be reproduced without changing request flow or prompt logic.
 - Local debugging needs a documented production-like mode where the backend runs with the same container/runtime assumptions intended for Cloud Run and the frontend uses the same `ADK_BACKEND_URL` contract it will use remotely.
 
@@ -81,6 +85,24 @@ Teachers in K–12 markets (initially PH, JP, VN) spend disproportionate time ma
 - **Short / standard / long length presets.** A length_preset parameter that adjusts target word counts per section without changing the section structure.
 - **Optional input pre-population.** Vocabulary seeds and topic domain overrides let experienced writers guide generation without being required for basic use.
 - **Automated CI/CD promotion.** Once the manual deployment path is stable, dev and production releases can be promoted from versioned configuration rather than ad hoc local commands.
+
+### Prompt Lab MVP criteria
+
+- **Private reviewer-only prompt workspace.** A non-technical reviewer can access a private web page intended for internal use only, separate from the normal teacher-facing generation flow.
+- **Prompt editing without code access.** The reviewer can edit plain-language prompt instructions for supported study-guide sections without touching repository files or Python modules directly.
+- **Temporary prompt overrides.** A prompt-lab run can send temporary prompt overrides into the existing generation workflow without changing the default prompt set used by normal teacher generation.
+- **Prompt-lab generation output.** After running a prompt-lab generation, the reviewer can inspect the same core outputs as the teacher flow: streamed progress, structured web preview, downloadable PDF, and validation warnings.
+- **Sample-input driven review.** The reviewer can run prompt experiments against a structured lesson input chosen from a small curated sample set or entered through a simplified form.
+- **Manual promotion outside the MVP UI.** The MVP does not need an in-product publish button. Approved prompt changes can still be promoted manually by a developer or content lead after review.
+
+### Out of scope for Prompt Lab MVP
+
+- Real-time collaborative editing of prompts by multiple reviewers.
+- Full prompt version-control, approval, rollback, or audit-log workflows inside the UI.
+- Automatic publishing of reviewer edits to production.
+- Arbitrary workflow editing such as changing section order, validator rules, retry policy, or model parameters from the prompt-lab page.
+- Broad CMS-style prompt management for every internal prompt artifact in the system.
+- Replacing the teacher-facing generation form with the prompt-lab reviewer experience.
 
 ### Out of scope for this visual-icons requirement
 

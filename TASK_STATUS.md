@@ -1,6 +1,6 @@
 # Task Status
 
-Last updated: 2026-05-22
+Last updated: 2026-05-26
 
 This file mirrors the structure of `TASKS.md` and records the current repo state against each task directly.
 Use it together with `TASKS.md`:
@@ -35,6 +35,7 @@ Status legend:
 - The PDF icon renderer now inlines SVG stroke/fill attributes directly in the Jinja template and replaces the tiny point-style dot glyph hacks used by a few icons, so downloaded PDFs render the new header and callout icon set more cleanly under WeasyPrint instead of collapsing some closed shapes into black blobs
 - Deployment planning is now documented around a recommended Vercel frontend plus Cloud Run backend topology, with a separate local parity mode planned so production issues can be reproduced without changing the app architecture; the backend container now honors the runtime `PORT` environment variable, serves `app.fast_api_app:app` in the same image shape intended for Cloud Run, and now includes environment-driven CORS/runtime config plus a standardized Cloud Run deploy entrypoint in `DEPLOYMENT.md` and `scripts/deploy-backend-cloud-run.sh`
 - `IFC.md` and `ARCHITECTURE.md` now also document a new deterministic iconography requirement for section headers, selected subheaders, and repeated callouts; the shared preview contract in `backend/study-guide-agent/app/types.py` and `frontend/lib/types.ts` now carries optional `icon_key` metadata, the backend renderer now emits deterministic section icon keys, the PDF template now renders inline SVG icons for section headers plus repeated callouts using a more literal section-specific icon family, the focused renderer tests now assert both preview `icon_key` emission and a stable PDF render path with icon markup present, and the frontend web preview now maps the same icon family onto section headers plus repeated warning, success, and default callout treatments
+- `IFC.md` and `ARCHITECTURE.md` now also define a prompt-lab MVP for non-technical remote reviewers, including a private reviewer-only page, a request-scoped `PromptLabGenerateRequest` contract, dedicated proxy routing, and explicit MVP boundaries; implementation tasks for that feature have now been added to `TASKS.md`, but no prompt-lab code has been shipped yet
 
 ## Phase 0 — Repository and tooling setup
 
@@ -369,6 +370,43 @@ Notes: `DEPLOYMENT.md` now documents the Vercel project-settings contract for `A
 
 Status: `not started`
 Notes: No remote deployment checkpoints have been recorded yet after Phases 7, 10, or 12.
+
+## Phase 14 — Prompt Lab MVP
+
+### Task 14.1 — Extend the prompt-lab request contract and sample-input model
+
+Status: `not started`
+Notes: The prompt-lab request shape is now specified in `ARCHITECTURE.md` as `PromptLabGenerateRequest`, but the backend/frontend runtime contracts and sample-input model have not been implemented yet.
+
+### Task 14.2 — Add backend prompt override resolution for supported sections
+
+Status: `not started`
+Notes: The architecture now requires request-scoped prompt overrides that leave the default prompt template files unchanged, but there is not yet any backend prompt-override resolution layer in the shipped code.
+
+### Task 14.3 — Add a prompt-lab backend endpoint and thin frontend proxy route
+
+Status: `not started`
+Notes: The prompt-lab transport path is specified as separate from the teacher-facing `/api/generate` flow, but no dedicated backend endpoint or Next.js proxy route exists yet.
+
+### Task 14.4 — Add curated prompt-lab sample inputs
+
+Status: `not started`
+Notes: The prompt-lab MVP now calls for a small curated set of lesson cases identified by simple ids, but no reviewer-focused sample set has been added yet.
+
+### Task 14.5 — Build the private prompt-lab page and reviewer editors
+
+Status: `not started`
+Notes: `ARCHITECTURE.md` now reserves `frontend/app/prompt-lab/page.tsx` and related reviewer components for the private prompt-lab UI, but that page and its editors do not exist yet.
+
+### Task 14.6 — Reuse progress, preview, download, and validation results in prompt lab
+
+Status: `not started`
+Notes: The current frontend already has reusable progress and results components for the teacher flow, but no prompt-lab page wiring exists yet to reuse them for reviewer runs.
+
+### Task 14.7 — Add focused prompt-lab validation and documentation
+
+Status: `not started`
+Notes: The prompt-lab feature now has specification coverage in `IFC.md` and `ARCHITECTURE.md`, but no prompt-lab-specific tests, smoke checks, or implementation docs exist yet.
 
 ## Guidance for future chats
 
