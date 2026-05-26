@@ -35,7 +35,13 @@ from google.adk.cli.fast_api import get_fast_api_app
 
 from app.agent import study_guide_workflow
 from app.app_utils.telemetry import setup_telemetry
-from app.types import GenerateRequest, GenerateResponse, ProgressEvent
+from app.types import (
+    GenerateRequest,
+    GenerateResponse,
+    ProgressEvent,
+    PromptLabGenerateRequest,
+    StudyGuideRequest,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 load_dotenv(PROJECT_ROOT / ".env")
@@ -144,8 +150,7 @@ class _StreamingWorkflowContext:
         return result
 
 
-@app.post("/generate")
-async def generate(request: GenerateRequest) -> StreamingResponse:
+async def _stream_workflow(request: StudyGuideRequest) -> StreamingResponse:
     event_queue: asyncio.Queue[tuple[str, dict[str, Any]] | None] = asyncio.Queue()
 
     async def emit_event(event_name: str, payload: dict[str, Any]) -> None:
@@ -206,12 +211,22 @@ async def generate(request: GenerateRequest) -> StreamingResponse:
     )
 
 
+@app.post("/generate")
+async def generate(request: GenerateRequest) -> StreamingResponse:
+    return await _stream_workflow(request)
+
+
+@app.post("/prompt-lab/generate")
+async def generate_prompt_lab(request: PromptLabGenerateRequest) -> StreamingResponse:
+    return await _stream_workflow(request)
+
+
 class _SingleInputNodeProtocol(Protocol):
     _func: Callable[[Any], Awaitable[Any]]
 
 
 class _WorkflowNodeProtocol(Protocol):
-    _func: Callable[[Any, GenerateRequest], Awaitable[GenerateResponse]]
+    _func: Callable[[Any, StudyGuideRequest], Awaitable[GenerateResponse]]
 
 
 # Main execution

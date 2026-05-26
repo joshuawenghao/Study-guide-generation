@@ -194,6 +194,17 @@ def test_generate_route_streams_progress_and_result(
             "length_preset": "standard",
         },
     }
+    prompt_lab_request_payload = {
+        "base_request": request_payload,
+        "prompt_overrides": {
+            "system_prompt_append": "Prefer concise reviewer-facing wording.",
+            "section_overrides": {
+                "intro": "Open with one short hook sentence.",
+            },
+        },
+        "sample_case_id": "english_grade6_ph",
+        "reviewer_label": "reviewer-a",
+    }
 
     async def fake_blueprint(_request: Any) -> dict[str, Any]:
         return {"title": "Blueprint"}
@@ -233,3 +244,19 @@ def test_generate_route_streams_progress_and_result(
     assert any('"node": "blueprint"' in line for line in lines)
     assert "event: result" in lines
     assert any('"success": true' in line for line in lines)
+
+    with TestClient(fast_api_module.app) as client:
+        with client.stream(
+            "POST",
+            "/prompt-lab/generate",
+            json=prompt_lab_request_payload,
+        ) as response:
+            assert response.status_code == 200
+            assert response.headers["content-type"].startswith("text/event-stream")
+            prompt_lab_lines = [line for line in response.iter_lines() if line]
+
+    assert "event: progress" in prompt_lab_lines
+    assert any('"type": "node_started"' in line for line in prompt_lab_lines)
+    assert any('"node": "blueprint"' in line for line in prompt_lab_lines)
+    assert "event: result" in prompt_lab_lines
+    assert any('"success": true' in line for line in prompt_lab_lines)
