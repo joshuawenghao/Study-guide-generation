@@ -24,7 +24,7 @@ from pathlib import Path
 from typing import Any, Protocol, cast
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 
 from app.app_utils.adk_compat import ensure_google_adk_beta_compat
@@ -35,11 +35,13 @@ from google.adk.cli.fast_api import get_fast_api_app
 
 from app.agent import study_guide_workflow
 from app.app_utils.telemetry import setup_telemetry
+from app.prompt_lab.samples import get_prompt_lab_sample, list_prompt_lab_samples
 from app.types import (
     GenerateRequest,
     GenerateResponse,
     ProgressEvent,
     PromptLabGenerateRequest,
+    PromptLabSampleInput,
     StudyGuideRequest,
 )
 
@@ -219,6 +221,21 @@ async def generate(request: GenerateRequest) -> StreamingResponse:
 @app.post("/prompt-lab/generate")
 async def generate_prompt_lab(request: PromptLabGenerateRequest) -> StreamingResponse:
     return await _stream_workflow(request)
+
+
+@app.get("/prompt-lab/samples", response_model=list[PromptLabSampleInput])
+async def prompt_lab_samples() -> list[PromptLabSampleInput]:
+    return list_prompt_lab_samples()
+
+
+@app.get("/prompt-lab/samples/{sample_id}", response_model=PromptLabSampleInput)
+async def prompt_lab_sample(sample_id: str) -> PromptLabSampleInput:
+    try:
+        return get_prompt_lab_sample(sample_id)
+    except KeyError as exc:
+        raise HTTPException(
+            status_code=404, detail="Prompt-lab sample not found."
+        ) from exc
 
 
 class _SingleInputNodeProtocol(Protocol):

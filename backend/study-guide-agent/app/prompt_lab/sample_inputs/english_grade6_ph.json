@@ -1,0 +1,56 @@
+{
+  "id": "english_grade6_ph",
+  "label": "English Grade 6 PH",
+  "description": "Author's purpose lesson for a Philippine Grade 6 English context, useful for narrative and reading-comprehension prompt experiments.",
+  "request": {
+    "lesson_metadata": {
+      "subject": "English",
+      "grade_level": 6,
+      "market": "PH",
+      "language": "en",
+      "unit_number": 2,
+      "unit_title": "Reading with Purpose",
+      "lesson_number": 1,
+      "lesson_title": "Identifying Author's Purpose",
+      "lesson_code": "E6_Q1_0201"
+    },
+    "curriculum": {
+      "competency_code": "EN6RC-Ia-2.2",
+      "competency_description": "Identify the author's purpose for writing a text.",
+      "sub_competencies": [
+        {
+          "id": "sc1",
+          "label": "Identify purpose to entertain"
+        },
+        {
+          "id": "sc2",
+          "label": "Identify purpose to inform"
+        },
+        {
+          "id": "sc3",
+          "label": "Identify purpose to persuade"
+        }
+      ]
+    },
+    "instructional_design": {
+      "core_concept": "Authors write with a specific purpose — to entertain, inform, or persuade — and recognising this purpose helps readers understand and evaluate texts more critically.",
+      "bloom_targets": [
+        "Remember the three main author purposes (entertain, inform, persuade)",
+        "Understand how language and tone signal an author's purpose",
+        "Apply purpose identification to an unseen passage"
+      ],
+      "essential_question_seed": "Why does it matter why an author wrote something?"
+    },
+    "optional": {
+      "vocabulary_seeds": [
+        "author's purpose",
+        "entertain",
+        "inform",
+        "persuade"
+      ],
+      "topic_domains": null,
+      "tone_register": "supportive",
+      "length_preset": "standard"
+    }
+  }
+}

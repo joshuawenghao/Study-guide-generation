@@ -1,0 +1,56 @@
+{
+  "id": "math_grade4_vn",
+  "label": "Math Grade 4 VN",
+  "description": "Fraction-comparison lesson for a Vietnam Grade 4 mathematics context, useful for testing non-ELA prompt behavior and structured worked examples.",
+  "request": {
+    "lesson_metadata": {
+      "subject": "Mathematics",
+      "grade_level": 4,
+      "market": "VN",
+      "language": "en",
+      "unit_number": 3,
+      "unit_title": "Fractions",
+      "lesson_number": 2,
+      "lesson_title": "Comparing Fractions with Unlike Denominators",
+      "lesson_code": "M4_Q2_0302"
+    },
+    "curriculum": {
+      "competency_code": "M4NS-IIc-81",
+      "competency_description": "Compare fractions with unlike denominators using visual models and equivalent fractions.",
+      "sub_competencies": [
+        {
+          "id": "sc1",
+          "label": "Find equivalent fractions"
+        },
+        {
+          "id": "sc2",
+          "label": "Use a common denominator to compare"
+        },
+        {
+          "id": "sc3",
+          "label": "Order fractions on a number line"
+        }
+      ]
+    },
+    "instructional_design": {
+      "core_concept": "Two fractions with different denominators can be compared by rewriting them with a common denominator, allowing direct comparison of the numerators.",
+      "bloom_targets": [
+        "Remember the meaning of numerator and denominator",
+        "Understand how to find the least common denominator",
+        "Apply equivalent fraction methods to compare and order fractions"
+      ],
+      "essential_question_seed": "How can you tell which of two fractions is larger when the bottom numbers are different?"
+    },
+    "optional": {
+      "vocabulary_seeds": [
+        "numerator",
+        "denominator",
+        "equivalent fractions",
+        "common denominator"
+      ],
+      "topic_domains": null,
+      "tone_register": "clear-encouraging",
+      "length_preset": "standard"
+    }
+  }
+}
