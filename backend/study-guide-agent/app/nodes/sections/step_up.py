@@ -15,11 +15,11 @@ from google.adk.workflow import node
 
 from app.nodes.sections import generate_section
 from app.prompts.templates.step_up import build_prompt as build_step_up_prompt
-from app.types import Blueprint, GenerateRequest
+from app.types import Blueprint, StudyGuideRequest
 
 
 async def generate_step_up(
-    request: GenerateRequest,
+    request: StudyGuideRequest,
     blueprint: Blueprint,
     assessment_passage: dict[str, Any],
     assessment_questions: dict[str, Any],
@@ -37,6 +37,6 @@ async def generate_step_up(
 
 
 step_up_node = cast(
-    Callable[[GenerateRequest, Blueprint, dict[str, Any], dict[str, Any]], Any],
+    Callable[[StudyGuideRequest, Blueprint, dict[str, Any], dict[str, Any]], Any],
     node(generate_step_up),
 )

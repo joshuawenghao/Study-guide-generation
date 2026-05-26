@@ -17,11 +17,11 @@ from app.nodes.sections import generate_section
 from app.prompts.templates.assessment_passage import (
     build_prompt as build_assessment_passage_prompt,
 )
-from app.types import Blueprint, GenerateRequest
+from app.types import Blueprint, StudyGuideRequest
 
 
 async def generate_assessment_passage(
-    request: GenerateRequest, blueprint: Blueprint
+    request: StudyGuideRequest, blueprint: Blueprint
 ) -> dict[str, Any]:
     return await generate_section(
         request=request,
@@ -32,5 +32,5 @@ async def generate_assessment_passage(
 
 
 assessment_passage_node = cast(
-    Callable[[GenerateRequest, Blueprint], Any], node(generate_assessment_passage)
+    Callable[[StudyGuideRequest, Blueprint], Any], node(generate_assessment_passage)
 )

@@ -9,8 +9,11 @@ from collections.abc import Callable
 from typing import Any
 
 from app.nodes.base import TEMP_SECTION, call_gemini
-from app.prompts.system_prompt import build_system_prompt
-from app.types import Blueprint, GenerateRequest
+from app.prompts.runtime import (
+    build_runtime_section_prompt,
+    build_runtime_system_prompt,
+)
+from app.types import Blueprint, GenerateRequest, StudyGuideRequest
 
 _INVALID_JSON_ESCAPE_PATTERN = re.compile(r'(?<!\\)\\(?!["\\/bfnrtu])')
 _INLINE_QUOTED_LIST_ANNOTATION_PATTERN = re.compile(
@@ -303,14 +306,20 @@ def _parse_section_response(response_text: str, context_label: str) -> dict[str,
 
 async def generate_section(
     *,
-    request: GenerateRequest,
+    request: StudyGuideRequest,
     blueprint: Blueprint,
     prompt_builder: Callable[[Any, Blueprint, GenerateRequest], str],
     context_label: str,
     spec: Any = None,
 ) -> dict[str, Any]:
-    system_prompt = build_system_prompt(request)
-    user_prompt = prompt_builder(spec, blueprint, request)
+    system_prompt = build_runtime_system_prompt(request)
+    user_prompt = build_runtime_section_prompt(
+        request=request,
+        blueprint=blueprint,
+        prompt_builder=prompt_builder,
+        context_label=context_label,
+        spec=spec,
+    )
     response_text = await call_gemini(
         system_prompt=system_prompt,
         user_prompt=user_prompt,

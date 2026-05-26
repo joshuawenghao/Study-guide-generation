@@ -19,7 +19,7 @@ from app.nodes.sections import generate_section
 from app.prompts.templates.assessment_questions import (
     build_prompt as build_assessment_questions_prompt,
 )
-from app.types import Blueprint, GenerateRequest
+from app.types import Blueprint, StudyGuideRequest
 
 QUOTED_PHRASE_PATTERN = re.compile(r'"([^"\n]+)"|“([^”\n]+)”')
 
@@ -187,7 +187,7 @@ def normalize_assessment_questions_payload(
 
 
 async def generate_assessment_questions(
-    request: GenerateRequest,
+    request: StudyGuideRequest,
     blueprint: Blueprint,
     assessment_passage: dict[str, Any],
 ) -> dict[str, Any]:
@@ -202,6 +202,6 @@ async def generate_assessment_questions(
 
 
 assessment_questions_node = cast(
-    Callable[[GenerateRequest, Blueprint, dict[str, Any]], Any],
+    Callable[[StudyGuideRequest, Blueprint, dict[str, Any]], Any],
     node(generate_assessment_questions),
 )

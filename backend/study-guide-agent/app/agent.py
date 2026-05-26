@@ -40,7 +40,11 @@ from app.nodes.sections.subconcept import generate_subconcept
 from app.nodes.sections.vocabulary import generate_vocabulary
 from app.nodes.sections.warmup import generate_warmup
 from app.nodes.validator import generate_validation
-from app.prompts.system_prompt import build_system_prompt
+from app.prompts.runtime import (
+    build_runtime_section_prompt,
+    build_runtime_system_prompt,
+    resolve_base_request,
+)
 from app.prompts.templates.answer_key import build_prompt as build_answer_key_prompt
 from app.prompts.templates.assessment_passage import (
     build_prompt as build_assessment_passage_prompt,
@@ -75,43 +79,44 @@ from app.types import (
     Blueprint,
     GenerateRequest,
     GenerateResponse,
+    StudyGuideRequest,
     SubCompetency,
     ValidationResult,
 )
 
 
 class SectionNodeInput(BaseModel):
-    request: GenerateRequest
+    request: StudyGuideRequest
     blueprint: Blueprint
 
 
 class SubconceptNodeInput(SectionNodeInput):
-    request: GenerateRequest
+    request: StudyGuideRequest
     blueprint: Blueprint
     sub_competency: SubCompetency
 
 
 class CheckInNodeInput(SectionNodeInput):
-    request: GenerateRequest
+    request: StudyGuideRequest
     blueprint: Blueprint
     model_passage: dict[str, Any]
 
 
 class AssessmentQuestionsNodeInput(SectionNodeInput):
-    request: GenerateRequest
+    request: StudyGuideRequest
     blueprint: Blueprint
     assessment_passage: dict[str, Any]
 
 
 class StepUpNodeInput(AssessmentQuestionsNodeInput):
-    request: GenerateRequest
+    request: StudyGuideRequest
     blueprint: Blueprint
     assessment_passage: dict[str, Any]
     assessment_questions: dict[str, Any]
 
 
 class AnswerKeyNodeInput(AssessmentQuestionsNodeInput):
-    request: GenerateRequest
+    request: StudyGuideRequest
     blueprint: Blueprint
     model_passage: dict[str, Any]
     assessment_passage: dict[str, Any]
@@ -121,7 +126,7 @@ class AnswerKeyNodeInput(AssessmentQuestionsNodeInput):
 
 
 class ValidationNodeInput(BaseModel):
-    request: GenerateRequest
+    request: StudyGuideRequest
     blueprint: Blueprint
     sections: dict[str, Any]
 
@@ -153,7 +158,7 @@ def _with_retry_guidance(prompt: str, failure_messages: list[str]) -> str:
 def _retry_prompt_builder(
     section_key: str,
     blueprint: Blueprint,
-    request: GenerateRequest,
+    request: StudyGuideRequest,
     sections: dict[str, Any],
 ) -> tuple[PromptBuilder, Any]:
     if section_key == "intro":
@@ -199,20 +204,21 @@ def _retry_prompt_builder(
 
 
 async def _generate_retry_payload(node_input: RetryNodeInput) -> Any:
-    system_prompt = build_system_prompt(node_input.request)
+    system_prompt = build_runtime_system_prompt(node_input.request)
 
     if node_input.section_key == "subconcept":
 
         async def retry_subconcept(sub_competency: SubCompetency) -> dict[str, Any]:
-            prompt = build_subconcept_prompt(
-                sub_competency,
-                node_input.blueprint,
-                node_input.request,
-            )
             response_text = await call_gemini(
                 system_prompt=system_prompt,
                 user_prompt=_with_retry_guidance(
-                    prompt,
+                    build_runtime_section_prompt(
+                        request=node_input.request,
+                        blueprint=node_input.blueprint,
+                        prompt_builder=build_subconcept_prompt,
+                        context_label="subconcept",
+                        spec=sub_competency,
+                    ),
                     node_input.failure_messages,
                 ),
                 temperature=TEMP_RETRY,
@@ -236,7 +242,13 @@ async def _generate_retry_payload(node_input: RetryNodeInput) -> Any:
     response_text = await call_gemini(
         system_prompt=system_prompt,
         user_prompt=_with_retry_guidance(
-            prompt_builder(spec, node_input.blueprint, node_input.request),
+            build_runtime_section_prompt(
+                request=node_input.request,
+                blueprint=node_input.blueprint,
+                prompt_builder=prompt_builder,
+                context_label=node_input.section_key,
+                spec=spec,
+            ),
             node_input.failure_messages,
         ),
         temperature=TEMP_RETRY,
@@ -375,7 +387,7 @@ async def _generate_validation_node(
     node_input: ValidationNodeInput,
 ) -> ValidationResult:
     return await generate_validation(
-        node_input.request,
+        resolve_base_request(node_input.request),
         node_input.blueprint,
         node_input.sections,
     )

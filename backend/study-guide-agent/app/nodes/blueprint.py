@@ -16,9 +16,9 @@ from google.adk.workflow import node
 from pydantic import ValidationError
 
 from app.nodes.base import TEMP_BLUEPRINT, call_gemini
-from app.prompts.system_prompt import build_system_prompt
+from app.prompts.runtime import build_runtime_system_prompt, resolve_base_request
 from app.prompts.templates.blueprint import build_prompt as build_blueprint_prompt
-from app.types import Blueprint, GenerateRequest
+from app.types import Blueprint, StudyGuideRequest
 
 
 def _parse_blueprint_response(response_text: str) -> Blueprint:
@@ -39,9 +39,14 @@ def _parse_blueprint_response(response_text: str) -> Blueprint:
         ) from error
 
 
-async def generate_blueprint(request: GenerateRequest) -> Blueprint:
-    system_prompt = build_system_prompt(request)
-    user_prompt = build_blueprint_prompt(spec=None, blueprint=None, request=request)
+async def generate_blueprint(request: StudyGuideRequest) -> Blueprint:
+    base_request = resolve_base_request(request)
+    system_prompt = build_runtime_system_prompt(request)
+    user_prompt = build_blueprint_prompt(
+        spec=None,
+        blueprint=None,
+        request=base_request,
+    )
     response_text = await call_gemini(
         system_prompt=system_prompt,
         user_prompt=user_prompt,
@@ -51,4 +56,4 @@ async def generate_blueprint(request: GenerateRequest) -> Blueprint:
     return _parse_blueprint_response(response_text)
 
 
-blueprint_node = cast(Callable[[GenerateRequest], Any], node(generate_blueprint))
+blueprint_node = cast(Callable[[StudyGuideRequest], Any], node(generate_blueprint))

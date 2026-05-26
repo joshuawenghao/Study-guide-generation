@@ -15,11 +15,11 @@ from google.adk.workflow import node
 
 from app.nodes.sections import generate_section
 from app.prompts.templates.key_points import build_prompt as build_key_points_prompt
-from app.types import Blueprint, GenerateRequest
+from app.types import Blueprint, StudyGuideRequest
 
 
 async def generate_key_points(
-    request: GenerateRequest, blueprint: Blueprint
+    request: StudyGuideRequest, blueprint: Blueprint
 ) -> dict[str, Any]:
     return await generate_section(
         request=request,
@@ -30,5 +30,5 @@ async def generate_key_points(
 
 
 key_points_node = cast(
-    Callable[[GenerateRequest, Blueprint], Any], node(generate_key_points)
+    Callable[[StudyGuideRequest, Blueprint], Any], node(generate_key_points)
 )

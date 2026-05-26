@@ -17,11 +17,11 @@ from app.nodes.sections import generate_section
 from app.prompts.templates.strategy_list import (
     build_prompt as build_strategy_list_prompt,
 )
-from app.types import Blueprint, GenerateRequest
+from app.types import Blueprint, StudyGuideRequest
 
 
 async def generate_strategy_list(
-    request: GenerateRequest, blueprint: Blueprint
+    request: StudyGuideRequest, blueprint: Blueprint
 ) -> dict[str, Any]:
     return await generate_section(
         request=request,
@@ -32,5 +32,5 @@ async def generate_strategy_list(
 
 
 strategy_list_node = cast(
-    Callable[[GenerateRequest, Blueprint], Any], node(generate_strategy_list)
+    Callable[[StudyGuideRequest, Blueprint], Any], node(generate_strategy_list)
 )

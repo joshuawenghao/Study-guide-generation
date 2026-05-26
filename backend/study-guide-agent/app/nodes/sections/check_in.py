@@ -15,11 +15,11 @@ from google.adk.workflow import node
 
 from app.nodes.sections import generate_section
 from app.prompts.templates.check_in import build_prompt as build_check_in_prompt
-from app.types import Blueprint, GenerateRequest
+from app.types import Blueprint, StudyGuideRequest
 
 
 async def generate_check_in(
-    request: GenerateRequest,
+    request: StudyGuideRequest,
     blueprint: Blueprint,
     model_passage: dict[str, Any],
 ) -> dict[str, Any]:
@@ -33,5 +33,6 @@ async def generate_check_in(
 
 
 check_in_node = cast(
-    Callable[[GenerateRequest, Blueprint, dict[str, Any]], Any], node(generate_check_in)
+    Callable[[StudyGuideRequest, Blueprint, dict[str, Any]], Any],
+    node(generate_check_in),
 )

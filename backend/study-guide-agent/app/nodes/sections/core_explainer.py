@@ -17,11 +17,11 @@ from app.nodes.sections import generate_section
 from app.prompts.templates.core_explainer import (
     build_prompt as build_core_explainer_prompt,
 )
-from app.types import Blueprint, GenerateRequest
+from app.types import Blueprint, StudyGuideRequest
 
 
 async def generate_core_explainer(
-    request: GenerateRequest, blueprint: Blueprint
+    request: StudyGuideRequest, blueprint: Blueprint
 ) -> dict[str, Any]:
     return await generate_section(
         request=request,
@@ -32,5 +32,5 @@ async def generate_core_explainer(
 
 
 core_explainer_node = cast(
-    Callable[[GenerateRequest, Blueprint], Any], node(generate_core_explainer)
+    Callable[[StudyGuideRequest, Blueprint], Any], node(generate_core_explainer)
 )

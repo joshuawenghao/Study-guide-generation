@@ -17,9 +17,12 @@ from google.adk.workflow import node
 
 from app.nodes.base import TEMP_ANSWER_KEY, call_gemini
 from app.nodes.sections import _parse_section_response
-from app.prompts.system_prompt import build_system_prompt
+from app.prompts.runtime import (
+    build_runtime_section_prompt,
+    build_runtime_system_prompt,
+)
 from app.prompts.templates.answer_key import build_prompt as build_answer_key_prompt
-from app.types import Blueprint, GenerateRequest
+from app.types import Blueprint, GenerateRequest, StudyGuideRequest
 
 QUOTED_PHRASE_PATTERN = re.compile(r'"([^"\n]+)"|“([^”\n]+)”')
 
@@ -484,7 +487,7 @@ def _normalize_assessment_answer_quotes(
 
 
 async def generate_answer_key(
-    request: GenerateRequest,
+    request: StudyGuideRequest,
     blueprint: Blueprint,
     model_passage: dict[str, Any],
     check_in: dict[str, Any],
@@ -492,17 +495,20 @@ async def generate_answer_key(
     assessment_questions: dict[str, Any],
     step_up: dict[str, Any],
 ) -> dict[str, Any]:
-    system_prompt = build_system_prompt(request)
-    user_prompt = build_answer_key_prompt(
-        {
-            "model_passage": model_passage,
-            "check_in": check_in,
-            "assessment_passage": assessment_passage,
-            "assessment_questions": assessment_questions,
-            "step_up": step_up,
-        },
-        blueprint,
-        request,
+    answer_key_spec = {
+        "model_passage": model_passage,
+        "check_in": check_in,
+        "assessment_passage": assessment_passage,
+        "assessment_questions": assessment_questions,
+        "step_up": step_up,
+    }
+    system_prompt = build_runtime_system_prompt(request)
+    user_prompt = build_runtime_section_prompt(
+        request=request,
+        blueprint=blueprint,
+        prompt_builder=build_answer_key_prompt,
+        context_label="answer_key",
+        spec=answer_key_spec,
     )
     response_text = await call_gemini(
         system_prompt=system_prompt,

@@ -176,6 +176,9 @@ class PromptLabSampleInput(BaseModel):
     request: GenerateRequest
 
 
+StudyGuideRequest = GenerateRequest | PromptLabGenerateRequest
+
+
 class LearningTarget(BaseModel):
     number: int
     bloom_verb: str

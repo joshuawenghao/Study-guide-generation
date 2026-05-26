@@ -15,11 +15,11 @@ from google.adk.workflow import node
 
 from app.nodes.sections import generate_section
 from app.prompts.templates.subconcept import build_prompt as build_subconcept_prompt
-from app.types import Blueprint, GenerateRequest, SubCompetency
+from app.types import Blueprint, StudyGuideRequest, SubCompetency
 
 
 async def generate_subconcept(
-    request: GenerateRequest,
+    request: StudyGuideRequest,
     blueprint: Blueprint,
     sub_competency: SubCompetency,
 ) -> dict[str, Any]:
@@ -33,6 +33,6 @@ async def generate_subconcept(
 
 
 subconcept_node = cast(
-    Callable[[GenerateRequest, Blueprint, SubCompetency], Any],
+    Callable[[StudyGuideRequest, Blueprint, SubCompetency], Any],
     node(generate_subconcept),
 )
