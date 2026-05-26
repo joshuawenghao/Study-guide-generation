@@ -1,0 +1,55 @@
+{
+  "id": "nursing_grade12_ph",
+  "label": "Nursing Grade 12 PH",
+  "description": "Senior high nursing-care lesson for a Philippine health context, useful for testing technical vocabulary, patient-safety passages, and upper-grade explanatory tone.",
+  "request": {
+    "lesson_metadata": {
+      "subject": "Health",
+      "grade_level": 12,
+      "market": "PH",
+      "language": "en",
+      "unit_number": 3,
+      "unit_title": "Infection Prevention and Safety",
+      "lesson_number": 2,
+      "lesson_title": "Standard Precautions in Nursing Care",
+      "lesson_code": "HN12-U3-L2"
+    },
+    "curriculum": {
+      "competency_code": "HN12SP-IIIb-2",
+      "competency_description": "Apply standard precautions to prevent infection during patient care.",
+      "sub_competencies": [
+        {
+          "id": "SC-1",
+          "label": "Identify situations that require standard precautions during patient care"
+        }
+      ]
+    },
+    "instructional_design": {
+      "core_concept": "Standard precautions protect patients and healthcare workers by treating blood and body fluids as potentially infectious and using consistent infection-control actions.",
+      "bloom_targets": [
+        "identify",
+        "explain",
+        "apply"
+      ],
+      "essential_question_seed": "How do nurses use standard precautions to protect themselves and their patients?"
+    },
+    "optional": {
+      "vocabulary_seeds": [
+        "standard precautions",
+        "hand hygiene",
+        "personal protective equipment",
+        "infection control",
+        "aseptic technique"
+      ],
+      "topic_domains": {
+        "model_passage": "school clinic triage",
+        "assessment_passage": "medical ward wound dressing",
+        "entertain_example": "healthcare role-play",
+        "inform_example": "infection prevention guidelines",
+        "persuade_example": "patient safety campaign"
+      },
+      "tone_register": "academic",
+      "length_preset": "standard"
+    }
+  }
+}

@@ -12,9 +12,15 @@ def test_list_prompt_lab_samples_returns_curated_cases_in_stable_order() -> None
     assert [sample.id for sample in samples] == [
         "english_grade6_ph",
         "math_grade4_vn",
+        "nursing_grade12_ph",
+        "science_grade8_ph",
+        "social_studies_grade7_ph",
     ]
     assert samples[0].request.lesson_metadata.subject == "English"
     assert samples[1].request.lesson_metadata.subject == "Mathematics"
+    assert samples[2].request.lesson_metadata.subject == "Health"
+    assert samples[3].request.lesson_metadata.subject == "Science"
+    assert samples[4].request.lesson_metadata.subject == "Social Studies"
 
 
 def test_get_prompt_lab_sample_resolves_by_id() -> None:
@@ -22,6 +28,14 @@ def test_get_prompt_lab_sample_resolves_by_id() -> None:
 
     assert sample.label == "English Grade 6 PH"
     assert sample.request.lesson_metadata.lesson_code == "E6_Q1_0201"
+
+
+def test_get_prompt_lab_sample_resolves_nursing_case() -> None:
+    sample = get_prompt_lab_sample("nursing_grade12_ph")
+
+    assert sample.label == "Nursing Grade 12 PH"
+    assert sample.request.lesson_metadata.lesson_code == "HN12-U3-L2"
+    assert sample.request.optional.topic_domains is not None
 
 
 def test_prompt_lab_samples_routes_return_catalog_and_item() -> None:
@@ -34,6 +48,9 @@ def test_prompt_lab_samples_routes_return_catalog_and_item() -> None:
     assert [sample["id"] for sample in catalog_payload] == [
         "english_grade6_ph",
         "math_grade4_vn",
+        "nursing_grade12_ph",
+        "science_grade8_ph",
+        "social_studies_grade7_ph",
     ]
 
     assert item_response.status_code == 200

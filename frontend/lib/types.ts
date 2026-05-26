@@ -77,6 +77,9 @@ export type PromptLabSectionKey = (typeof PROMPT_LAB_SECTION_KEYS)[number];
 export const PROMPT_LAB_SAMPLE_CASE_IDS = [
   "english_grade6_ph",
   "math_grade4_vn",
+  "nursing_grade12_ph",
+  "science_grade8_ph",
+  "social_studies_grade7_ph",
 ] as const;
 
 export type PromptLabSampleCaseId = (typeof PROMPT_LAB_SAMPLE_CASE_IDS)[number];

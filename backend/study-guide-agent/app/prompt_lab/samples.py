@@ -17,6 +17,9 @@ SAMPLE_INPUTS_DIR = Path(__file__).resolve().parent / "sample_inputs"
 _SAMPLE_FILE_NAMES: dict[PromptLabSampleCaseId, str] = {
     PromptLabSampleCaseId.ENGLISH_GRADE6_PH: "english_grade6_ph.json",
     PromptLabSampleCaseId.MATH_GRADE4_VN: "math_grade4_vn.json",
+    PromptLabSampleCaseId.NURSING_GRADE12_PH: "nursing_grade12_ph.json",
+    PromptLabSampleCaseId.SCIENCE_GRADE8_PH: "science_grade8_ph.json",
+    PromptLabSampleCaseId.SOCIAL_STUDIES_GRADE7_PH: "social_studies_grade7_ph.json",
 }
 
 

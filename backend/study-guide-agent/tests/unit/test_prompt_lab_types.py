@@ -68,7 +68,7 @@ def test_prompt_lab_generate_request_rejects_unsupported_override_keys() -> None
 def test_prompt_lab_generate_request_rejects_unknown_sample_case_id() -> None:
     payload = {
         "base_request": _load_request_payload(),
-        "sample_case_id": "nursing_grade12_ph",
+        "sample_case_id": "biology_grade9_ph",
     }
 
     with pytest.raises(ValidationError):

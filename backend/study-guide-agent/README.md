@@ -120,6 +120,8 @@ The `renderer-only` mode proves Jinja2 plus WeasyPrint PDF rendering without cal
 
 The `full-workflow` JSON summary now includes both `validation_warning_count` and `validation_warnings`, which makes it easier to inspect remaining soft-validator output from the terminal without opening the PDF first.
 
+The prompt-lab sample catalog now lives under `app/prompt_lab/sample_inputs/` and currently includes five checked-in reviewer cases: Grade 6 English (PH), Grade 4 Math (VN), Grade 12 Nursing/Health (PH), Grade 8 Science (PH), and Grade 7 Social Studies (PH). The backend exposes these through `/prompt-lab/samples` and `/prompt-lab/samples/{sample_id}` so the later reviewer UI can preload curated requests by stable id.
+
 You can also use features from the [ADK](https://adk.dev/) CLI with `uv run adk`, or use `agents-cli playground` for the scaffolded agent playground.
 
 Scaffold-native conversational CLI and eval flows now run through the dedicated `eval_app/` loader surface, while the real typed study-guide workflow used by the backend `/generate` endpoint remains under `app/agent.py` and the ADK loader compatibility package remains `study_guide_agent/`.

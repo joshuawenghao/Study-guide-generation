@@ -119,11 +119,17 @@ PROMPT_LAB_SECTION_KEYS: tuple[PromptLabSectionKey, ...] = (
 class PromptLabSampleCaseId(StrEnum):
     ENGLISH_GRADE6_PH = "english_grade6_ph"
     MATH_GRADE4_VN = "math_grade4_vn"
+    NURSING_GRADE12_PH = "nursing_grade12_ph"
+    SCIENCE_GRADE8_PH = "science_grade8_ph"
+    SOCIAL_STUDIES_GRADE7_PH = "social_studies_grade7_ph"
 
 
 PROMPT_LAB_SAMPLE_CASE_IDS: tuple[PromptLabSampleCaseId, ...] = (
     PromptLabSampleCaseId.ENGLISH_GRADE6_PH,
     PromptLabSampleCaseId.MATH_GRADE4_VN,
+    PromptLabSampleCaseId.NURSING_GRADE12_PH,
+    PromptLabSampleCaseId.SCIENCE_GRADE8_PH,
+    PromptLabSampleCaseId.SOCIAL_STUDIES_GRADE7_PH,
 )
 
 

@@ -1,0 +1,63 @@
+{
+  "id": "science_grade8_ph",
+  "label": "Science Grade 8 PH",
+  "description": "Philippine Grade 8 science lesson on cell transport, useful for testing diagram-adjacent explanations, scientific vocabulary, and evidence-based reading passages.",
+  "request": {
+    "lesson_metadata": {
+      "subject": "Science",
+      "grade_level": 8,
+      "market": "PH",
+      "language": "en",
+      "unit_number": 1,
+      "unit_title": "Life at the Cellular Level",
+      "lesson_number": 4,
+      "lesson_title": "Movement of Materials Across Cell Membranes",
+      "lesson_code": "S8-Q1-0104"
+    },
+    "curriculum": {
+      "competency_code": "S8LT-Ig-h-9",
+      "competency_description": "Explain how substances move across the cell membrane through diffusion, osmosis, and active transport.",
+      "sub_competencies": [
+        {
+          "id": "sc1",
+          "label": "Describe diffusion and osmosis using everyday examples"
+        },
+        {
+          "id": "sc2",
+          "label": "Compare passive and active transport"
+        },
+        {
+          "id": "sc3",
+          "label": "Predict how concentration affects movement across a membrane"
+        }
+      ]
+    },
+    "instructional_design": {
+      "core_concept": "Cells maintain balance by moving materials across the membrane, sometimes naturally down a concentration gradient and sometimes with energy.",
+      "bloom_targets": [
+        "Remember the meaning of diffusion, osmosis, and active transport",
+        "Understand how concentration differences affect particle movement",
+        "Apply membrane-transport concepts to familiar real-world situations"
+      ],
+      "essential_question_seed": "How do cells control what enters and leaves so they can stay alive?"
+    },
+    "optional": {
+      "vocabulary_seeds": [
+        "cell membrane",
+        "diffusion",
+        "osmosis",
+        "active transport",
+        "concentration gradient"
+      ],
+      "topic_domains": {
+        "model_passage": "sports drink and hydration",
+        "assessment_passage": "saltwater fish tank care",
+        "entertain_example": "science-club challenge",
+        "inform_example": "laboratory observation guide",
+        "persuade_example": "healthy hydration campaign"
+      },
+      "tone_register": "clear-encouraging",
+      "length_preset": "standard"
+    }
+  }
+}
