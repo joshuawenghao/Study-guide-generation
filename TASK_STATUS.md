@@ -1,6 +1,6 @@
 # Task Status
 
-Last updated: 2026-05-26
+Last updated: 2026-05-28
 
 This file mirrors the structure of `TASKS.md` and records the current repo state against each task directly.
 Use it together with `TASKS.md`:
@@ -31,6 +31,8 @@ Status legend:
 - The check-in answer realignment path now also assigns each raw model answer at most once and scores unmatched entries against the upstream question text plus evidence hint instead of over-trusting returned numbering, which closes the nursing run bug where check-in answers 2 and 3 could cross when the model drifted
 - The answer-key prompt now also gives check-in answers their own verbatim model-passage quote bank and requires one question-specific `evidence_quote` per entry, reducing generic quote reuse across adjacent check-in answers in live nursing runs
 - The shared section parser now also strips additional malformed `assessment_passage` placeholder variants seen in live nursing runs, including unmatched mixed-quote concatenation prefixes, escaped-quote bracket annotations, adjacent escaped-string placeholder annotations, and parsed string-level placeholder remnants that survive valid JSON decoding
+- The shared section parser now also performs a late-fallback repair for malformed unmatched quote-concatenation prefixes such as `["] + ["]` patterns in `assessment_passage` payloads, plus parsed-string cleanup for `["] + ["]` remnants that survive valid JSON decoding; focused wave-2 parser coverage now includes this nursing-shaped regression case
+- Fresh full browser reruns now pass for both the teacher page (`/`) and the prompt-lab nursing stress flow (`/prompt-lab`) with multiple section overrides, and the prior `assessment_passage` parse failure is no longer reproduced
 - The shared section parser now also strips doubled-quote bracket placeholder fragments such as `[""quote""]` and repairs malformed model JSON with mismatched closing braces and brackets before retrying parse, closing additional live generation failures seen in nursing runs
 - The PDF icon renderer now inlines SVG stroke/fill attributes directly in the Jinja template and replaces the tiny point-style dot glyph hacks used by a few icons, so downloaded PDFs render the new header and callout icon set more cleanly under WeasyPrint instead of collapsing some closed shapes into black blobs
 - Deployment planning is now documented around a recommended Vercel frontend plus Cloud Run backend topology, with a separate local parity mode planned so production issues can be reproduced without changing the app architecture; the backend container now honors the runtime `PORT` environment variable, serves `app.fast_api_app:app` in the same image shape intended for Cloud Run, and now includes environment-driven CORS/runtime config plus a standardized Cloud Run deploy entrypoint in `DEPLOYMENT.md` and `scripts/deploy-backend-cloud-run.sh`

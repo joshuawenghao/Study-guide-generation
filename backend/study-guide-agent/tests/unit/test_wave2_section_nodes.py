@@ -594,3 +594,42 @@ async def test_wave2_section_nodes_strip_double_quote_placeholder_annotations(
         "Many patients arrive with unknown conditions.",
         "That's why she always follows standard precautions.",
     ]
+
+
+@pytest.mark.asyncio
+async def test_wave2_section_nodes_strip_unmatched_quote_concat_prefix_annotations(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = _load_request_from_fixture()
+    blueprint = _build_blueprint(request)
+
+    async def fake_call_gemini(**_: object) -> str:
+        return """{
+    \"title\": \"Assessment Passage\",
+    \"topic_domain\": \"home healthcare visit for medication administration\",
+    \"genre\": \"Narrative\",
+    \"passage\": [
+        \"Nena receives home healthcare support for insulin administration. [\\\" + \\\"Rose prepares sterile supplies and performs hand hygiene before the procedure.\",
+        \"Rose explains each step, uses gloves, and disposes of sharps safely after injection. [\\\" + \\\"She documents the visit and reinforces infection-control reminders.\"
+    ],
+    \"evidence_clues\": [
+        \"performs hand hygiene before the procedure\",
+        \"disposes of sharps safely\"
+    ],
+    \"answerability_note\": \"All claims are directly answerable from the passage.\"
+}"""
+
+    monkeypatch.setattr(sections_module, "call_gemini", fake_call_gemini)
+
+    result = await assessment_passage_module.generate_assessment_passage(
+        request, blueprint
+    )
+
+    assert result["passage"] == [
+        "Nena receives home healthcare support for insulin administration. Rose prepares sterile supplies and performs hand hygiene before the procedure.",
+        "Rose explains each step, uses gloves, and disposes of sharps safely after injection. She documents the visit and reinforces infection-control reminders.",
+    ]
+    assert result["evidence_clues"] == [
+        "performs hand hygiene before the procedure",
+        "disposes of sharps safely",
+    ]

@@ -28,6 +28,9 @@ _MIXED_QUOTE_CONCATENATION_ANNOTATION_PATTERN = re.compile(
 _UNMATCHED_MIXED_QUOTE_CONCATENATION_PREFIX_PATTERN = re.compile(
     r"\[\s*\"\s*\+\s*'\"'\s*\+\s*\"(?:\\.|[^\"\n])*\"\s*\+\s*'\"'\s*\+\s*\""
 )
+_UNMATCHED_QUOTE_CONCATENATION_PREFIX_PATTERN = re.compile(
+    r'\[\s*(?:\\?")\s*\+\s*(?:\\?")'
+)
 _ESCAPED_QUOTE_CONCATENATION_ANNOTATION_PATTERN = re.compile(
     r"\[\\\"(?:\s*\+\s*'[^'\n]+'\s*\+\s*\\\")+\]"
 )
@@ -38,6 +41,7 @@ _DOUBLE_QUOTE_PLACEHOLDER_ANNOTATION_PATTERN = re.compile(
     r'\[\s*(?:"\s*){2,}[^"\]\n]+(?:\s*"){2,}\s*\]'
 )
 _PARSED_STRING_PLACEHOLDER_ANNOTATION_PATTERN = re.compile(r'\s*\[\s*"[^\]\n]*\]')
+_PARSED_UNMATCHED_QUOTE_CONCATENATION_PREFIX_PATTERN = re.compile(r'\s*\[\s*"\s*\+\s*"')
 _CONCATENATED_QUOTED_LIST_ANNOTATION_PATTERN = re.compile(
     r'\[\s*"\s*(?:\+\s*"(?:\\.|[^"\n])*"\s*)+\+\s*"\s*\]'
 )
@@ -71,6 +75,10 @@ def _strip_mixed_quote_concatenation_annotations(response_text: str) -> str:
 
 def _strip_unmatched_mixed_quote_concatenation_prefixes(response_text: str) -> str:
     return _UNMATCHED_MIXED_QUOTE_CONCATENATION_PREFIX_PATTERN.sub("", response_text)
+
+
+def _strip_unmatched_quote_concatenation_prefixes(response_text: str) -> str:
+    return _UNMATCHED_QUOTE_CONCATENATION_PREFIX_PATTERN.sub("", response_text)
 
 
 def _strip_escaped_quote_concatenation_annotations(response_text: str) -> str:
@@ -202,6 +210,7 @@ def _strip_html_like_markup(text: str) -> str:
 
 def _strip_parsed_string_placeholder_annotations(text: str) -> str:
     cleaned = _PARSED_STRING_PLACEHOLDER_ANNOTATION_PATTERN.sub("", text)
+    cleaned = _PARSED_UNMATCHED_QUOTE_CONCATENATION_PREFIX_PATTERN.sub(" ", cleaned)
     cleaned = re.sub(r" {2,}", " ", cleaned)
     return cleaned.strip()
 
@@ -278,6 +287,33 @@ def _parse_section_response(response_text: str, context_label: str) -> dict[str,
                 payload = json.loads(balanced_response)
             except json.JSONDecodeError:
                 pass
+            else:
+                if isinstance(payload, dict):
+                    normalized_payload = _normalize_payload_value(payload)
+                    if isinstance(normalized_payload, dict):
+                        return normalized_payload
+        unmatched_prefix_stripped_response = (
+            _strip_unmatched_quote_concatenation_prefixes(
+                multiline_annotation_stripped_response
+            )
+        )
+        if unmatched_prefix_stripped_response != multiline_annotation_stripped_response:
+            try:
+                payload = json.loads(unmatched_prefix_stripped_response)
+            except json.JSONDecodeError:
+                unmatched_balanced_response = _repair_mismatched_json_closers(
+                    unmatched_prefix_stripped_response
+                )
+                if unmatched_balanced_response != unmatched_prefix_stripped_response:
+                    try:
+                        payload = json.loads(unmatched_balanced_response)
+                    except json.JSONDecodeError:
+                        pass
+                    else:
+                        if isinstance(payload, dict):
+                            normalized_payload = _normalize_payload_value(payload)
+                            if isinstance(normalized_payload, dict):
+                                return normalized_payload
             else:
                 if isinstance(payload, dict):
                     normalized_payload = _normalize_payload_value(payload)
