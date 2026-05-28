@@ -32,17 +32,18 @@ ADK_BACKEND_URL=http://127.0.0.1:8080 npm run start
 
 For the repo-standardized production-like local stack, use `./scripts/run-local-parity.sh` from the repository root.
 
-## Vercel deployment contract
+## Firebase App Hosting deployment contract
 
-The frontend deployment path assumes Vercel for hosting and Cloud Run for the backend.
+The frontend deployment path assumes Firebase App Hosting for hosting and Cloud Run for the backend.
 
-Set `ADK_BACKEND_URL` in Vercel Project Settings instead of editing frontend code:
+Set `ADK_BACKEND_URL` in Firebase App Hosting runtime configuration instead of editing frontend code:
 
-- `Development`: the local or shared dev backend URL when using Vercel's development environment
-- `Preview`: the dev Cloud Run backend URL
-- `Production`: the production Cloud Run backend URL
+- `Staging`: the staging Cloud Run backend URL
+- `Production`: the production Cloud Run backend URL when a production environment is introduced
 
-The proxy route at `frontend/app/api/generate/route.ts` must remain thin. It forwards requests to `ADK_BACKEND_URL` and does not contain environment-specific business logic. Switching preview and production backends should require only Vercel environment-variable changes.
+The proxy routes at `frontend/app/api/generate/route.ts` and `frontend/app/api/prompt-lab/generate/route.ts` must remain thin. They forward requests to `ADK_BACKEND_URL` and do not contain environment-specific business logic. Switching staging and later production backends should require only runtime environment-variable changes.
+
+Use Firebase App Hosting rather than plain static Firebase Hosting. The current app depends on Next.js server-side route handlers for SSE proxying and prompt-lab transport, so a static export would break the shipped request flow.
 
 ## Prompt-Lab reviewer page
 

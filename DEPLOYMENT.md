@@ -1,6 +1,6 @@
 # Deployment Guide
 
-Last updated: 2026-05-12
+Last updated: 2026-05-28
 
 This document is the deployment source of truth for the repository.
 Use it together with `IFC.md`, `ARCHITECTURE.md`, `TASKS.md`, and `TASK_STATUS.md`.
@@ -16,22 +16,42 @@ Use it together with `IFC.md`, `ARCHITECTURE.md`, `TASKS.md`, and `TASK_STATUS.m
 
 The current recommended managed deployment is:
 
-- **Frontend:** Vercel
+- **Frontend:** Firebase App Hosting
 - **Backend:** Google Cloud Run
 
 This is the best default for the current repo because:
 
-- the frontend is already a standard Next.js 14 app that benefits from Vercel preview environments and simple environment-variable management
+- the frontend is already a standard Next.js 14 app with server routes and SSE proxying, which fits Firebase App Hosting without changing the browser -> Next.js -> backend flow
 - the backend is a Python ADK service with WeasyPrint and a Docker-based deployment path that maps naturally to Cloud Run
 - the application is already designed as two runtimes connected by a single HTTP boundary, so there is no architectural rewrite required to deploy this way
+
+## Current rollout decisions
+
+The current deployment plan is intentionally conservative:
+
+- deploy manually first rather than introducing CI/CD before the remote path is proven
+- stand up a single staging environment before defining a production release flow
+- keep the existing two-runtime architecture unchanged: Firebase App Hosting frontend plus Cloud Run backend
+
+The current staging decisions are:
+
+- GCP project: `manabie-ai`
+- Cloud Run region: `asia-northeast1`
+- backend secret name: `GOOGLE_API_KEY`
+- frontend App Hosting name: `study-guide-frontend-staging`
+- backend Cloud Run service name: `study-guide-agent-staging`
+- frontend runtime env var: `ADK_BACKEND_URL=<staging-cloud-run-url>`
+- backend CORS pattern after the frontend exists: `http://localhost:3000,https://<firebase-app-hosting-staging-domain>`
+
+Because both the Cloud Run service URL and the Firebase App Hosting staging domain are generated at provision time, the exact values are only known after the first manual staging deploy.
 
 ## Alternatives considered
 
 ### Cloud Run for both frontend and backend
 
-This would increase local-to-remote parity for the frontend runtime, but it adds operational work on the Next.js side without solving a current product constraint better than Vercel.
+This would increase local-to-remote parity for the frontend runtime, but it adds operational work on the Next.js side without solving a current product constraint better than Firebase App Hosting.
 
-Use this alternative only if deployed Vercel behavior becomes the measured source of a production issue that cannot be reproduced or mitigated while keeping the thin proxy route.
+Use this alternative only if deployed App Hosting behavior becomes the measured source of a production issue that cannot be reproduced or mitigated while keeping the thin proxy route.
 
 ### Direct browser-to-backend calls in production
 
@@ -45,8 +65,8 @@ Use this alternative only if deployed proxy behavior becomes a measured bottlene
 | -------------- | --------------------------------- | -------------------------------------------------------- | --------------------------------------- |
 | Fast local dev | `npm run dev`                     | `uv run uvicorn app.fast_api_app:app --reload`           | Building features quickly               |
 | Local parity   | production-mode Next.js runtime   | same container image intended for Cloud Run, run locally | Reproducing deployment-only bugs        |
-| Remote dev     | Vercel preview or dev environment | separate dev Cloud Run service                           | Testing deployment after key milestones |
-| Production     | Vercel production                 | Cloud Run production service                             | Serving users                           |
+| Remote staging | Firebase App Hosting staging      | separate staging Cloud Run service                       | Testing deployment after key milestones |
+| Production     | Firebase App Hosting production   | Cloud Run production service                             | Serving users                           |
 
 ## Parity rules
 
@@ -96,10 +116,10 @@ You can override the defaults with environment variables such as `FRONTEND_PORT`
 - `ADK_BACKEND_URL`
   - local dev: `http://localhost:8000`
   - local parity: local backend URL exposed by the parity stack
-  - remote dev: dev Cloud Run service URL
+  - remote staging: staging Cloud Run service URL
   - production: production Cloud Run service URL
 
-Store remote values in Vercel project environment settings. Do not hardcode backend URLs in the app.
+Store remote values in Firebase App Hosting environment configuration. Do not hardcode backend URLs in the app.
 
 ### Backend
 
@@ -118,7 +138,7 @@ Backend deployment requirements:
 - container boots the FastAPI app
 - runtime port is configurable
 - WeasyPrint system dependencies are present in the image
-- CORS allows the Vercel preview and production origins
+- CORS allows the Firebase App Hosting staging and production origins
 - request timeout is set for long-running generation requests
 - configuration comes from environment variables, not code edits
 
@@ -219,7 +239,7 @@ These values are intentionally conservative because study-guide generation can i
 For the dev Cloud Run service, `BACKEND_CORS_ALLOW_ORIGINS` should include only the origins that need to call the backend directly in that environment, typically:
 
 - local frontend development origin, e.g. `http://localhost:3000`
-- the active Vercel preview or dev frontend origin once Phase 13.5 is in place
+- the active Firebase App Hosting staging frontend origin once Phase 13.5 is in place
 
 For the production Cloud Run service, `BACKEND_CORS_ALLOW_ORIGINS` should include only the production frontend origin or custom domains.
 
@@ -243,35 +263,53 @@ BACKEND_CORS_ALLOW_ORIGINS=https://<production-domain> \
 
 ## Frontend deployment guidance
 
-Deploy the frontend to Vercel with separate preview and production environments.
+Deploy the frontend to Firebase App Hosting, starting with a single staging environment.
 
 Frontend deployment requirements:
 
 - the thin API proxy route remains the only path from the frontend to the backend
-- preview environments point to the dev Cloud Run backend
-- production points to the production Cloud Run backend
-- environment switching is handled only through Vercel settings
+- the staging environment points to the staging Cloud Run backend
+- production, when introduced, points to the production Cloud Run backend
+- environment switching is handled only through App Hosting runtime configuration
 
-### Vercel project settings
+### Firebase App Hosting environment settings
 
-Set `ADK_BACKEND_URL` in the Vercel project for each environment instead of committing deployed values to the repo:
+Set `ADK_BACKEND_URL` in Firebase App Hosting runtime configuration instead of committing deployed values to the repo:
 
-- `Development`: optional Vercel development environment value when using `vercel dev`
-- `Preview`: the dev Cloud Run service URL
-- `Production`: the production Cloud Run service URL
+- `Staging`: the staging Cloud Run service URL
+- `Production`: the production Cloud Run service URL when that environment exists
 
-This keeps the frontend deployment path environment-driven. The same built app and the same proxy route can be used across preview and production; only the Vercel environment value changes.
+This keeps the frontend deployment path environment-driven. The same built app and the same proxy route can be used across staging and later production; only the App Hosting environment value changes.
 
 The proxy route at `frontend/app/api/generate/route.ts` is already compatible with this contract because it reads `ADK_BACKEND_URL` at runtime and forwards requests without embedding backend-specific business logic.
 
+The prompt-lab proxy route at `frontend/app/api/prompt-lab/generate/route.ts` uses the same backend base URL contract, so one `ADK_BACKEND_URL` value is sufficient for both the teacher flow and the reviewer-only prompt-lab flow.
+
 ### Frontend deployment checklist
 
-Before considering the frontend Vercel path configured, confirm all of the following:
+Before considering the frontend Firebase App Hosting path configured, confirm all of the following:
 
-- `ADK_BACKEND_URL` is set in Vercel Preview to the dev Cloud Run backend URL
-- `ADK_BACKEND_URL` is set in Vercel Production to the production Cloud Run backend URL
+- `ADK_BACKEND_URL` is set in App Hosting Staging to the staging Cloud Run backend URL
+- if production is introduced later, `ADK_BACKEND_URL` is set there to the production Cloud Run backend URL
 - no frontend code or committed env file changes are required when switching environments
-- the backend `BACKEND_CORS_ALLOW_ORIGINS` value includes the active preview domain for dev and only the production domain for prod
+- the backend `BACKEND_CORS_ALLOW_ORIGINS` value includes `http://localhost:3000` plus the active staging App Hosting domain during staging
+- when production is introduced later, the production backend allowlist includes only the production frontend origin or custom domain
+
+### Frontend hosting compatibility note
+
+The current frontend is not compatible with plain static Firebase Hosting because it relies on Next.js server-side route handlers for SSE proxying and prompt-lab transport. Use Firebase App Hosting or another server-capable Next.js hosting target; do not flatten the frontend into a static export for the current app shape.
+
+### Manual staging flow
+
+The minimal staging sequence is:
+
+1. Deploy the backend Cloud Run service first and record the generated service URL.
+2. Create the Firebase App Hosting staging frontend and set `ADK_BACKEND_URL` to that backend URL.
+3. Record the generated App Hosting staging domain.
+4. Update `BACKEND_CORS_ALLOW_ORIGINS` on the backend to `http://localhost:3000,https://<firebase-app-hosting-staging-domain>`.
+5. Re-run the backend deploy so the staging frontend origin is allowed remotely.
+
+If the staging frontend does not exist yet, it is acceptable to bootstrap the backend first with `BACKEND_CORS_ALLOW_ORIGINS=http://localhost:3000` and then expand the allowlist after the App Hosting domain is known.
 
 ## Staged deployment checkpoints
 
@@ -281,14 +319,14 @@ These checkpoints do **not** wait for all of Phase 13 to be complete. Phase 13 i
 Run deployment checks at these milestones:
 
 1. **After Phase 7:** deploy the backend to a dev environment and verify the real workflow can boot and accept a representative request.
-2. **After Phase 10:** deploy the integrated frontend preview plus dev backend and verify the proxy and SSE path remotely.
+2. **After Phase 10:** deploy the integrated staging frontend plus staging backend and verify the proxy and SSE path remotely.
 3. **After Phase 12:** deploy a release candidate and run a smoke test covering submit, progress, preview, and PDF download.
 
 Record the outcome of each checkpoint in `TASK_STATUS.md`.
 
 ## Current recommendation summary
 
-- Keep **Vercel + Cloud Run** as the target deployment unless measured runtime limits prove otherwise.
+- Keep **Firebase App Hosting + Cloud Run** as the target deployment unless measured runtime limits prove otherwise.
 - Add a **local parity** path rather than replacing the fast local dev loop.
 - Validate deployment in **stages** after major milestones, not only at the end.
 - Keep `DEPLOYMENT.md` as the detailed deployment reference and keep `ARCHITECTURE.md` aligned with any deployment changes.

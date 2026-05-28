@@ -212,7 +212,7 @@ The repo-level deployment source of truth is `DEPLOYMENT.md` in the repository r
 
 Recommended target:
 
-- frontend on Vercel
+- frontend on Firebase App Hosting
 - backend on Google Cloud Run
 
 The backend should also be runnable locally in the same container/runtime shape intended for Cloud Run so production issues can be reproduced without changing backend code.
@@ -224,7 +224,7 @@ BACKEND_CORS_ALLOW_ORIGINS=http://localhost:3000 \
 ./scripts/deploy-backend-cloud-run.sh dev --dry-run
 ```
 
-The backend runtime reads deployment configuration from environment variables rather than code edits. The deployment-facing variables are documented in the repo-level `DEPLOYMENT.md`, including `BACKEND_CORS_ALLOW_ORIGINS`, the Cloud Run timeout and concurrency defaults, and the script-supported secret/env overrides.
+The backend runtime reads deployment configuration from environment variables rather than code edits. The deployment-facing variables are documented in the repo-level `DEPLOYMENT.md`, including `BACKEND_CORS_ALLOW_ORIGINS`, the Cloud Run timeout and concurrency defaults, the current staging-first Firebase App Hosting + Cloud Run plan, and the script-supported secret/env overrides.
 
 The standardized backend deploy entrypoint is `./scripts/deploy-backend-cloud-run.sh <dev|prod>`. Use `--dry-run` to print the exact `gcloud run deploy` command without executing it.
 

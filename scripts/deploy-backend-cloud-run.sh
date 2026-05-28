@@ -27,7 +27,7 @@ Optional environment variables:
 Example:
   GCP_PROJECT_ID=my-project \
   CLOUD_RUN_REGION=us-central1 \
-  BACKEND_CORS_ALLOW_ORIGINS=https://my-preview.vercel.app,http://localhost:3000 \
+  BACKEND_CORS_ALLOW_ORIGINS=https://my-staging-app.web.app,http://localhost:3000 \
   ./scripts/deploy-backend-cloud-run.sh dev --dry-run
 EOF
 }

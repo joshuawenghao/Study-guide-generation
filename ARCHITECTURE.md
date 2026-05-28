@@ -32,7 +32,7 @@ An internal prompt-lab surface may reuse the same workflow with temporary prompt
 
 ```mermaid
 flowchart LR
-    subgraph Frontend ["Next.js Frontend (localhost:3000 / Vercel)"]
+    subgraph Frontend ["Next.js Frontend (localhost:3000 / Firebase App Hosting)"]
         Form["Input Form\n(lesson metadata,\ncurriculum, etc.)"]
       PromptLab["Prompt Lab\n(private reviewer page)"]
         Tracker["Progress Tracker"]
@@ -67,7 +67,7 @@ flowchart LR
 | Web preview                | Structured JSON → React components                           | Preview is assembled from the same section JSON that feeds the PDF renderer                                            |
 | Deployment (Fast local)    | Next.js dev server + scaffolded FastAPI backend              | Fastest iteration loop for feature work; no container build step                                                       |
 | Deployment (Local parity)  | Production-mode Next.js frontend + backend container locally | Mirrors the remote two-runtime topology and routing contract closely enough for production bug reproduction            |
-| Deployment (Managed cloud) | Vercel (frontend) + Google Cloud Run (ADK backend)           | Best fit for the split stack: Vercel for Next.js delivery, Cloud Run for Python ADK and WeasyPrint                     |
+| Deployment (Managed cloud) | Firebase App Hosting (frontend) + Google Cloud Run (ADK backend) | Best fit for the split stack under the current platform constraints: App Hosting preserves the Next.js server runtime and thin proxy route, while Cloud Run fits Python ADK and WeasyPrint |
 
 ### Why ADK dynamic workflows over graph-based workflows or a plain orchestrator
 
@@ -624,10 +624,10 @@ The backend implementation must continue to use the same workflow orchestration,
 
 The recommended deployment shape remains a split stack:
 
-- **Frontend:** Vercel for the Next.js 14 application and its thin API proxy route
+- **Frontend:** Firebase App Hosting for the Next.js 14 application and its thin API proxy route
 - **Backend:** Google Cloud Run for the Python ADK service and WeasyPrint renderer
 
-This remains the best default for the current repo because it matches the runtime split already designed into the app, keeps the backend on the infrastructure that ADK tooling targets most directly, and avoids forcing the Python runtime into a frontend-first hosting model.
+This remains the best default for the current repo because it matches the runtime split already designed into the app, keeps the backend on the infrastructure that ADK tooling targets most directly, and preserves the current Next.js server-route runtime without rewriting the frontend into a static-hosting shape.
 
 ### Environment modes
 
@@ -637,8 +637,8 @@ The repo should support four operating modes:
 | -------------- | ------------------------------------------------------------------------- | -------------------------------------------------------- | ----------------------------------------------------------- |
 | Fast local dev | `npm run dev`                                                             | `uv run uvicorn app.fast_api_app:app --reload`           | Fast feature iteration                                      |
 | Local parity   | `next build && next start` or equivalent production-mode frontend runtime | Same container image intended for Cloud Run, run locally | Reproducing deployment-only bugs                            |
-| Remote dev     | Vercel preview or dev environment                                         | Separate non-production Cloud Run service                | Early deployment checks after key implementation milestones |
-| Production     | Vercel production                                                         | Cloud Run production service                             | End-user traffic                                            |
+| Remote staging | Firebase App Hosting staging environment                                  | Separate non-production Cloud Run service                | Early deployment checks after key implementation milestones |
+| Production     | Firebase App Hosting production environment                               | Cloud Run production service                             | End-user traffic                                            |
 
 Across all four modes, the application contract stays the same: the frontend talks only to the backend URL configured through `ADK_BACKEND_URL`, and the backend owns Gemini access, validation, and PDF rendering.
 
@@ -668,23 +668,23 @@ This mode is slower than normal development and should not replace the default l
 
 ```mermaid
 flowchart LR
-    Browser --> Vercel["Vercel\n(Next.js)"]
-    Vercel --> CloudRun["Google Cloud Run\n(ADK backend)"]
+  Browser --> AppHosting["Firebase App Hosting\n(Next.js)"]
+  AppHosting --> CloudRun["Google Cloud Run\n(ADK backend)"]
     CloudRun --> Gemini["Gemini 2.0 Flash\n(Google API)"]
 ```
 
-The ADK backend is containerised and deployed to Google Cloud Run. The Next.js frontend is deployed to Vercel. The same frontend proxy architecture is preserved in local and remote environments; the main environment-level change is the value of `ADK_BACKEND_URL`:
+The ADK backend is containerised and deployed to Google Cloud Run. The Next.js frontend is deployed to Firebase App Hosting. The same frontend proxy architecture is preserved in local and remote environments; the main environment-level change is the value of `ADK_BACKEND_URL`:
 
 | Environment  | `ADK_BACKEND_URL` value                        |
 | ------------ | ---------------------------------------------- |
 | Local dev    | `http://localhost:8000`                        |
 | Local parity | local backend URL exposed by the parity stack  |
-| Remote dev   | `https://<dev-service>.run.app`                |
+| Remote staging | `https://<staging-service>.run.app`          |
 | Production   | `https://your-service.run.app` (Cloud Run URL) |
 
 **No proxy architecture change is required** — the Next.js API route forwards requests to whatever URL `ADK_BACKEND_URL` points to. The frontend code should stay identical across fast local dev, parity mode, remote dev, and production.
 
-**CORS:** The ADK backend must be configured to accept requests from the Vercel domains used for preview and production. In parity mode and local dev, allow the local frontend origin as well. Configure allowed origins in the backend server startup rather than relying on infrastructure defaults.
+**CORS:** The ADK backend must be configured to accept requests from the Firebase App Hosting domains used for staging and production. In parity mode and local dev, allow the local frontend origin as well. Configure allowed origins in the backend server startup rather than relying on infrastructure defaults.
 
 **Runtime fit:** Cloud Run handles autoscaling and supports long-running requests (up to 3600 seconds), which is required for the 30–90 second generation window and PDF rendering path.
 
@@ -714,17 +714,17 @@ A plain `async def orchestrate()` function in Next.js resolves section dependenc
 
 **Alternative considered:** Plain Next.js orchestrator with Redis for state persistence. Rejected because it replicates ADK's checkpointing in application code with no technical advantage.
 
-### Decision: Vercel for frontend and Cloud Run for backend
+### Decision: Firebase App Hosting for frontend and Cloud Run for backend
 
-The current recommended production topology is Vercel for the Next.js frontend and Google Cloud Run for the Python ADK backend.
+The current recommended managed topology is Firebase App Hosting for the Next.js frontend and Google Cloud Run for the Python ADK backend.
 
 This split matches the existing architecture cleanly:
 
-- the frontend stays on a platform optimized for Next.js builds and preview environments
+- the frontend stays on a managed platform that supports the current Next.js server runtime and app-router proxy routes
 - the backend stays on a platform that matches the Python container, ADK deployment path, and WeasyPrint runtime needs
 - local and remote environments can keep the same browser -> Next.js -> backend request flow, which is better for reproducibility than switching to a different transport in production
 
-**Alternative considered:** Cloud Run for both frontend and backend. Rejected for now because it increases operational burden on the Next.js side without solving a current product constraint better than Vercel. Revisit only if Vercel-specific runtime limits become a measured blocker for the proxy or streaming path.
+**Alternative considered:** Cloud Run for both frontend and backend. Rejected for now because it increases operational burden on the Next.js side without solving a current product constraint better than Firebase App Hosting for the current staging-first rollout.
 
 **Alternative considered:** Direct browser calls from the frontend to the Cloud Run backend in production. Rejected for now because the thin Next.js proxy keeps the frontend request surface stable across environments and avoids coupling browser clients to backend origin changes. Revisit only if the proxy route proves to be the actual bottleneck under deployed streaming tests.
 
@@ -744,11 +744,11 @@ The web preview is rendered from the same structured JSON that feeds the PDF ren
 
 ### Decision: SSE over WebSockets for progress streaming
 
-Generation takes 30–90 seconds. SSE provides one-directional server-to-browser streaming with no additional library, works through Vercel's Edge Runtime, and is sufficient because the browser never needs to send messages back during generation.
+Generation takes 30–90 seconds. SSE provides one-directional server-to-browser streaming with no additional library and is sufficient because the browser never needs to send messages back during generation.
 
 ### Decision: `ADK_BACKEND_URL` environment variable over a separate proxy service
 
-The Next.js API route reads `ADK_BACKEND_URL` and forwards requests directly. In local dev this is `http://localhost:8000`; in production it is the Cloud Run URL. No separate proxy service, gateway, or network configuration change is required when moving between environments. The only addition for production is CORS configuration on the ADK backend allowing the Vercel domain.
+The Next.js API route reads `ADK_BACKEND_URL` and forwards requests directly. In local dev this is `http://localhost:8000`; in managed staging or production it is the Cloud Run URL. No separate proxy service, gateway, or network configuration change is required when moving between environments. The only addition for managed environments is CORS configuration on the ADK backend allowing the Firebase App Hosting domain.
 
 ### Decision: Request-scoped prompt overrides over direct prompt-file editing by reviewers
 

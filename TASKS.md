@@ -1778,7 +1778,7 @@ Confirm that the repo documents these modes clearly:
 
 Confirm the recommended production split remains:
 
-- Vercel for the frontend
+- Firebase App Hosting for the frontend
 - Cloud Run for the backend
 
 **Done looks like:**
@@ -1853,22 +1853,23 @@ Capture at minimum:
 
 ---
 
-### Task 13.5 — Configure the frontend deployment for Vercel
+### Task 13.5 — Configure the frontend deployment for Firebase App Hosting
 
 🧑 **You**
 
-Set up the frontend deployment path so preview and production environments can target the correct backend URL through environment configuration only.
+Set up the frontend deployment path so the staging environment, and later production, can target the correct backend URL through environment configuration only.
 
 Confirm at minimum:
 
-- `ADK_BACKEND_URL` is set separately for preview/dev and production
+- `ADK_BACKEND_URL` is set in Firebase App Hosting runtime configuration for staging, and later production if a production environment is introduced
 - the Next.js proxy route stays thin and forwards to the backend URL without business logic
-- the deployment guide documents which values belong in Vercel project settings
+- the deployment guide documents which values belong in Firebase App Hosting configuration
+- the chosen Firebase frontend target preserves Next.js server routes rather than forcing a static export
 
 **Done looks like:**
 
-- A Vercel preview environment can talk to the dev Cloud Run backend
-- A Vercel production environment can talk to the production Cloud Run backend
+- A Firebase App Hosting staging environment can talk to the staging Cloud Run backend
+- A later production App Hosting environment can talk to the production Cloud Run backend without frontend code edits
 - No frontend code changes are required when switching environments
 
 ---
@@ -1881,7 +1882,7 @@ Do not wait until the whole roadmap is complete before testing deployment.
 Run these checkpoints when the corresponding phases are ready:
 
 1. After Phase 7, deploy the backend to a dev environment and verify the service boots and accepts a representative request.
-2. After Phase 10, deploy the integrated frontend preview plus dev backend and verify the proxy plus SSE path works remotely.
+2. After Phase 10, deploy the integrated staging frontend plus staging backend and verify the proxy plus SSE path works remotely.
 3. After Phase 12, deploy the release candidate and run a smoke test covering form submit, progress, preview, and PDF download.
 
 Record the results in `TASK_STATUS.md` as you go.

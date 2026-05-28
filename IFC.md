@@ -54,6 +54,7 @@ Teachers in K–12 markets (initially PH, JP, VN) spend disproportionate time ma
 - Validators must run programmatically after generation to catch constraint violations before the document is assembled, and must trigger targeted section retries automatically as part of the validation pass — not as a separate manual step.
 - Prompt experimentation must not require code edits in production deployments or access to the repository. Reviewers need a private, browser-based tuning surface that can send temporary prompt overrides to the existing generation workflow.
 - Prompt tuning must remain isolated from the live teacher-facing experience. Experimental prompt sets should be reviewable in a staging or internal environment before any manual promotion to the default prompt set.
+- The current managed deployment target is Firebase App Hosting for the Next.js frontend and Cloud Run for the ADK backend, with a manual staging rollout before any broader environment promotion or CI/CD automation.
 - Deployment should preserve the same two-runtime split in local and remote environments so production issues can be reproduced without changing request flow or prompt logic.
 - Local debugging needs a documented production-like mode where the backend runs with the same container/runtime assumptions intended for Cloud Run and the frontend uses the same `ADK_BACKEND_URL` contract it will use remotely.
 
