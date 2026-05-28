@@ -1,6 +1,6 @@
 # Codebase State
 
-Last updated: 2026-05-22
+Last updated: 2026-05-28
 
 This document is the live plain-language summary of the shipped codebase.
 It is intended to answer, in words, what currently exists in the repository without requiring a reader to inspect source files directly.
@@ -13,7 +13,7 @@ It is intended to answer, in words, what currently exists in the repository with
 - The backend container now honors the runtime `PORT` environment variable and has been validated to boot the FastAPI app from the same image shape intended for Cloud Run.
 - The backend deployment path now has a repo-standardized Cloud Run entrypoint and environment-driven CORS/runtime configuration, so dev and production services can be configured without code edits.
 - The backend now also exposes a typed `POST /generate` SSE endpoint that runs the study-guide workflow directly from a `GenerateRequest`, emits coarse-grained progress events, and streams the final `GenerateResponse` for the frontend proxy path.
-- The backend now also ships a prompt-lab sample catalog with five curated reviewer cases and exposes that catalog through dedicated prompt-lab sample endpoints, so the upcoming reviewer page can preload real lesson requests by stable id instead of hardcoding form defaults in the frontend.
+- The backend now also ships a prompt-lab sample catalog with five curated reviewer cases and exposes that catalog through dedicated prompt-lab sample endpoints, so the shipped private reviewer page can preload real lesson requests by stable id instead of hardcoding form defaults in the frontend.
 - The frontend now includes a private reviewer page at `/prompt-lab` with curated sample loading, request editing, supported prompt-override editors, and the same streamed progress plus preview/download results workspace already used by the teacher flow.
 - The local app stack has now been validated through the actual browser UI with a realistic lesson input: submission, streamed progress, preview rendering, and PDF download controls all work in the dev stack.
 - The answer-key generation path now includes the required structured `step_up_answer` payload, so full workflow runs no longer carry the answer key forward as a best-effort section just because that field was missing.
@@ -140,6 +140,7 @@ It is intended to answer, in words, what currently exists in the repository with
 - Task 11.4 is now implemented: `frontend/app/page.tsx` now keeps the progress tracker visible after completion and turns the final response into a responsive results workspace with preview and download tabs, repeated validation-warning visibility, result summary cards, and download filename guidance.
 - Task 11.5 is now implemented: `frontend/components/PreviewIcon.tsx` now provides a local inline SVG icon mapping for renderer-owned `icon_key` values and recurring callout roles, and `frontend/components/PreviewSection.tsx` plus `frontend/components/WebPreview.tsx` now render that iconography on preview section headers and repeated warning, success, and default callout treatments with graceful text-only fallback, mirroring the newer literal section-specific icon family used by the PDF renderer.
 - Prompt-lab MVP page work is now shipped in `frontend/app/prompt-lab/page.tsx`, with `frontend/components/PromptLabSamplePicker.tsx` and `frontend/components/PromptLabEditor.tsx` providing reviewer-facing sample selection and prompt/edit controls, while the existing `ProgressTracker`, `WebPreview`, and `DownloadButton` components are reused for prompt-lab runs.
+- Prompt-lab frontend request-shaping and stream-stage parsing logic now lives in `frontend/lib/promptLab.ts` with focused coverage in `frontend/lib/promptLab.test.ts`, executed through `npm run test:prompt-lab`.
 - `frontend/lib/types.ts` now also exports the shared `InputFormProps` contract used by the teacher input form component, keeping frontend component typing aligned with the repo rule that shared types live in the central frontend types module.
 - `frontend/lib/types.ts` now also exports the shared `ProgressTrackerProps` contract used by the streamed progress UI.
 - `frontend/lib/types.ts` now also exports the shared `PreviewSectionProps` contract so preview UI components can stay aligned with the backend preview payload and validation metadata.
@@ -164,6 +165,7 @@ It is intended to answer, in words, what currently exists in the repository with
 - That script is intended to run backend lint, backend unit tests, backend integration tests, frontend format checks, frontend lint, frontend typecheck, a frontend production build, and a frontend production-runtime smoke check when those checks exist.
 - Backend lint passes under the repo-level validation script, and the current baseline is clean without unresolved `ty` advisory warnings.
 - The backend integration smoke surface now validates that the exported root agent is a constructible `Workflow` and that the FastAPI server boots and supports session creation without relying on the removed scaffold chat-bootstrap behavior.
+- Prompt-lab-focused validation now also includes a curated-sample smoke path through `GET /prompt-lab/samples`, `GET /prompt-lab/samples/{sample_id}`, and `POST /prompt-lab/generate` in `backend/study-guide-agent/tests/integration/test_server_e2e.py`.
 - Python analysis for backend files is now pinned through `pyrightconfig.json` so the backend venv is used for import resolution in editor diagnostics.
 - The full repo-level validation script now passes end to end, including backend lint, backend tests, frontend lint, frontend typecheck, and a frontend production build.
 - The repo-level validation script now also fails the done gate when frontend files are not Prettier-clean, preventing committed files from picking up additional TS or TSX formatting changes on the next save.

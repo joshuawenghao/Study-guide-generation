@@ -408,8 +408,8 @@ Notes: The prompt-lab page now reuses the existing generation result workspace c
 
 ### Task 14.7 — Add focused prompt-lab validation and documentation
 
-Status: `not started`
-Notes: The prompt-lab feature now has specification coverage in `IFC.md` and `ARCHITECTURE.md`, but no prompt-lab-specific tests, smoke checks, or implementation docs exist yet.
+Status: `complete`
+Notes: Prompt-lab validation and docs are now implemented with focused coverage on both runtimes. Backend validation now includes override behavior and unsupported-key rejection coverage plus a curated-sample smoke path through `/prompt-lab/samples` -> `/prompt-lab/samples/{sample_id}` -> `/prompt-lab/generate` in `backend/study-guide-agent/tests/integration/test_server_e2e.py`; focused backend validation passed with `cd backend/study-guide-agent && uv run pytest tests/unit/test_prompt_lab_prompt_overrides.py tests/unit/test_prompt_lab_types.py tests/integration/test_server_e2e.py -k prompt_lab -q`. Frontend validation now includes `frontend/lib/promptLab.test.ts` covering prompt-lab request shaping and stream-state parsing from `frontend/lib/promptLab.ts`; focused frontend validation passed with `cd frontend && npm run typecheck && npm run lint && npm run test:prompt-lab`. Documentation is updated in `frontend/README.md` and `backend/study-guide-agent/README.md`, and the repo done gate `./scripts/validate-task.sh` also passed.
 
 ## Guidance for future chats
 

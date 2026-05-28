@@ -44,6 +44,14 @@ Set `ADK_BACKEND_URL` in Vercel Project Settings instead of editing frontend cod
 
 The proxy route at `frontend/app/api/generate/route.ts` must remain thin. It forwards requests to `ADK_BACKEND_URL` and does not contain environment-specific business logic. Switching preview and production backends should require only Vercel environment-variable changes.
 
+## Prompt-Lab reviewer page
+
+The private reviewer flow now ships at `frontend/app/prompt-lab/page.tsx`.
+
+- It loads curated backend samples through `frontend/app/api/prompt-lab/samples/route.ts` and `frontend/app/api/prompt-lab/samples/[sampleId]/route.ts`.
+- It sends reviewer runs through `frontend/app/api/prompt-lab/generate/route.ts` to keep prompt-lab transport separate from the teacher flow.
+- It reuses the existing `ProgressTracker`, `WebPreview`, and `DownloadButton` result surfaces for prompt-lab output review.
+
 ## Validation
 
 The repo-level validation entrypoint is `./scripts/validate-task.sh` from the repository root. For frontend-only validation, the narrow checks are:
@@ -54,4 +62,11 @@ npm run format:check
 npm run lint
 npm run typecheck
 npm run build
+```
+
+Focused prompt-lab frontend checks:
+
+```bash
+cd frontend
+npm run test:prompt-lab
 ```

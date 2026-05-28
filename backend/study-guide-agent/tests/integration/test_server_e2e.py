@@ -260,3 +260,71 @@ def test_generate_route_streams_progress_and_result(
     assert any('"node": "blueprint"' in line for line in prompt_lab_lines)
     assert "event: result" in prompt_lab_lines
     assert any('"success": true' in line for line in prompt_lab_lines)
+
+
+def test_prompt_lab_curated_sample_smoke_path(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def fake_blueprint(_request: Any) -> dict[str, Any]:
+        return {"title": "Blueprint"}
+
+    async def fake_workflow(ctx: Any, request: Any) -> Any:
+        await ctx.run_node(
+            SimpleNamespace(name="blueprint_node", _func=fake_blueprint), request
+        )
+        return GenerateResponse.model_validate(
+            {
+                "success": True,
+                "pdf_base64": "cGRm",
+                "preview": {"sections": []},
+                "validation": {
+                    "passed": True,
+                    "failed_sections": [],
+                    "failures": {},
+                    "warnings": [],
+                    "best_effort_sections": [],
+                },
+                "error": None,
+            }
+        )
+
+    monkeypatch.setattr(fast_api_module.study_guide_workflow, "_func", fake_workflow)
+
+    from fastapi.testclient import TestClient
+
+    with TestClient(fast_api_module.app) as client:
+        catalog_response = client.get("/prompt-lab/samples")
+        assert catalog_response.status_code == 200
+        catalog_payload = catalog_response.json()
+        assert isinstance(catalog_payload, list)
+        assert len(catalog_payload) > 0
+
+        sample_id = catalog_payload[0]["id"]
+        sample_response = client.get(f"/prompt-lab/samples/{sample_id}")
+        assert sample_response.status_code == 200
+        sample_payload = sample_response.json()
+
+        with client.stream(
+            "POST",
+            "/prompt-lab/generate",
+            json={
+                "base_request": sample_payload["request"],
+                "sample_case_id": sample_id,
+                "reviewer_label": "smoke-reviewer",
+                "prompt_overrides": {
+                    "system_prompt_append": "Prefer concise reviewer-facing wording.",
+                    "section_overrides": {
+                        "intro": "Open with one short hook sentence.",
+                    },
+                },
+            },
+        ) as response:
+            assert response.status_code == 200
+            assert response.headers["content-type"].startswith("text/event-stream")
+            lines = [line for line in response.iter_lines() if line]
+
+    assert "event: progress" in lines
+    assert any('"type": "node_started"' in line for line in lines)
+    assert any('"node": "blueprint"' in line for line in lines)
+    assert "event: result" in lines
+    assert any('"success": true' in line for line in lines)
