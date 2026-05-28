@@ -103,6 +103,30 @@ export interface PromptLabSampleInput {
   request: GenerateRequest;
 }
 
+export interface PromptLabSamplePickerProps {
+  samples: PromptLabSampleInput[];
+  selectedSampleId: string;
+  onSelectedSampleIdChange: (sampleId: string) => void;
+  onApplySample: () => void;
+  isLoading: boolean;
+  errorMessage?: string;
+}
+
+export interface PromptLabEditorProps {
+  baseRequestJson: string;
+  onBaseRequestJsonChange: (value: string) => void;
+  systemPromptAppend: string;
+  onSystemPromptAppendChange: (value: string) => void;
+  sectionOverrides: Record<PromptLabSectionKey, string>;
+  onSectionOverrideChange: (
+    section: PromptLabSectionKey,
+    value: string,
+  ) => void;
+  onGenerate: () => void;
+  isGenerating: boolean;
+  errorMessage?: string;
+}
+
 export interface InputFormProps {
   onSubmit: (request: GenerateRequest) => void;
   isLoading: boolean;
