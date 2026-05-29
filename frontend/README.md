@@ -36,6 +36,11 @@ For the repo-standardized production-like local stack, use `./scripts/run-local-
 
 The frontend deployment path assumes Firebase App Hosting for hosting and Cloud Run for the backend.
 
+The checked-in App Hosting configuration files for this repo live at:
+
+- `frontend/apphosting.yaml` for defaults that are safe across environments
+- `frontend/apphosting.staging.yaml` for the current staging-only `ADK_BACKEND_URL` override
+
 Set `ADK_BACKEND_URL` in Firebase App Hosting runtime configuration instead of editing frontend code:
 
 - `Staging`: the staging Cloud Run backend URL
@@ -44,6 +49,15 @@ Set `ADK_BACKEND_URL` in Firebase App Hosting runtime configuration instead of e
 The proxy routes at `frontend/app/api/generate/route.ts` and `frontend/app/api/prompt-lab/generate/route.ts` must remain thin. They forward requests to `ADK_BACKEND_URL` and do not contain environment-specific business logic. Switching staging and later production backends should require only runtime environment-variable changes.
 
 Use Firebase App Hosting rather than plain static Firebase Hosting. The current app depends on Next.js server-side route handlers for SSE proxying and prompt-lab transport, so a static export would break the shipped request flow.
+
+For this monorepo, create the App Hosting backend against the repository root but set the app root directory to `frontend`. The current staging backend plan is:
+
+- project: `manabie-ai`
+- region: `asia-northeast1`
+- backend name: `study-guide-frontend-staging`
+- environment name: `staging`
+
+After the backend is created, replace the placeholder value in `frontend/apphosting.staging.yaml` with the real staging Cloud Run URL and roll out again so the frontend proxy targets the deployed backend without code changes.
 
 ## Prompt-Lab reviewer page
 

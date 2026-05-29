@@ -282,6 +282,11 @@ Set `ADK_BACKEND_URL` in Firebase App Hosting runtime configuration instead of c
 
 This keeps the frontend deployment path environment-driven. The same built app and the same proxy route can be used across staging and later production; only the App Hosting environment value changes.
 
+The repo now checks in Firebase App Hosting config files under the frontend app root:
+
+- `frontend/apphosting.yaml` for shared App Hosting runtime defaults
+- `frontend/apphosting.staging.yaml` for the current staging-only runtime `ADK_BACKEND_URL` override
+
 The proxy route at `frontend/app/api/generate/route.ts` is already compatible with this contract because it reads `ADK_BACKEND_URL` at runtime and forwards requests without embedding backend-specific business logic.
 
 The prompt-lab proxy route at `frontend/app/api/prompt-lab/generate/route.ts` uses the same backend base URL contract, so one `ADK_BACKEND_URL` value is sufficient for both the teacher flow and the reviewer-only prompt-lab flow.
@@ -305,7 +310,8 @@ The current frontend is not compatible with plain static Firebase Hosting becaus
 The minimal staging sequence is:
 
 1. Deploy the backend Cloud Run service first and record the generated service URL.
-2. Create the Firebase App Hosting staging frontend and set `ADK_BACKEND_URL` to that backend URL.
+2. Create the Firebase App Hosting staging frontend in `manabie-ai` with backend name `study-guide-frontend-staging`, region `asia-northeast1`, environment name `staging`, and app root directory `frontend`.
+3. Set `ADK_BACKEND_URL` to the backend URL by replacing the placeholder value in `frontend/apphosting.staging.yaml` or by setting the same variable in the Firebase console.
 3. Record the generated App Hosting staging domain.
 4. Update `BACKEND_CORS_ALLOW_ORIGINS` on the backend to `http://localhost:3000,https://<firebase-app-hosting-staging-domain>`.
 5. Re-run the backend deploy so the staging frontend origin is allowed remotely.

@@ -1,0 +1,5 @@
+env:
+  - variable: ADK_BACKEND_URL
+    value: https://REPLACE_WITH_STAGING_CLOUD_RUN_URL
+    availability:
+      - RUNTIME
