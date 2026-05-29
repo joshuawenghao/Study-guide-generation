@@ -4,3 +4,9 @@ runConfig:
   minInstances: 0
   maxInstances: 10
   concurrency: 20
+
+env:
+  - variable: ADK_BACKEND_URL
+    value: https://study-guide-agent-staging-angcxvrtzq-an.a.run.app
+    availability:
+      - RUNTIME
