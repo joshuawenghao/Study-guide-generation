@@ -30,6 +30,7 @@ WORKDIR /code
 COPY ./pyproject.toml ./README.md ./uv.lock* ./
 
 COPY ./app ./app
+COPY ./study_guide_agent ./study_guide_agent
 
 RUN uv sync --frozen
 
