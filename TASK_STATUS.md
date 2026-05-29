@@ -349,7 +349,7 @@ Notes: The IFC must-have checklist has now been verified against passing local v
 ### Task 13.1 — Document the deployment topology and environment matrix
 
 Status: `complete`
-Notes: `DEPLOYMENT.md` now exists at the repo root and aligns the deployment plan across `IFC.md`, `ARCHITECTURE.md`, `TASKS.md`, and the repo README files around fast local dev, local parity, remote dev, and production.
+Notes: `DEPLOYMENT.md` now exists at the repo root and aligns the deployment plan across `IFC.md`, `ARCHITECTURE.md`, `TASKS.md`, and the repo README files around fast local dev, local parity, remote staging, and production.
 
 ### Task 13.2 — Containerize the backend for Cloud Run parity
 
@@ -364,7 +364,7 @@ Notes: `scripts/run-local-parity.sh` now provides the documented single-command 
 ### Task 13.4 — Configure the backend deployment for Cloud Run
 
 Status: `complete`
-Notes: `app/fast_api_app.py` now reads deployment-facing runtime configuration from environment variables, including comma-separated `BACKEND_CORS_ALLOW_ORIGINS`, optional service URIs, telemetry toggles, and `PORT`; `scripts/deploy-backend-cloud-run.sh` now standardizes the dev/prod `gcloud run deploy` entrypoint with timeout, concurrency, memory, CPU, env-var, and secret flags; `DEPLOYMENT.md` and the backend README now document required environment variables, preview/production CORS guidance, and the standardized deploy path, and the repo done gate passed.
+Notes: `app/fast_api_app.py` now reads deployment-facing runtime configuration from environment variables, including comma-separated `BACKEND_CORS_ALLOW_ORIGINS`, optional service URIs, telemetry toggles, and `PORT`; `scripts/deploy-backend-cloud-run.sh` now standardizes the non-production/production `gcloud run deploy` entrypoint with timeout, concurrency, memory, CPU, env-var, and secret flags; `DEPLOYMENT.md` and the backend README now document required environment variables, staging/production CORS guidance, and the standardized deploy path, and the repo done gate passed.
 
 ### Task 13.5 — Configure the frontend deployment for Firebase App Hosting
 

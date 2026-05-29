@@ -96,7 +96,7 @@ Phase 14 — Prompt Lab MVP
 Deployment checkpoints should be exercised before the end of the roadmap:
 
 - After Phase 7 is working well enough to boot the real backend workflow, validate a backend-only remote deployment.
-- After Phase 10 is working, validate the deployed proxy and SSE path in a remote dev environment.
+- After Phase 10 is working, validate the deployed proxy and SSE path in the remote staging environment.
 - After Phase 12 passes, run a full release-candidate deployment and smoke test.
 
 ---
@@ -1773,7 +1773,7 @@ Confirm that the repo documents these modes clearly:
 
 - fast local dev
 - local parity
-- remote dev
+- remote staging
 - production
 
 Confirm the recommended production split remains:
@@ -1841,14 +1841,14 @@ Add the deployment configuration and documentation needed for a non-production a
 Capture at minimum:
 
 - required environment variables and secret sources
-- allowed origins for preview and production frontends
+- allowed origins for staging and production frontends
 - request timeout and concurrency assumptions for long-running generation requests
 - the deploy command or IaC entrypoint the repo will standardize on
 
 **Done looks like:**
 
-- The backend can be deployed to a dev Cloud Run service without manual code edits
-- Preview and production origins are documented for CORS
+- The backend can be deployed to a staging Cloud Run service without manual code edits
+- Staging and production origins are documented for CORS
 - The deployment path is written down in `DEPLOYMENT.md`
 
 ---
@@ -1882,6 +1882,7 @@ Do not wait until the whole roadmap is complete before testing deployment.
 Run these checkpoints when the corresponding phases are ready:
 
 1. After Phase 7, deploy the backend to a dev environment and verify the service boots and accepts a representative request.
+    Use the current non-production staging service when there is only one remote environment.
 2. After Phase 10, deploy the integrated staging frontend plus staging backend and verify the proxy plus SSE path works remotely.
 3. After Phase 12, deploy the release candidate and run a smoke test covering form submit, progress, preview, and PDF download.
 

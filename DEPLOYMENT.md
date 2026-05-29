@@ -180,7 +180,7 @@ docker run --rm \
 Cloud Run deploy shape:
 
 ```bash
-gcloud run deploy study-guide-agent-dev \
+gcloud run deploy study-guide-agent-staging \
   --source backend/study-guide-agent \
   --region <region> \
   --set-env-vars MARKET_DEFAULT=PH \
@@ -236,19 +236,20 @@ These values are intentionally conservative because study-guide generation can i
 
 ### CORS origin guidance
 
-For the dev Cloud Run service, `BACKEND_CORS_ALLOW_ORIGINS` should include only the origins that need to call the backend directly in that environment, typically:
+For the staging Cloud Run service, `BACKEND_CORS_ALLOW_ORIGINS` should include only the origins that need to call the backend directly in that environment, typically:
 
 - local frontend development origin, e.g. `http://localhost:3000`
 - the active Firebase App Hosting staging frontend origin once Phase 13.5 is in place
 
 For the production Cloud Run service, `BACKEND_CORS_ALLOW_ORIGINS` should include only the production frontend origin or custom domains.
 
-Example dev deployment:
+Example staging deployment using the current script:
 
 ```bash
 GCP_PROJECT_ID=<project-id> \
 CLOUD_RUN_REGION=<region> \
-BACKEND_CORS_ALLOW_ORIGINS=http://localhost:3000,https://<preview-domain> \
+CLOUD_RUN_SERVICE=study-guide-agent-staging \
+BACKEND_CORS_ALLOW_ORIGINS=http://localhost:3000,https://<firebase-app-hosting-staging-domain> \
 ./scripts/deploy-backend-cloud-run.sh dev
 ```
 
@@ -318,7 +319,7 @@ These checkpoints do **not** wait for all of Phase 13 to be complete. Phase 13 i
 
 Run deployment checks at these milestones:
 
-1. **After Phase 7:** deploy the backend to a dev environment and verify the real workflow can boot and accept a representative request.
+1. **After Phase 7:** deploy the backend to the current non-production environment and verify the real workflow can boot and accept a representative request.
 2. **After Phase 10:** deploy the integrated staging frontend plus staging backend and verify the proxy and SSE path remotely.
 3. **After Phase 12:** deploy a release candidate and run a smoke test covering submit, progress, preview, and PDF download.
 
