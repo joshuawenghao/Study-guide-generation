@@ -26,6 +26,7 @@ TEMP_ANSWER_KEY = 0.3
 TEMP_RETRY = 0.3
 
 MAX_OUTPUT_TOKENS = 2048
+MAX_BLUEPRINT_OUTPUT_TOKENS = 4096
 DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
 MODEL_NAME = os.getenv("GEMINI_MODEL", DEFAULT_GEMINI_MODEL)
 
@@ -49,6 +50,7 @@ async def call_gemini(
     system_prompt: str,
     user_prompt: str,
     temperature: float,
+    max_output_tokens: int = MAX_OUTPUT_TOKENS,
     max_retries: int = 2,
     context_label: str = "unknown",
 ) -> str:
@@ -58,7 +60,7 @@ async def call_gemini(
         {
             "system_instruction": system_prompt,
             "temperature": temperature,
-            "max_output_tokens": MAX_OUTPUT_TOKENS,
+            "max_output_tokens": max_output_tokens,
             "response_mime_type": "application/json",
         }
     )

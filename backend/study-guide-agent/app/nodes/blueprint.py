@@ -15,7 +15,7 @@ ensure_google_adk_beta_compat()
 from google.adk.workflow import node
 from pydantic import ValidationError
 
-from app.nodes.base import TEMP_BLUEPRINT, call_gemini
+from app.nodes.base import MAX_BLUEPRINT_OUTPUT_TOKENS, TEMP_BLUEPRINT, call_gemini
 from app.prompts.runtime import build_runtime_system_prompt, resolve_base_request
 from app.prompts.templates.blueprint import build_prompt as build_blueprint_prompt
 from app.types import Blueprint, StudyGuideRequest
@@ -51,6 +51,7 @@ async def generate_blueprint(request: StudyGuideRequest) -> Blueprint:
         system_prompt=system_prompt,
         user_prompt=user_prompt,
         temperature=TEMP_BLUEPRINT,
+        max_output_tokens=MAX_BLUEPRINT_OUTPUT_TOKENS,
         context_label="blueprint",
     )
     return _parse_blueprint_response(response_text)

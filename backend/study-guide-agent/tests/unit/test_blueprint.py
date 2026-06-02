@@ -33,12 +33,14 @@ async def test_generate_blueprint_returns_valid_blueprint(
         system_prompt: str,
         user_prompt: str,
         temperature: float,
+        max_output_tokens: int = blueprint_module.MAX_BLUEPRINT_OUTPUT_TOKENS,
         max_retries: int = 2,
         context_label: str = "unknown",
     ) -> str:
         assert "PH Grade 6 English" in system_prompt
         assert "Competency code: EN6RC-Ia-2.2" in user_prompt
         assert temperature == blueprint_module.TEMP_BLUEPRINT
+        assert max_output_tokens == blueprint_module.MAX_BLUEPRINT_OUTPUT_TOKENS
         assert max_retries == 2
         assert context_label == "blueprint"
 
