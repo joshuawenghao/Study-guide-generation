@@ -26,7 +26,8 @@ TEMP_ANSWER_KEY = 0.3
 TEMP_RETRY = 0.3
 
 MAX_OUTPUT_TOKENS = 2048
-MODEL_NAME = "gemini-2.0-flash"
+DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
+MODEL_NAME = os.getenv("GEMINI_MODEL", DEFAULT_GEMINI_MODEL)
 
 
 def _get_client() -> genai.Client:
