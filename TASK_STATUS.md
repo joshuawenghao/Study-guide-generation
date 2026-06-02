@@ -1,6 +1,6 @@
 # Task Status
 
-Last updated: 2026-05-29
+Last updated: 2026-06-02
 
 This file mirrors the structure of `TASKS.md` and records the current repo state against each task directly.
 Use it together with `TASKS.md`:
@@ -374,8 +374,8 @@ Notes: The repo now includes checked-in Firebase App Hosting configuration in `f
 
 ### Task 13.6 — Run staged deployment checkpoints
 
-Status: `partial`
-Notes: The first two staged checkpoints are now recorded. After Phase 7, the backend was deployed to the non-production staging Cloud Run service and verified healthy at `https://study-guide-agent-staging-angcxvrtzq-an.a.run.app`. After Phase 10, the integrated staging frontend plus staging backend were deployed and validated remotely: the App Hosting backend `study-guide-frontend-staging` is live at `https://study-guide-frontend-staging--manabie-ai.asia-southeast1.hosted.app`, and a hosted `/api/generate` request returned live backend SSE progress events through the thin Next.js proxy. The Phase 12 release-candidate smoke checkpoint is still pending as a distinct final validation slice.
+Status: `complete`
+Notes: All three staged checkpoints are now recorded. After Phase 7, the backend was deployed to the non-production staging Cloud Run service and verified healthy. After Phase 10, the integrated staging frontend plus staging backend were deployed and validated remotely: the App Hosting backend `study-guide-frontend-staging` is live at `https://study-guide-frontend-staging--manabie-ai.asia-southeast1.hosted.app`, and the hosted `/api/generate` route streams backend SSE progress events through the thin Next.js proxy. On 2026-06-02 the repo done gate passed again after switching the backend default model to `gemini-2.5-flash` and replacing one-off section budget fixes with a shared parse-aware retry path that automatically retries likely truncated JSON responses with progressively larger output budgets across blueprint, standard sections, answer_key generation, and retry generation. The committed fix was deployed to staging Cloud Run revision `study-guide-agent-staging-00015-tpm`, and a fresh hosted nursing smoke on the App Hosting frontend completed end to end: form submit succeeded, streamed progress reached `done`, the results workspace rendered 16 preview sections with 0 failed sections and 0 best-effort sections, and the PDF download workspace opened successfully from the hosted UI. Remaining output warnings in that run were non-blocking reading-level warnings only.
 
 ## Phase 14 — Prompt Lab MVP
 

@@ -1,6 +1,6 @@
 # Codebase State
 
-Last updated: 2026-05-29
+Last updated: 2026-06-02
 
 This document is the live plain-language summary of the shipped codebase.
 It is intended to answer, in words, what currently exists in the repository without requiring a reader to inspect source files directly.
@@ -22,6 +22,7 @@ It is intended to answer, in words, what currently exists in the repository with
 - The ADK FastAPI loader now has a compatibility adapter so the server integration path can locate `study_guide_agent.root_agent` correctly.
 - The repo documentation now includes an explicit deployment plan and task phase covering Firebase App Hosting, Cloud Run, a manual staging-first rollout, and a production-like local parity mode.
 - The frontend deployment slice now includes checked-in Firebase App Hosting config files at `frontend/apphosting.yaml` and `frontend/apphosting.staging.yaml`, and the staging frontend is now live on Firebase App Hosting at `https://study-guide-frontend-staging--manabie-ai.asia-southeast1.hosted.app`.
+- The staging backend is now running the `gemini-2.5-flash` model family instead of the discontinued `gemini-2.0-flash`, with a temporary literal `GOOGLE_API_KEY` Cloud Run env-var workaround still in place because the runtime service account does not yet have the secret access needed to return to the standard secret-backed deploy path.
 - The shared preview contract now includes optional renderer-owned `icon_key` metadata so presentation-only iconography can flow from the backend to the frontend without changing teacher input payloads.
 - The backend renderer and PDF template now include a first-pass deterministic iconography system for section headers and repeated callouts using inline SVG markup that survives WeasyPrint.
 - The web preview now consumes renderer-selected icon metadata through a local React icon mapping, so the browser preview and PDF now share the same section-header and recurring-callout iconography family, including the newer literal section-specific icons such as compass, gamepad, stacked books, reader, notes, and pencil treatments.
@@ -188,5 +189,8 @@ It is intended to answer, in words, what currently exists in the repository with
 
 - Wave 1, Wave 2, Wave 3, and answer-key generation are implemented; the validator layer now includes its aggregator node, six hard validators, two soft validators, broad isolated test coverage, and the complete Phase 6 renderer slice including template, node, and focused renderer tests.
 - Workflow orchestration and focused backend integration coverage are now implemented.
-- The remaining major gaps now sit after the completed staging deployment slice, primarily the final release-candidate checkpoint in Task 13.6 and any later production-environment rollout hardening.
+- The remaining major gaps now sit after the completed staging deployment slice, primarily the still-incomplete release-candidate checkpoint in Task 13.6 and any later production-environment rollout hardening.
 - Deployment is now specified and partially validated remotely: the backend image, local parity stack, Cloud Run staging service, Firebase App Hosting staging frontend, and remote proxy-plus-SSE path are all working, while the final release-candidate smoke checkpoint in Task 13.6 still remains to be recorded.
+- The 2026-06-02 staging reruns cleared the original discontinued-model failure and then several later truncation failures by increasing blueprint, `strategy_list`, and `answer_key` output budgets for `gemini-2.5-flash`; however, the release-candidate nursing smoke still does not complete end to end, and the newest staged rerun on Cloud Run revision `study-guide-agent-staging-00014-wpn` now fails on a truncated `intro` JSON response. The final Task 13.6 checkpoint therefore remains blocked on additional long-section output handling rather than on deployment reachability.
+- The backend now also has a shared parse-aware retry path around Gemini JSON generation: blueprint generation, standard section generation, answer-key generation, and retry generation all detect likely truncated JSON responses and automatically retry with progressively larger output budgets instead of relying on a growing list of section-specific hardcoded token caps.
+- The newest staging backend revision `study-guide-agent-staging-00015-tpm` now serves that shared truncation fix, and a fresh hosted nursing smoke on `https://study-guide-frontend-staging--manabie-ai.asia-southeast1.hosted.app` completed end to end with streamed progress, rendered preview, and the PDF download workspace all working. The remaining visible quality issues in that smoke were non-blocking reading-level warnings only, so the Phase 13.6 release-candidate checkpoint is now satisfied.
