@@ -15,7 +15,13 @@ ensure_google_adk_beta_compat()
 from google.adk.workflow import node
 from pydantic import ValidationError
 
-from app.nodes.base import MAX_BLUEPRINT_OUTPUT_TOKENS, TEMP_BLUEPRINT, call_gemini
+from app.nodes.base import (
+    MAX_BLUEPRINT_OUTPUT_TOKENS,
+    TEMP_BLUEPRINT,
+    JSONResponseParseError,
+    call_gemini,
+    call_gemini_and_parse_json,
+)
 from app.prompts.runtime import build_runtime_system_prompt, resolve_base_request
 from app.prompts.templates.blueprint import build_prompt as build_blueprint_prompt
 from app.types import Blueprint, StudyGuideRequest
@@ -25,9 +31,11 @@ def _parse_blueprint_response(response_text: str) -> Blueprint:
     try:
         payload = json.loads(response_text)
     except json.JSONDecodeError as error:
-        raise RuntimeError(
+        raise JSONResponseParseError(
             "Failed to parse blueprint response as JSON. "
-            f"Raw response:\n{response_text}"
+            f"Raw response:\n{response_text}",
+            response_text=response_text,
+            source_error=error,
         ) from error
 
     try:
@@ -47,14 +55,15 @@ async def generate_blueprint(request: StudyGuideRequest) -> Blueprint:
         blueprint=None,
         request=base_request,
     )
-    response_text = await call_gemini(
+    return await call_gemini_and_parse_json(
         system_prompt=system_prompt,
         user_prompt=user_prompt,
         temperature=TEMP_BLUEPRINT,
+        parse_response=_parse_blueprint_response,
+        call_model=call_gemini,
         max_output_tokens=MAX_BLUEPRINT_OUTPUT_TOKENS,
         context_label="blueprint",
     )
-    return _parse_blueprint_response(response_text)
 
 
 blueprint_node = cast(Callable[[StudyGuideRequest], Any], node(generate_blueprint))

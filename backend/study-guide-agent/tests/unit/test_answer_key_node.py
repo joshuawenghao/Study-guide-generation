@@ -6,6 +6,7 @@ from typing import cast
 
 import pytest
 
+from app.nodes.base import MAX_ANSWER_KEY_OUTPUT_TOKENS
 from app.nodes.sections import answer_key as answer_key_module
 from app.types import Blueprint, GenerateRequest
 
@@ -137,6 +138,7 @@ async def test_generate_answer_key_returns_structured_json(
         system_prompt: str,
         user_prompt: str,
         temperature: float,
+        max_output_tokens: int = MAX_ANSWER_KEY_OUTPUT_TOKENS,
         max_retries: int = 2,
         context_label: str = "unknown",
     ) -> str:
@@ -165,6 +167,7 @@ async def test_generate_answer_key_returns_structured_json(
         assert "Do not include assessment_answers in the JSON payload" in user_prompt
         assert '"assessment_answers"' not in user_prompt
         assert temperature == answer_key_module.TEMP_ANSWER_KEY
+        assert max_output_tokens == MAX_ANSWER_KEY_OUTPUT_TOKENS
         assert max_retries == 2
         assert context_label == "answer_key"
 
@@ -237,6 +240,87 @@ async def test_generate_answer_key_raises_on_malformed_json(
             _build_assessment_questions(),
             _build_step_up(),
         )
+
+
+@pytest.mark.asyncio
+async def test_generate_answer_key_retries_truncated_json_with_higher_budget(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = _load_request_from_fixture()
+    blueprint = _build_blueprint(request)
+    check_in = _build_check_in()
+    assessment_passage = _build_assessment_passage()
+    assessment_questions = _build_assessment_questions()
+    step_up = _build_step_up()
+    seen_budgets: list[int] = []
+
+    async def fake_call_gemini(
+        *,
+        system_prompt: str,
+        user_prompt: str,
+        temperature: float,
+        max_output_tokens: int = MAX_ANSWER_KEY_OUTPUT_TOKENS,
+        max_retries: int = 2,
+        context_label: str = "unknown",
+    ) -> str:
+        del system_prompt, user_prompt, temperature, max_retries, context_label
+        seen_budgets.append(max_output_tokens)
+        if len(seen_budgets) == 1:
+            return (
+                '{"title":"Answer Key","check_in_answers":[{'
+                '"question_number":1,"question":"What clues show the author'
+            )
+
+        return json.dumps(
+            {
+                "title": "Answer Key",
+                "check_in_answers": [
+                    {
+                        "question_number": 1,
+                        "question": str(
+                            cast(list[dict[str, object]], check_in["questions"])[0][
+                                "question"
+                            ]
+                        ),
+                        "possible_answer": "The author uses an encouraging tone.",
+                        "evidence_quote": '"encouraging tone"',
+                    }
+                ],
+                "assessment_answers": [
+                    {
+                        "question_number": 1,
+                        "question": str(
+                            cast(
+                                list[dict[str, object]],
+                                assessment_questions["questions"],
+                            )[0]["question"]
+                        ),
+                        "possible_answer": 'The author wants to inform readers because "protect coastlines" explains why mangroves matter.',
+                        "evidence_quote": '"protect coastlines"',
+                    }
+                ],
+                "step_up_answer": {
+                    "challenge_response": "The passage explains how mangroves protect communities.",
+                    "required_evidence": ['"protect coastlines"'],
+                },
+                "teacher_note": "Accept direct quotes from the passage.",
+            }
+        )
+
+    monkeypatch.setattr(answer_key_module, "call_gemini", fake_call_gemini)
+
+    result = await answer_key_module.generate_answer_key(
+        request,
+        blueprint,
+        _build_model_passage(),
+        check_in,
+        assessment_passage,
+        assessment_questions,
+        step_up,
+    )
+
+    assert result["title"] == "Answer Key"
+    assert seen_budgets == [MAX_ANSWER_KEY_OUTPUT_TOKENS, 16384]
 
 
 @pytest.mark.asyncio

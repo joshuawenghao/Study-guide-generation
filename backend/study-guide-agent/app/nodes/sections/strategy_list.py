@@ -13,6 +13,7 @@ ensure_google_adk_beta_compat()
 
 from google.adk.workflow import node
 
+from app.nodes.base import MAX_STRATEGY_LIST_OUTPUT_TOKENS
 from app.nodes.sections import generate_section
 from app.prompts.templates.strategy_list import (
     build_prompt as build_strategy_list_prompt,
@@ -28,6 +29,7 @@ async def generate_strategy_list(
         blueprint=blueprint,
         prompt_builder=build_strategy_list_prompt,
         context_label="strategy_list",
+        max_output_tokens=MAX_STRATEGY_LIST_OUTPUT_TOKENS,
     )
 
 

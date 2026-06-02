@@ -8,6 +8,7 @@ import pytest
 
 import app.nodes.sections as sections_module
 from app.nodes import blueprint as blueprint_module
+from app.nodes.base import MAX_ANSWER_KEY_OUTPUT_TOKENS, MAX_OUTPUT_TOKENS
 from app.nodes.sections import answer_key as answer_key_module
 from app.nodes.sections import intro as intro_module
 from app.types import Blueprint, GenerateRequest, PromptLabGenerateRequest
@@ -156,6 +157,7 @@ async def test_prompt_lab_intro_override_appends_system_and_section_guidance(
         system_prompt: str,
         user_prompt: str,
         temperature: float,
+        max_output_tokens: int = MAX_OUTPUT_TOKENS,
         max_retries: int = 2,
         context_label: str = "unknown",
     ) -> str:
@@ -165,6 +167,7 @@ async def test_prompt_lab_intro_override_appends_system_and_section_guidance(
         assert "Add one short sentence that previews the lesson task." in user_prompt
         assert context_label == "intro"
         assert temperature == sections_module.TEMP_SECTION
+        assert max_output_tokens == MAX_OUTPUT_TOKENS
         assert max_retries == 2
 
         return json.dumps(
@@ -196,6 +199,7 @@ async def test_prompt_lab_system_append_reaches_blueprint_without_section_overri
         system_prompt: str,
         user_prompt: str,
         temperature: float,
+        max_output_tokens: int = blueprint_module.MAX_BLUEPRINT_OUTPUT_TOKENS,
         max_retries: int = 2,
         context_label: str = "unknown",
     ) -> str:
@@ -206,6 +210,7 @@ async def test_prompt_lab_system_append_reaches_blueprint_without_section_overri
         )
         assert context_label == "blueprint"
         assert temperature == blueprint_module.TEMP_BLUEPRINT
+        assert max_output_tokens == blueprint_module.MAX_BLUEPRINT_OUTPUT_TOKENS
         assert max_retries == 2
 
         return json.dumps(
@@ -265,6 +270,7 @@ async def test_prompt_lab_answer_key_override_applies_to_answer_key_prompt(
         system_prompt: str,
         user_prompt: str,
         temperature: float,
+        max_output_tokens: int = MAX_ANSWER_KEY_OUTPUT_TOKENS,
         max_retries: int = 2,
         context_label: str = "unknown",
     ) -> str:
@@ -278,6 +284,7 @@ async def test_prompt_lab_answer_key_override_applies_to_answer_key_prompt(
         assert str(assessment_question_list[0]["question"]) in user_prompt
         assert context_label == "answer_key"
         assert temperature == answer_key_module.TEMP_ANSWER_KEY
+        assert max_output_tokens == MAX_ANSWER_KEY_OUTPUT_TOKENS
         assert max_retries == 2
 
         return json.dumps(

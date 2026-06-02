@@ -7,6 +7,7 @@ from typing import cast
 import pytest
 
 import app.nodes.sections as sections_module
+from app.nodes.base import MAX_ANSWER_KEY_OUTPUT_TOKENS, MAX_OUTPUT_TOKENS
 from app.nodes.sections import answer_key as answer_key_module
 from app.nodes.sections import intro as intro_module
 from app.nodes.sections import step_up as step_up_module
@@ -136,12 +137,14 @@ async def test_representative_wave1_section_nodes(
         system_prompt: str,
         user_prompt: str,
         temperature: float,
+        max_output_tokens: int = MAX_OUTPUT_TOKENS,
         max_retries: int = 2,
         context_label: str = "unknown",
     ) -> str:
         assert "PH Grade 6 English" in system_prompt
         assert request.lesson_metadata.lesson_title in user_prompt
         assert temperature == sections_module.TEMP_SECTION
+        assert max_output_tokens == MAX_OUTPUT_TOKENS
         assert max_retries == 2
 
         return json.dumps(
@@ -179,6 +182,7 @@ async def test_dependency_aware_wave3_step_up_node(
         system_prompt: str,
         user_prompt: str,
         temperature: float,
+        max_output_tokens: int = MAX_OUTPUT_TOKENS,
         max_retries: int = 2,
         context_label: str = "unknown",
     ) -> str:
@@ -191,6 +195,7 @@ async def test_dependency_aware_wave3_step_up_node(
         assert assessment_passage_lines[0] in user_prompt
         assert str(assessment_question_list[0]["question"]) in user_prompt
         assert temperature == sections_module.TEMP_SECTION
+        assert max_output_tokens == MAX_OUTPUT_TOKENS
         assert max_retries == 2
         assert context_label == "step_up"
 
@@ -236,6 +241,7 @@ async def test_answer_key_output_shape(
         system_prompt: str,
         user_prompt: str,
         temperature: float,
+        max_output_tokens: int = MAX_ANSWER_KEY_OUTPUT_TOKENS,
         max_retries: int = 2,
         context_label: str = "unknown",
     ) -> str:
@@ -251,6 +257,7 @@ async def test_answer_key_output_shape(
         assert str(assessment_question_list[0]["question"]) in user_prompt
         assert str(step_up["challenge_prompt"]) in user_prompt
         assert temperature == answer_key_module.TEMP_ANSWER_KEY
+        assert max_output_tokens == MAX_ANSWER_KEY_OUTPUT_TOKENS
         assert max_retries == 2
         assert context_label == "answer_key"
 

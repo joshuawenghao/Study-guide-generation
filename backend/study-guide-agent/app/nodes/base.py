@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import os
+from collections.abc import Awaitable, Callable
 from pathlib import Path
+from typing import TypeVar
 
 from dotenv import load_dotenv
 from google import genai
@@ -27,8 +30,51 @@ TEMP_RETRY = 0.3
 
 MAX_OUTPUT_TOKENS = 2048
 MAX_BLUEPRINT_OUTPUT_TOKENS = 4096
+MAX_STRATEGY_LIST_OUTPUT_TOKENS = 4096
+MAX_ANSWER_KEY_OUTPUT_TOKENS = 8192
+MAX_DYNAMIC_OUTPUT_TOKENS = 16384
 DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
 MODEL_NAME = os.getenv("GEMINI_MODEL", DEFAULT_GEMINI_MODEL)
+
+ParsedPayload = TypeVar("ParsedPayload")
+
+
+class JSONResponseParseError(RuntimeError):
+    def __init__(
+        self,
+        message: str,
+        *,
+        response_text: str,
+        source_error: Exception | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.response_text = response_text
+        self.source_error = source_error
+
+
+def _next_output_budget(current: int, ceiling: int) -> int | None:
+    if current >= ceiling:
+        return None
+    return min(current * 2, ceiling)
+
+
+def _is_likely_truncated_json(error: JSONResponseParseError) -> bool:
+    stripped_response = error.response_text.rstrip()
+    if not stripped_response:
+        return False
+
+    decode_error = error.source_error
+    if isinstance(decode_error, json.JSONDecodeError):
+        if decode_error.pos >= max(len(error.response_text) - 160, 0):
+            return True
+        if decode_error.msg in {
+            "Unterminated string starting at",
+            "Expecting ',' delimiter",
+            "Expecting value",
+        }:
+            return True
+
+    return stripped_response[-1] not in {"}", "]"}
 
 
 def _get_client() -> genai.Client:
@@ -113,3 +159,47 @@ async def call_gemini(
         f"[{context_label}] Gemini call failed after {total_attempts} attempts. "
         f"Last error: {last_error}"
     ) from last_error
+
+
+async def call_gemini_and_parse_json(
+    *,
+    system_prompt: str,
+    user_prompt: str,
+    temperature: float,
+    parse_response: Callable[[str], ParsedPayload],
+    call_model: Callable[..., Awaitable[str]] | None = None,
+    max_output_tokens: int = MAX_OUTPUT_TOKENS,
+    max_output_tokens_ceiling: int = MAX_DYNAMIC_OUTPUT_TOKENS,
+    max_retries: int = 2,
+    context_label: str = "unknown",
+) -> ParsedPayload:
+    current_output_budget = max_output_tokens
+    model_caller = call_model or call_gemini
+
+    while True:
+        response_text = await model_caller(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            temperature=temperature,
+            max_output_tokens=current_output_budget,
+            max_retries=max_retries,
+            context_label=context_label,
+        )
+
+        try:
+            return parse_response(response_text)
+        except JSONResponseParseError as error:
+            next_output_budget = _next_output_budget(
+                current_output_budget,
+                max_output_tokens_ceiling,
+            )
+            if next_output_budget is None or not _is_likely_truncated_json(error):
+                raise
+
+            logger.warning(
+                "[%s] Response looks truncated at %d tokens; retrying with %d",
+                context_label,
+                current_output_budget,
+                next_output_budget,
+            )
+            current_output_budget = next_output_budget

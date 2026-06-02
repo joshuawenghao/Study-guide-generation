@@ -15,7 +15,12 @@ ensure_google_adk_beta_compat()
 
 from google.adk.workflow import node
 
-from app.nodes.base import TEMP_ANSWER_KEY, call_gemini
+from app.nodes.base import (
+    MAX_ANSWER_KEY_OUTPUT_TOKENS,
+    TEMP_ANSWER_KEY,
+    call_gemini,
+    call_gemini_and_parse_json,
+)
 from app.nodes.sections import _parse_section_response
 from app.prompts.runtime import (
     build_runtime_section_prompt,
@@ -510,13 +515,18 @@ async def generate_answer_key(
         context_label="answer_key",
         spec=answer_key_spec,
     )
-    response_text = await call_gemini(
+    parsed_response = await call_gemini_and_parse_json(
         system_prompt=system_prompt,
         user_prompt=user_prompt,
         temperature=TEMP_ANSWER_KEY,
+        parse_response=lambda response_text: _parse_section_response(
+            response_text,
+            "answer_key",
+        ),
+        call_model=call_gemini,
+        max_output_tokens=MAX_ANSWER_KEY_OUTPUT_TOKENS,
         context_label="answer_key",
     )
-    parsed_response = _parse_section_response(response_text, "answer_key")
     return _normalize_assessment_answer_quotes(
         parsed_response,
         check_in,

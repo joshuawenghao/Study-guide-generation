@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 import app.nodes.sections as sections_module
+from app.nodes.base import MAX_OUTPUT_TOKENS
 from app.nodes.sections import (
     intro as intro_module,
 )
@@ -118,12 +119,14 @@ async def test_wave1_section_nodes_generate_structured_json(
         system_prompt: str,
         user_prompt: str,
         temperature: float,
+        max_output_tokens: int = MAX_OUTPUT_TOKENS,
         max_retries: int = 2,
         context_label: str = "unknown",
     ) -> str:
         assert "PH Grade 6 English" in system_prompt
         assert request.lesson_metadata.lesson_title in user_prompt
         assert temperature == sections_module.TEMP_SECTION
+        assert max_output_tokens == MAX_OUTPUT_TOKENS
         assert max_retries == 2
 
         return json.dumps(
@@ -210,3 +213,48 @@ async def test_wave1_section_nodes_repair_mismatched_json_closers(
             }
         ],
     }
+
+
+@pytest.mark.asyncio
+async def test_wave1_section_nodes_retry_truncated_json_with_higher_budget(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = _load_request_from_fixture()
+    blueprint = _build_blueprint(request)
+    seen_budgets: list[int] = []
+
+    async def fake_call_gemini(
+        *,
+        system_prompt: str,
+        user_prompt: str,
+        temperature: float,
+        max_output_tokens: int = sections_module.MAX_OUTPUT_TOKENS,
+        max_retries: int = 2,
+        context_label: str = "unknown",
+    ) -> str:
+        del system_prompt, user_prompt, temperature, max_retries, context_label
+        seen_budgets.append(max_output_tokens)
+        if len(seen_budgets) == 1:
+            return (
+                '{"title":"Introduction","hook":"A quick opening.",'
+                '"essential_question":"Why does it matter why an author wrote something?",'
+                '"paragraphs":["Paragraph one.","Paragraph two."],'
+                '"bridge_to_lesson":"You will now'
+            )
+
+        return json.dumps(
+            {
+                "title": "Introduction",
+                "hook": "A quick opening.",
+                "essential_question": blueprint.essential_question,
+                "paragraphs": ["Paragraph one.", "Paragraph two."],
+                "bridge_to_lesson": "You will now apply these ideas.",
+            }
+        )
+
+    monkeypatch.setattr(sections_module, "call_gemini", fake_call_gemini)
+
+    result = await intro_module.generate_intro(request, blueprint)
+
+    assert result["title"] == "Introduction"
+    assert seen_budgets == [sections_module.MAX_OUTPUT_TOKENS, 4096]

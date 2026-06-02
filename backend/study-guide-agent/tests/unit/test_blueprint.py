@@ -132,3 +132,69 @@ async def test_generate_blueprint_returns_valid_blueprint(
     assert len(result.sub_competencies) == 3
     assert len(result.vocabulary) == 5
     assert result.topic_domains.model_passage != result.topic_domains.assessment_passage
+
+
+@pytest.mark.asyncio
+async def test_generate_blueprint_retries_truncated_json_with_higher_budget(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = _load_request_from_fixture()
+    seen_budgets: list[int] = []
+
+    async def fake_call_gemini(
+        *,
+        system_prompt: str,
+        user_prompt: str,
+        temperature: float,
+        max_output_tokens: int = blueprint_module.MAX_BLUEPRINT_OUTPUT_TOKENS,
+        max_retries: int = 2,
+        context_label: str = "unknown",
+    ) -> str:
+        del system_prompt, user_prompt, temperature, max_retries, context_label
+        seen_budgets.append(max_output_tokens)
+        if len(seen_budgets) == 1:
+            return '{"lesson_id":"HN12-U3-L2","title":"Standard Precautions"'
+
+        return json.dumps(
+            {
+                "lesson_id": request.lesson_metadata.lesson_code,
+                "title": request.lesson_metadata.lesson_title,
+                "essential_question": "How do nurses use standard precautions to protect themselves and their patients?",
+                "introduction_hook": "Think about how one missed precaution can affect an entire ward.",
+                "learning_targets": [
+                    {
+                        "number": 1,
+                        "bloom_verb": request.instructional_design.bloom_targets[0],
+                        "objective": "I can identify situations that require standard precautions.",
+                    }
+                ],
+                "vocabulary": [
+                    {
+                        "word": "standard precautions",
+                        "definition": "Basic infection prevention steps used with every patient.",
+                        "example_sentence": "Nurses use standard precautions during every patient interaction.",
+                    }
+                ],
+                "topic_domains": {
+                    "model_passage": "school clinic triage",
+                    "assessment_passage": "medical ward wound dressing",
+                    "entertain_example": "healthcare role-play",
+                    "inform_example": "infection prevention guidelines",
+                    "persuade_example": "patient safety campaign",
+                },
+                "sub_competencies": [
+                    item.model_dump() for item in request.curriculum.sub_competencies
+                ],
+                "core_concept": request.instructional_design.core_concept,
+            }
+        )
+
+    monkeypatch.setattr(blueprint_module, "call_gemini", fake_call_gemini)
+
+    result = await blueprint_module.generate_blueprint(request)
+
+    assert result.lesson_id == request.lesson_metadata.lesson_code
+    assert seen_budgets == [
+        blueprint_module.MAX_BLUEPRINT_OUTPUT_TOKENS,
+        blueprint_module.MAX_BLUEPRINT_OUTPUT_TOKENS * 2,
+    ]

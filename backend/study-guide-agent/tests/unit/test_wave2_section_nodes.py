@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 import app.nodes.sections as sections_module
+from app.nodes.base import MAX_OUTPUT_TOKENS, MAX_STRATEGY_LIST_OUTPUT_TOKENS
 from app.nodes.sections import assessment_passage as assessment_passage_module
 from app.nodes.sections import core_explainer as core_explainer_module
 from app.nodes.sections import deep_dive as deep_dive_module
@@ -107,12 +108,19 @@ async def test_wave2_section_nodes_generate_structured_json(
         system_prompt: str,
         user_prompt: str,
         temperature: float,
+        max_output_tokens: int = MAX_OUTPUT_TOKENS,
         max_retries: int = 2,
         context_label: str = "unknown",
     ) -> str:
         assert "PH Grade 6 English" in system_prompt
         assert request.lesson_metadata.lesson_title in user_prompt
         assert temperature == sections_module.TEMP_SECTION
+        expected_output_tokens = (
+            MAX_STRATEGY_LIST_OUTPUT_TOKENS
+            if context_label == "strategy_list"
+            else MAX_OUTPUT_TOKENS
+        )
+        assert max_output_tokens == expected_output_tokens
         assert max_retries == 2
 
         expected_fragments = {

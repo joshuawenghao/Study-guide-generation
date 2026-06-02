@@ -8,7 +8,13 @@ import re
 from collections.abc import Callable
 from typing import Any
 
-from app.nodes.base import TEMP_SECTION, call_gemini
+from app.nodes.base import (
+    MAX_OUTPUT_TOKENS,
+    TEMP_SECTION,
+    JSONResponseParseError,
+    call_gemini,
+    call_gemini_and_parse_json,
+)
 from app.prompts.runtime import (
     build_runtime_section_prompt,
     build_runtime_system_prompt,
@@ -231,11 +237,13 @@ def _parse_section_response(response_text: str, context_label: str) -> dict[str,
     try:
         payload = json.loads(response_text)
     except json.JSONDecodeError as error:
+        parse_error: json.JSONDecodeError = error
         repaired_response = _repair_invalid_json_escapes(response_text)
         if repaired_response != response_text:
             try:
                 payload = json.loads(repaired_response)
-            except json.JSONDecodeError:
+            except json.JSONDecodeError as repaired_error:
+                parse_error = repaired_error
                 pass
             else:
                 if isinstance(payload, dict):
@@ -272,7 +280,8 @@ def _parse_section_response(response_text: str, context_label: str) -> dict[str,
         if multiline_annotation_stripped_response != repaired_response:
             try:
                 payload = json.loads(multiline_annotation_stripped_response)
-            except json.JSONDecodeError:
+            except json.JSONDecodeError as multiline_error:
+                parse_error = multiline_error
                 pass
             else:
                 if isinstance(payload, dict):
@@ -285,7 +294,8 @@ def _parse_section_response(response_text: str, context_label: str) -> dict[str,
         if balanced_response != multiline_annotation_stripped_response:
             try:
                 payload = json.loads(balanced_response)
-            except json.JSONDecodeError:
+            except json.JSONDecodeError as balanced_error:
+                parse_error = balanced_error
                 pass
             else:
                 if isinstance(payload, dict):
@@ -300,14 +310,16 @@ def _parse_section_response(response_text: str, context_label: str) -> dict[str,
         if unmatched_prefix_stripped_response != multiline_annotation_stripped_response:
             try:
                 payload = json.loads(unmatched_prefix_stripped_response)
-            except json.JSONDecodeError:
+            except json.JSONDecodeError as unmatched_prefix_error:
+                parse_error = unmatched_prefix_error
                 unmatched_balanced_response = _repair_mismatched_json_closers(
                     unmatched_prefix_stripped_response
                 )
                 if unmatched_balanced_response != unmatched_prefix_stripped_response:
                     try:
                         payload = json.loads(unmatched_balanced_response)
-                    except json.JSONDecodeError:
+                    except json.JSONDecodeError as unmatched_balanced_error:
+                        parse_error = unmatched_balanced_error
                         pass
                     else:
                         if isinstance(payload, dict):
@@ -319,9 +331,11 @@ def _parse_section_response(response_text: str, context_label: str) -> dict[str,
                     normalized_payload = _normalize_payload_value(payload)
                     if isinstance(normalized_payload, dict):
                         return normalized_payload
-        raise RuntimeError(
+        raise JSONResponseParseError(
             f"Failed to parse {context_label} response as JSON. "
-            f"Raw response:\n{response_text}"
+            f"Raw response:\n{response_text}",
+            response_text=response_text,
+            source_error=parse_error,
         ) from error
 
     if not isinstance(payload, dict):
@@ -347,6 +361,7 @@ async def generate_section(
     prompt_builder: Callable[[Any, Blueprint, GenerateRequest], str],
     context_label: str,
     spec: Any = None,
+    max_output_tokens: int = MAX_OUTPUT_TOKENS,
 ) -> dict[str, Any]:
     system_prompt = build_runtime_system_prompt(request)
     user_prompt = build_runtime_section_prompt(
@@ -356,10 +371,15 @@ async def generate_section(
         context_label=context_label,
         spec=spec,
     )
-    response_text = await call_gemini(
+    return await call_gemini_and_parse_json(
         system_prompt=system_prompt,
         user_prompt=user_prompt,
         temperature=TEMP_SECTION,
+        parse_response=lambda response_text: _parse_section_response(
+            response_text,
+            context_label,
+        ),
+        call_model=call_gemini,
+        max_output_tokens=max_output_tokens,
         context_label=context_label,
     )
-    return _parse_section_response(response_text, context_label)

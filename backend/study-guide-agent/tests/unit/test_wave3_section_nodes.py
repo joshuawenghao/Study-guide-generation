@@ -7,6 +7,7 @@ from typing import cast
 import pytest
 
 import app.nodes.sections as sections_module
+from app.nodes.base import MAX_OUTPUT_TOKENS
 from app.nodes.sections import assessment_questions as assessment_questions_module
 from app.nodes.sections import check_in as check_in_module
 from app.nodes.sections import step_up as step_up_module
@@ -131,12 +132,14 @@ async def test_wave3_section_nodes_generate_structured_json(
         system_prompt: str,
         user_prompt: str,
         temperature: float,
+        max_output_tokens: int = MAX_OUTPUT_TOKENS,
         max_retries: int = 2,
         context_label: str = "unknown",
     ) -> str:
         assert "PH Grade 6 English" in system_prompt
         assert request.lesson_metadata.lesson_title in user_prompt
         assert temperature == sections_module.TEMP_SECTION
+        assert max_output_tokens == MAX_OUTPUT_TOKENS
         assert max_retries == 2
 
         model_passage_lines = cast(list[str], model_passage["passage"])
