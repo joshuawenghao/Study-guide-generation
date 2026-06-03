@@ -1,6 +1,6 @@
 # Codebase State
 
-Last updated: 2026-06-02
+Last updated: 2026-06-03
 
 This document is the live plain-language summary of the shipped codebase.
 It is intended to answer, in words, what currently exists in the repository without requiring a reader to inspect source files directly.
@@ -22,7 +22,8 @@ It is intended to answer, in words, what currently exists in the repository with
 - The ADK FastAPI loader now has a compatibility adapter so the server integration path can locate `study_guide_agent.root_agent` correctly.
 - The repo documentation now includes an explicit deployment plan and task phase covering Firebase App Hosting, Cloud Run, a manual staging-first rollout, and a production-like local parity mode.
 - The frontend deployment slice now includes checked-in Firebase App Hosting config files at `frontend/apphosting.yaml` and `frontend/apphosting.staging.yaml`, and the staging frontend is now live on Firebase App Hosting at `https://study-guide-frontend-staging--manabie-ai.asia-southeast1.hosted.app`.
-- The staging backend is now running the `gemini-2.5-flash` model family instead of the discontinued `gemini-2.0-flash`, with a temporary literal `GOOGLE_API_KEY` Cloud Run env-var workaround still in place because the runtime service account does not yet have the secret access needed to return to the standard secret-backed deploy path.
+- The staging backend now defaults to the `gemini-3.5-flash` model family instead of the older `gemini-2.5-flash`, with a temporary literal `GOOGLE_API_KEY` Cloud Run env-var workaround still in place because the runtime service account does not yet have the secret access needed to return to the standard secret-backed deploy path.
+- On 2026-06-03 the `gemini-3.5-flash` backend update was redeployed to staging Cloud Run revision `study-guide-agent-staging-00017-mqb`, and a live SSE generation smoke against the deployed `/generate` endpoint completed successfully with validation passed, 0 failed sections, 0 best-effort sections, and only non-blocking reading-level warnings.
 - The shared preview contract now includes optional renderer-owned `icon_key` metadata so presentation-only iconography can flow from the backend to the frontend without changing teacher input payloads.
 - The backend renderer and PDF template now include a first-pass deterministic iconography system for section headers and repeated callouts using inline SVG markup that survives WeasyPrint.
 - The web preview now consumes renderer-selected icon metadata through a local React icon mapping, so the browser preview and PDF now share the same section-header and recurring-callout iconography family, including the newer literal section-specific icons such as compass, gamepad, stacked books, reader, notes, and pencil treatments.

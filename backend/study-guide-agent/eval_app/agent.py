@@ -24,7 +24,7 @@ ensure_google_adk_beta_compat()
 
 root_agent = Agent(
     name="study_guide_eval_assistant",
-    model=os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
+    model=os.getenv("GEMINI_MODEL", "gemini-3.5-flash"),
     instruction=(
         "You support teachers using the Study Guide Generation app. "
         "Explain the product accurately and concisely. "
