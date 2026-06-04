@@ -255,6 +255,47 @@ async def test_wave2_section_nodes_strip_html_like_markup_from_payload_strings(
 
 
 @pytest.mark.asyncio
+async def test_wave2_section_nodes_decode_literal_display_escapes_in_payload_strings(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = _load_request_from_fixture()
+    blueprint = _build_blueprint(request)
+    first_subcompetency = blueprint.sub_competencies[0]
+
+    async def fake_call_gemini(**_: object) -> str:
+        return json.dumps(
+            {
+                "title": "Subconcept",
+                "sub_competency_id": first_subcompetency.id,
+                "sub_competency_label": first_subcompetency.label,
+                "explanation": "Read the problem\\nthen identify the clue.",
+                "worked_example": "A poster says,\\nJoin the clean-up drive today!",
+                "quick_check": {
+                    "question": "What clue shows persuasion?",
+                    "expected_answer": "The command word shows what to do.\\nIt guides the reader clearly.",
+                },
+            }
+        )
+
+    monkeypatch.setattr(sections_module, "call_gemini", fake_call_gemini)
+
+    result = await subconcept_module.generate_subconcept(
+        request,
+        blueprint,
+        first_subcompetency,
+    )
+
+    assert "\\n" not in result["explanation"]
+    assert "\\n" not in result["worked_example"]
+    assert "\\n" not in result["quick_check"]["expected_answer"]
+    assert result["explanation"] == "Read the problem\nthen identify the clue."
+    assert result["worked_example"] == "A poster says,\nJoin the clean-up drive today!"
+    assert result["quick_check"]["expected_answer"] == (
+        "The command word shows what to do.\nIt guides the reader clearly."
+    )
+
+
+@pytest.mark.asyncio
 async def test_wave2_section_nodes_strip_inline_quoted_list_annotations_from_passage(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

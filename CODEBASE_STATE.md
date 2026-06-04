@@ -1,6 +1,6 @@
 # Codebase State
 
-Last updated: 2026-06-03
+Last updated: 2026-06-04
 
 This document is the live plain-language summary of the shipped codebase.
 It is intended to answer, in words, what currently exists in the repository without requiring a reader to inspect source files directly.
@@ -24,6 +24,10 @@ It is intended to answer, in words, what currently exists in the repository with
 - The frontend deployment slice now includes checked-in Firebase App Hosting config files at `frontend/apphosting.yaml` and `frontend/apphosting.staging.yaml`, and the staging frontend is now live on Firebase App Hosting at `https://study-guide-frontend-staging--manabie-ai.asia-southeast1.hosted.app`.
 - The staging backend now defaults to the `gemini-3.5-flash` model family instead of the older `gemini-2.5-flash`, with a temporary literal `GOOGLE_API_KEY` Cloud Run env-var workaround still in place because the runtime service account does not yet have the secret access needed to return to the standard secret-backed deploy path.
 - On 2026-06-03 the `gemini-3.5-flash` backend update was redeployed to staging Cloud Run revision `study-guide-agent-staging-00017-mqb`, and a live SSE generation smoke against the deployed `/generate` endpoint completed successfully with validation passed, 0 failed sections, 0 best-effort sections, and only non-blocking reading-level warnings.
+- On 2026-06-04 the shared section parser was updated to decode literal display escapes such as `\n`, `\r`, and `\t` while still preserving the earlier malformed-backslash repair path for sequences like `\frac`, so generated section content no longer leaks visible escape sequences into preview or PDF output.
+- The web preview now renders `subconcept` quick-check content and `deep_dive` signal words with dedicated structured layouts instead of falling back to raw JSON stringification, and the relevant preview surfaces now force safe wrapping for long chips and answer text so those sections no longer overflow their cards in the browser UI.
+- The repo root now also includes checked-in `firebase.json` and `.firebaserc` files for the Firebase CLI, allowing local-source App Hosting redeploys from the workspace root instead of relying only on Git-triggered rollouts.
+- On 2026-06-04 the backend bugfix was redeployed to staging Cloud Run revision `study-guide-agent-staging-00018-xpw`, the staging frontend was redeployed successfully from local source through Firebase App Hosting, and a fresh hosted `/api/generate` smoke through the deployed frontend completed successfully without any literal `\n` hits in the returned preview payload.
 - The shared preview contract now includes optional renderer-owned `icon_key` metadata so presentation-only iconography can flow from the backend to the frontend without changing teacher input payloads.
 - The backend renderer and PDF template now include a first-pass deterministic iconography system for section headers and repeated callouts using inline SVG markup that survives WeasyPrint.
 - The web preview now consumes renderer-selected icon metadata through a local React icon mapping, so the browser preview and PDF now share the same section-header and recurring-callout iconography family, including the newer literal section-specific icons such as compass, gamepad, stacked books, reader, notes, and pencil treatments.
@@ -106,6 +110,7 @@ It is intended to answer, in words, what currently exists in the repository with
 - The shared section parser now also applies a late-fallback parse repair for unmatched quote-concatenation prefixes (for example `["] + ["]`-style remnants) and strips the same artifact at parsed-string normalization time, so nursing prompt-lab stress outputs no longer fail when `assessment_passage` includes unmatched concatenation fragments.
 - The shared section parser now also strips doubled-quote bracket placeholder fragments such as `[""quote""]` and repairs mismatched JSON closers by inserting missing braces before retrying parse, so otherwise recoverable model payloads like malformed `key_points` arrays no longer fail the generation.
 - The shared section parser now also strips HTML-like markup and decodes HTML entities from model-returned strings before validation, preview emission, and PDF rendering, so raw tags such as `<b>` or encoded markup no longer appear as literal study-guide content.
+- The shared section parser now also decodes literal display escapes in parsed strings after JSON repair, so visible `\n`-style artifacts in section prose are normalized into real whitespace before preview emission and PDF rendering.
 - The assessment-passage prompt now explicitly forbids bracketed clue lists, code-like concatenation, and similar inline placeholder annotations inside passage paragraphs, reducing the malformed JSON patterns seen in the live UI flow.
 - The lower-grade readability path is now stricter in prompts but slightly more realistic in scoring: the system prompt adds plain-text math-notation guidance for mathematics requests, the intro and deep-dive prompts add stronger elementary-grade brevity guidance, and the reading-level validator uses a modestly wider tolerance band for lower grades so local demos surface fewer borderline warnings without hiding clearly off-target prose.
 - The backend uses the scaffolded ADK project structure created by `agents-cli`.

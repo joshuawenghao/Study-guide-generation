@@ -1,3 +1,5 @@
+import React, { type JSX } from "react";
+
 import type {
   PreviewSection as PreviewSectionData,
   PreviewSectionProps,
@@ -44,6 +46,14 @@ function getRecordArray(record: ContentRecord, key: string): ContentRecord[] {
   return value.filter(isRecord);
 }
 
+function getNestedRecord(
+  record: ContentRecord,
+  key: string,
+): ContentRecord | null {
+  const value = record[key];
+  return isRecord(value) ? value : null;
+}
+
 function toSectionKey(sectionId: string): string {
   return sectionId.replace(/-\d+$/, "");
 }
@@ -60,7 +70,9 @@ function renderParagraphs(paragraphs: string[]): JSX.Element | null {
   return (
     <div className="space-y-4 text-sm leading-7 text-slate-700 sm:text-base">
       {paragraphs.map((paragraph) => (
-        <p key={paragraph}>{paragraph}</p>
+        <p key={paragraph} className="break-words [overflow-wrap:anywhere]">
+          {paragraph}
+        </p>
       ))}
     </div>
   );
@@ -76,7 +88,7 @@ function renderBullets(items: string[]): JSX.Element | null {
       {items.map((item) => (
         <li
           key={item}
-          className="rounded-2xl border border-slate-200 bg-white px-4 py-3"
+          className="rounded-2xl border border-slate-200 bg-white px-4 py-3 break-words [overflow-wrap:anywhere]"
         >
           {item}
         </li>
@@ -112,7 +124,7 @@ function renderKeyValueGrid(record: ContentRecord): JSX.Element {
           <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
             {formatLabel(key)}
           </dt>
-          <dd className="mt-2 text-sm leading-6 text-slate-700">
+          <dd className="mt-2 text-sm leading-6 text-slate-700 break-words [overflow-wrap:anywhere]">
             {typeof value === "string" || typeof value === "number"
               ? String(value)
               : JSON.stringify(value)}
@@ -288,6 +300,166 @@ function renderPassage(section: PreviewSectionData): JSX.Element {
             </span>
           ))}
         </div>
+      ) : null}
+    </div>
+  );
+}
+
+function renderSubconcept(section: PreviewSectionData): JSX.Element {
+  const explanation = getString(section.content, "explanation");
+  const workedExample = getString(section.content, "worked_example");
+  const subCompetencyLabel = getString(section.content, "sub_competency_label");
+  const quickCheck = getNestedRecord(section.content, "quick_check");
+  const quickCheckQuestion = quickCheck
+    ? getString(quickCheck, "question")
+    : null;
+  const quickCheckExpectedAnswer = quickCheck
+    ? getString(quickCheck, "expected_answer")
+    : null;
+
+  return (
+    <div className="space-y-5">
+      {subCompetencyLabel ? (
+        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Sub-competency
+          </p>
+          <p className="mt-2 text-sm leading-6 text-slate-700 break-words [overflow-wrap:anywhere]">
+            {subCompetencyLabel}
+          </p>
+        </div>
+      ) : null}
+
+      {explanation ? (
+        <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Explanation
+          </h3>
+          <p className="mt-4 text-sm leading-7 text-slate-700 break-words [overflow-wrap:anywhere] sm:text-base">
+            {explanation}
+          </p>
+        </section>
+      ) : null}
+
+      {workedExample ? (
+        <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Worked example
+          </h3>
+          <p className="mt-4 text-sm leading-7 text-slate-700 break-words [overflow-wrap:anywhere] sm:text-base">
+            {workedExample}
+          </p>
+        </section>
+      ) : null}
+
+      {quickCheckQuestion || quickCheckExpectedAnswer ? (
+        <section className="rounded-[2rem] border border-amber-200 bg-amber-50 p-6 shadow-sm">
+          <div className="flex items-start gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/80 text-amber-900">
+              <PreviewIcon
+                iconKey={PREVIEW_CALLOUT_ICON_KEYS.default}
+                className="h-5 w-5"
+              />
+            </span>
+            <div className="min-w-0 flex-1 space-y-3">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-amber-900">
+                Quick check
+              </h3>
+              {quickCheckQuestion ? (
+                <p className="text-sm leading-6 text-amber-950 break-words [overflow-wrap:anywhere] sm:text-base">
+                  {quickCheckQuestion}
+                </p>
+              ) : null}
+              {quickCheckExpectedAnswer ? (
+                <p className="rounded-2xl bg-white/80 px-4 py-3 text-sm leading-6 text-amber-950 break-words [overflow-wrap:anywhere]">
+                  <span className="font-semibold">Expected answer:</span>{" "}
+                  {quickCheckExpectedAnswer}
+                </p>
+              ) : null}
+            </div>
+          </div>
+        </section>
+      ) : null}
+    </div>
+  );
+}
+
+function renderDeepDive(section: PreviewSectionData): JSX.Element {
+  const compareFocus = getString(section.content, "compare_focus");
+  const takeaway = getString(section.content, "takeaway");
+  const examples = getRecordArray(section.content, "examples");
+
+  return (
+    <div className="space-y-5">
+      {compareFocus ? (
+        <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Compare focus
+          </h3>
+          <p className="mt-4 text-sm leading-7 text-slate-700 break-words [overflow-wrap:anywhere] sm:text-base">
+            {compareFocus}
+          </p>
+        </section>
+      ) : null}
+
+      <div className="grid gap-4">
+        {examples.map((example, index) => {
+          const mode = getString(example, "mode") ?? `Example ${index + 1}`;
+          const topicDomain = getString(example, "topic_domain");
+          const explanation = getString(example, "explanation");
+          const signalWords = getStringArray(example, "signal_words");
+
+          return (
+            <article
+              key={`${mode}-${topicDomain ?? index}`}
+              className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"
+            >
+              <div className="flex flex-wrap items-center gap-3">
+                <h3 className="text-lg font-semibold tracking-tight text-slate-950">
+                  {mode}
+                </h3>
+                {topicDomain ? (
+                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold tracking-[0.14em] text-slate-700 break-words [overflow-wrap:anywhere]">
+                    {topicDomain}
+                  </span>
+                ) : null}
+              </div>
+
+              {explanation ? (
+                <p className="mt-4 text-sm leading-6 text-slate-700 break-words [overflow-wrap:anywhere] sm:text-base">
+                  {explanation}
+                </p>
+              ) : null}
+
+              {signalWords.length > 0 ? (
+                <div className="mt-4 space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    Signal words
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {signalWords.map((word) => (
+                      <span
+                        key={`${mode}-${word}`}
+                        className="max-w-full rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold text-cyan-900 break-words [overflow-wrap:anywhere]"
+                      >
+                        {word}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </article>
+          );
+        })}
+      </div>
+
+      {takeaway ? (
+        <section className="rounded-[2rem] border border-dashed border-slate-300 bg-slate-50 px-5 py-4">
+          <p className="text-sm leading-6 text-slate-700 break-words [overflow-wrap:anywhere] sm:text-base">
+            <span className="font-semibold text-slate-900">Takeaway:</span>{" "}
+            {takeaway}
+          </p>
+        </section>
       ) : null}
     </div>
   );
@@ -547,6 +719,10 @@ function renderSectionBody(section: PreviewSectionData): JSX.Element {
     case "model_passage":
     case "assessment_passage":
       return renderPassage(section);
+    case "subconcept":
+      return renderSubconcept(section);
+    case "deep_dive":
+      return renderDeepDive(section);
     case "self_assessment":
       return renderSelfAssessment(section);
     case "answer_key":

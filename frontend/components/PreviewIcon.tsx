@@ -1,3 +1,5 @@
+import React, { type JSX } from "react";
+
 type PreviewIconProps = {
   iconKey?: string;
   className?: string;

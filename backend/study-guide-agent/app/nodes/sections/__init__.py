@@ -54,12 +54,10 @@ _CONCATENATED_QUOTED_LIST_ANNOTATION_PATTERN = re.compile(
 _STANDALONE_QUOTED_LINE_PATTERN = re.compile(r'^\s*"[^"\n]*",?\s*$')
 _HTML_LINE_BREAK_TAG_PATTERN = re.compile(r"(?is)<\s*(?:br|/p|/div|/li|/tr)\s*/?\s*>")
 _HTML_TAG_PATTERN = re.compile(r"(?is)</?[a-z][^>]*>")
-_CONTROL_ESCAPE_TO_PREFIX = {
+_LITERAL_DISPLAY_ESCAPES_PATTERN = re.compile(r"\\[nrt]")
+_NON_LINEBREAK_CONTROL_ESCAPE_TO_PREFIX = {
     "\b": "b",
     "\f": "f",
-    "\n": "n",
-    "\r": "r",
-    "\t": "t",
 }
 
 
@@ -192,10 +190,20 @@ def _repair_mismatched_json_closers(response_text: str) -> str:
     return "".join(repaired)
 
 
-def _restore_control_escapes(text: str) -> str:
+def _decode_literal_display_escapes(text: str) -> str:
+    def _replace_escape(match: re.Match[str]) -> str:
+        escape = match.group(0)
+        if escape == r"\t":
+            return " "
+        return "\n"
+
+    return _LITERAL_DISPLAY_ESCAPES_PATTERN.sub(_replace_escape, text)
+
+
+def _restore_non_linebreak_control_escapes(text: str) -> str:
     restored: list[str] = []
     for index, character in enumerate(text):
-        prefix = _CONTROL_ESCAPE_TO_PREFIX.get(character)
+        prefix = _NON_LINEBREAK_CONTROL_ESCAPE_TO_PREFIX.get(character)
         if prefix is not None and index + 1 < len(text) and text[index + 1].isalpha():
             restored.append("\\")
             restored.append(prefix)
@@ -224,7 +232,11 @@ def _strip_parsed_string_placeholder_annotations(text: str) -> str:
 def _normalize_payload_value(value: Any) -> Any:
     if isinstance(value, str):
         return _strip_parsed_string_placeholder_annotations(
-            _strip_html_like_markup(_restore_control_escapes(value))
+            _strip_html_like_markup(
+                _restore_non_linebreak_control_escapes(
+                    _decode_literal_display_escapes(value)
+                )
+            )
         )
     if isinstance(value, list):
         return [_normalize_payload_value(item) for item in value]
