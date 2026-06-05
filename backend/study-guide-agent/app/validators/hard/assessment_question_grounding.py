@@ -28,6 +28,24 @@ LOCATION_HINT_WORDS = {
     "passage",
     "text",
 }
+QUESTION_ALIGNMENT_WORDS = {
+    "search",
+    "think",
+    "about",
+    "specific",
+    "term",
+    "means",
+    "meaning",
+    "trying",
+    "whether",
+}
+PURPOSE_HINT_WORDS = {
+    "author",
+    "purpose",
+    "entertain",
+    "inform",
+    "persuade",
+}
 GENERIC_HINT_WORDS = {
     "the",
     "a",
@@ -60,6 +78,10 @@ GENERIC_HINT_WORDS = {
     "explain",
     "supports",
     "support",
+    "search",
+    "think",
+    "about",
+    "specific",
 }
 
 
@@ -111,6 +133,27 @@ def _content_tokens(value: str) -> set[str]:
 def _looks_like_location_hint(value: str) -> bool:
     tokens = set(re.findall(r"[A-Za-z0-9']+", value.lower()))
     return bool(tokens & LOCATION_HINT_WORDS)
+
+
+def _question_alignment_score(evidence_hint: str, question_text: str) -> float:
+    hint_tokens = _content_tokens(evidence_hint) - QUESTION_ALIGNMENT_WORDS
+    question_tokens = _content_tokens(question_text)
+    if not hint_tokens or not question_tokens:
+        return 0.0
+    return len(hint_tokens & question_tokens) / len(hint_tokens | question_tokens)
+
+
+def _passage_alignment_score(evidence_hint: str, passage_text: str) -> float:
+    hint_tokens = _content_tokens(evidence_hint) - QUESTION_ALIGNMENT_WORDS
+    passage_tokens = _content_tokens(passage_text)
+    if not hint_tokens or not passage_tokens:
+        return 0.0
+    return len(hint_tokens & passage_tokens) / len(hint_tokens | passage_tokens)
+
+
+def _looks_like_purpose_hint(value: str) -> bool:
+    tokens = set(re.findall(r"[A-Za-z0-9']+", value.lower()))
+    return bool(tokens & PURPOSE_HINT_WORDS)
 
 
 def validate_assessment_question_grounding(
@@ -169,6 +212,27 @@ def validate_assessment_question_grounding(
                 )
                 if location_overlap >= 0.25:
                     continue
+
+        question_alignment = _question_alignment_score(
+            evidence_hint,
+            question.question,
+        )
+        passage_alignment = _passage_alignment_score(evidence_hint, passage_text)
+
+        if (
+            best_score < 0.25
+            and _looks_like_location_hint(evidence_hint)
+            and question_alignment >= 0.3
+        ):
+            continue
+
+        if (
+            best_score < 0.25
+            and _looks_like_purpose_hint(evidence_hint)
+            and question_alignment >= 0.3
+            and passage_alignment >= 0.1
+        ):
+            continue
 
         if best_score < 0.25:
             failures.append(

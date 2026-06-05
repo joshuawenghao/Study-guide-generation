@@ -506,7 +506,7 @@ Hard validators block document assembly. A section that fails a hard validator i
 | `vocab_presence`                | Every vocabulary word from the blueprint appears (case-insensitive) in the combined body section text          | All body sections collectively |
 | `self_assess_targets`           | Each skill row in the self-assessment matches a learning target objective verbatim                             | `self_assessment`              |
 | `answer_key_quotes`             | Each assessment answer evidence quote in the answer key contains a verbatim phrase from the assessment passage | `answer_key`                   |
-| `assessment_question_grounding` | Each assessment question evidence hint stays grounded to the assessment passage, including location-style hints that still point to passage-supported content | `assessment_questions`         |
+| `assessment_question_grounding` | Each assessment question evidence hint stays grounded to the assessment passage, including location-style and author-purpose hints that still point students to passage-supported content | `assessment_questions`         |
 | `passage_domain_diff`           | The topic domain of the assessment passage differs from the model passage domain                               | `assessment_passage`           |
 | `json_schema`                   | Each section output parses correctly against its expected JSON schema                                          | All section nodes              |
 

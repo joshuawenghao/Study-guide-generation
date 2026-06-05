@@ -417,3 +417,82 @@ def test_validate_assessment_question_grounding_accepts_location_style_hint_when
     )
 
     assert result.passed is True
+
+
+def test_validate_assessment_question_grounding_accepts_location_hint_for_defined_term() -> (
+    None
+):
+    assessment_questions = validator_module.AssessmentQuestionsSection.model_validate(
+        {
+            "title": "Assessment Questions",
+            "passage_title": "Assessment Passage",
+            "questions": [
+                {
+                    "number": 3,
+                    "question": "What cultural term in the third paragraph means communal unity and cooperation?",
+                    "expected_response_type": "Short answer",
+                    "evidence_hint": "Search the third paragraph for a specific cultural term that means communal unity and cooperation.",
+                }
+            ],
+        }
+    )
+    assessment_passage = validator_module.AssessmentPassageSection.model_validate(
+        {
+            "title": "Assessment Passage",
+            "topic_domain": "community clean-up drive",
+            "genre": "article",
+            "passage": [
+                "Residents gathered for a clean-up drive.",
+                "The program highlighted teamwork across the barangay.",
+                "The article explains that bayanihan reflects communal unity and cooperation during the drive.",
+            ],
+            "evidence_clues": ["bayanihan", "communal unity and cooperation"],
+            "answerability_note": "Quote the text.",
+        }
+    )
+
+    result = validator_module.validate_assessment_question_grounding(
+        assessment_questions=assessment_questions,
+        assessment_passage=assessment_passage,
+    )
+
+    assert result.passed is True
+
+
+def test_validate_assessment_question_grounding_accepts_author_purpose_hint_with_passage_topic_anchor() -> (
+    None
+):
+    assessment_questions = validator_module.AssessmentQuestionsSection.model_validate(
+        {
+            "title": "Assessment Questions",
+            "passage_title": "Assessment Passage",
+            "questions": [
+                {
+                    "number": 4,
+                    "question": "Is the author trying to entertain, inform, or persuade residents to join the clean-up drive?",
+                    "expected_response_type": "Short answer",
+                    "evidence_hint": "Think about whether the author is trying to entertain, inform, or persuade the residents to join the clean-up drive.",
+                }
+            ],
+        }
+    )
+    assessment_passage = validator_module.AssessmentPassageSection.model_validate(
+        {
+            "title": "Assessment Passage",
+            "topic_domain": "community clean-up drive",
+            "genre": "article",
+            "passage": [
+                "Residents can join the clean-up drive on Saturday morning.",
+                "The article explains how cleaner streets protect health and strengthen the community.",
+            ],
+            "evidence_clues": ["join the clean-up drive", "protect health"],
+            "answerability_note": "Quote the text.",
+        }
+    )
+
+    result = validator_module.validate_assessment_question_grounding(
+        assessment_questions=assessment_questions,
+        assessment_passage=assessment_passage,
+    )
+
+    assert result.passed is True
