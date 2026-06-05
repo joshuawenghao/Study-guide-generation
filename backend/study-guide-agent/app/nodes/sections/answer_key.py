@@ -138,6 +138,17 @@ def _looks_like_guidance_not_answer(value: str) -> bool:
     return any(fragment in normalized for fragment in guidance_fragments)
 
 
+def _looks_like_substantive_assessment_answer(value: str) -> bool:
+    normalized = value.casefold().strip()
+    if not normalized:
+        return False
+    if normalized in {"fallback answer.", "fallback answer"}:
+        return False
+
+    tokens = re.findall(r"[A-Za-z0-9']+", normalized)
+    return len(tokens) >= 8
+
+
 def _quote_candidate_clause(quote_candidate: str | None) -> str | None:
     if quote_candidate is None:
         return None
@@ -390,6 +401,7 @@ def _build_assessment_possible_answer(
     fallback_answer: str,
     quote_candidate: str | None,
     quote_candidates: list[str],
+    source_matches_number: bool,
     source_matches_question: bool,
 ) -> str:
     answer_context = _answer_context_from_quote_candidate(
@@ -412,6 +424,10 @@ def _build_assessment_possible_answer(
             and not _looks_like_guidance_not_answer(cleaned_candidate)
             and (
                 source_matches_question
+                or (
+                    source_matches_number
+                    and _looks_like_substantive_assessment_answer(cleaned_candidate)
+                )
                 or _assessment_answer_is_grounded(
                     cleaned_candidate,
                     question_text,
@@ -554,6 +570,7 @@ def normalize_answer_key_payload(
         source_question_number = answer.get("question_number")
         source_question_text = str(answer.get("question", "")).strip()
         upstream_question_text = str(question_spec.get("question", "")).strip()
+        source_matches_number = source_question_number == question_spec.get("number")
         question_similarity = (
             SequenceMatcher(
                 None,
@@ -566,10 +583,7 @@ def normalize_answer_key_payload(
         source_matches_question = (
             source_question_text == upstream_question_text
             or question_similarity >= 0.75
-            or (
-                not source_question_text
-                and source_question_number == question_spec.get("number")
-            )
+            or (not source_question_text and source_matches_number)
         )
         normalized_evidence_quote = _normalize_evidence_quote(evidence_quote)
         quoted_phrases = _extract_quoted_phrases(possible_answer)
@@ -616,6 +630,7 @@ def normalize_answer_key_payload(
                     fallback_answer=possible_answer,
                     quote_candidate=best_candidate,
                     quote_candidates=quote_candidates,
+                    source_matches_number=source_matches_number,
                     source_matches_question=source_matches_question,
                 ),
                 "evidence_quote": (

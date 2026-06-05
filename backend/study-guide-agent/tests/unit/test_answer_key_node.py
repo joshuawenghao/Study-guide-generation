@@ -978,3 +978,81 @@ async def test_generate_answer_key_ignores_model_paraphrase_when_selecting_asses
     assert (
         '"protect coastlines"' not in result["assessment_answers"][0]["possible_answer"]
     )
+
+
+@pytest.mark.asyncio
+async def test_generate_answer_key_keeps_substantive_number_aligned_nursing_assessment_answer(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = _load_request_from_fixture()
+    blueprint = _build_blueprint(request)
+    assessment_passage = {
+        "title": "Assessment Passage",
+        "passage": [
+            "Before entering Mr. Reyes's room, Nurse Maria performs hand hygiene and prepares the needed supplies.",
+            "Inside the room, Nurse Maria wears gloves and eye protection to avoid contact with potentially infectious materials.",
+            "After the assessment, Nurse Maria removes her gloves carefully and performs hand hygiene again to avoid self-contamination.",
+        ],
+        "evidence_clues": [
+            "performs hand hygiene and prepares the needed supplies",
+            "wears gloves and eye protection",
+            "performs hand hygiene again to avoid self-contamination",
+        ],
+    }
+    assessment_questions = {
+        "title": "Assessment Questions",
+        "questions": [
+            {
+                "number": 1,
+                "question": "What specific actions does Nurse Maria take before even entering Mr. Reyes's room, and why are these actions important?",
+                "expected_response_type": "Short answer",
+                "evidence_hint": "Look for the sentence describing what Maria does immediately before entering the room.",
+            }
+        ],
+    }
+
+    detailed_answer = "She cleans her hands and gets the supplies ready before entering so she can begin care without carrying germs into the room or delaying sterile work."
+
+    async def fake_call_gemini(**_: object) -> str:
+        return json.dumps(
+            {
+                "title": "Answer Key",
+                "check_in_answers": [],
+                "assessment_answers": [
+                    {
+                        "question_number": 1,
+                        "question": "How does Nurse Maria prepare herself before patient contact?",
+                        "possible_answer": detailed_answer,
+                        "evidence_quote": '"Before entering Mr. Reyes\'s room, Nurse Maria performs hand hygiene and prepares the needed supplies."',
+                    }
+                ],
+                "step_up_answer": {
+                    "challenge_response": "The passage explains why the evidence matters.",
+                    "required_evidence": [
+                        "performs hand hygiene and prepares the needed supplies"
+                    ],
+                },
+                "teacher_note": "Accept answers that explain how the nurse prevents infection before care begins.",
+            }
+        )
+
+    monkeypatch.setattr(answer_key_module, "call_gemini", fake_call_gemini)
+
+    result = await answer_key_module.generate_answer_key(
+        request,
+        blueprint,
+        _build_model_passage(),
+        _build_check_in(),
+        assessment_passage,
+        assessment_questions,
+        _build_step_up(),
+    )
+
+    assert result["assessment_answers"] == [
+        {
+            "question_number": 1,
+            "question": "What specific actions does Nurse Maria take before even entering Mr. Reyes's room, and why are these actions important?",
+            "possible_answer": detailed_answer,
+            "evidence_quote": '"Before entering Mr. Reyes\'s room, Nurse Maria performs hand hygiene and prepares the needed supplies."',
+        }
+    ]

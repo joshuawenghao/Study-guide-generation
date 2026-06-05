@@ -582,7 +582,7 @@ async def test_study_guide_workflow_normalizes_answer_key_before_validation(
             {
                 "question_number": 1,
                 "question": "What is the author's purpose in this article?",
-                "possible_answer": "The author wants to inform readers that mangrove forests protect coastlines from strong waves.",
+                "possible_answer": "The author wants readers to care because the mangrove roots keep every shoreline family safe during strong storms.",
                 "evidence_quote": '"protect coastlines"',
             }
         ]

@@ -142,6 +142,7 @@ def build_prompt(
         "- Keep assessment_answers in the exact same order as the assessment questions above.",
         "- Copy each assessment_answers.question_number and assessment_answers.question exactly from the assessment questions above.",
         "- For each assessment_answers entry, write possible_answer as a concise model answer to the question itself.",
+        "- Match the specificity of the check-in answers: answer the full assessment question directly instead of reducing it to a generic passage-summary sentence.",
         "- Use the assessment question's evidence_hint and expected_response_type to keep the answer aligned to the student-facing prompt.",
         "- Do not write generic meta-instructions such as 'The correct answer should...' or 'Respond directly to the question.' Write the actual answer instead.",
         "- Keep the exact quoted evidence only in evidence_quote. Do not repeat the exact evidence_quote inside possible_answer.",
