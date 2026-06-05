@@ -160,7 +160,7 @@ async def test_wave3_section_nodes_generate_structured_json(
             "assessment_questions": [
                 assessment_passage_lines[0],
                 assessment_evidence_clues[0],
-                "Exact quote bank for evidence requirements",
+                "Use evidence_requirement as guidance only",
             ],
             "step_up": [
                 assessment_passage_lines[0],
@@ -255,8 +255,8 @@ async def test_generate_assessment_questions_normalizes_evidence_requirement_to_
         assessment_passage,
     )
 
-    assert result["questions"][0]["evidence_requirement"] in {
-        'Quote this exact phrase from the passage: "protect coastlines".',
-        'Quote this exact phrase from the passage: "The article urges communities to care for mangroves because they help both people and wildlife.".',
-    }
+    assert result["questions"][0]["evidence_requirement"].startswith(
+        "Use one exact phrase from the"
+    )
+    assert '"' not in result["questions"][0]["evidence_requirement"]
     assert '"' not in result["questions"][0]["answer_expectation"]

@@ -156,6 +156,7 @@ async def test_generate_answer_key_returns_structured_json(
             in user_prompt
         )
         assert str(assessment_question_list[0]["question"]) in user_prompt
+        assert "assessment_answers" in user_prompt
         assert str(step_up["challenge_prompt"]) in user_prompt
         assert '"Mangrove forests protect coastlines from strong waves."' in user_prompt
         assert "Mangrove forests protect coastlines from strong waves." in user_prompt
@@ -164,8 +165,10 @@ async def test_generate_answer_key_returns_structured_json(
             "Do not reuse a generic check-in evidence_quote for multiple different questions"
             in user_prompt
         )
-        assert "Do not include assessment_answers in the JSON payload" in user_prompt
-        assert '"assessment_answers"' not in user_prompt
+        assert (
+            "Provide one assessment_answers entry per assessment question"
+            in user_prompt
+        )
         assert temperature == answer_key_module.TEMP_ANSWER_KEY
         assert max_output_tokens == MAX_ANSWER_KEY_OUTPUT_TOKENS
         assert max_retries == 2
@@ -186,7 +189,7 @@ async def test_generate_answer_key_returns_structured_json(
                     {
                         "question_number": 1,
                         "question": str(assessment_question_list[0]["question"]),
-                        "possible_answer": 'The author wants to inform and persuade readers because "protect coastlines" shows why mangroves matter.',
+                        "possible_answer": "The author wants to inform and persuade readers about why mangroves matter.",
                         "evidence_quote": '"protect coastlines"',
                     }
                 ],
@@ -212,6 +215,10 @@ async def test_generate_answer_key_returns_structured_json(
 
     assert result["title"] == "Answer Key"
     assert result["check_in_answers"][0]["question_number"] == 1
+    assert (
+        result["assessment_answers"][0]["possible_answer"]
+        == "The author wants to inform and persuade readers about why mangroves matter."
+    )
     assert result["assessment_answers"][0]["evidence_quote"] == '"protect coastlines"'
     assert result["step_up_answer"]["required_evidence"] == ['"protect coastlines"']
 
@@ -295,7 +302,7 @@ async def test_generate_answer_key_retries_truncated_json_with_higher_budget(
                                 assessment_questions["questions"],
                             )[0]["question"]
                         ),
-                        "possible_answer": 'The author wants to inform readers because "protect coastlines" explains why mangroves matter.',
+                        "possible_answer": "The author wants to inform readers about why mangroves matter.",
                         "evidence_quote": '"protect coastlines"',
                     }
                 ],
@@ -363,7 +370,11 @@ async def test_generate_answer_key_repairs_missing_assessment_quote_from_evidenc
         _build_step_up(),
     )
 
-    assert '"protect coastlines"' in result["assessment_answers"][0]["possible_answer"]
+    assert (
+        result["assessment_answers"][0]["possible_answer"]
+        == "The author wants to inform readers about why mangroves matter."
+    )
+    assert result["assessment_answers"][0]["evidence_quote"] == '"protect coastlines"'
 
 
 @pytest.mark.asyncio
@@ -407,7 +418,9 @@ async def test_generate_answer_key_repairs_nonverbatim_quote_to_exact_passage_ph
     )
 
     assert result["assessment_answers"][0]["evidence_quote"] == '"protect coastlines"'
-    assert '"protect coastlines"' in result["assessment_answers"][0]["possible_answer"]
+    assert (
+        '"protect coastlines"' not in result["assessment_answers"][0]["possible_answer"]
+    )
     assert (
         result["assessment_answers"][0]["question"]
         == "What is the author's purpose in this article?"
@@ -458,14 +471,14 @@ async def test_generate_answer_key_realigns_assessment_answers_to_upstream_quest
         {
             "question_number": 1,
             "question": "What is the author's purpose in this article?",
-            "possible_answer": 'Identify the purpose and explain it. Evidence from the passage: "protect coastlines".',
+            "possible_answer": "The author wants to inform the reader using details from the passage.",
             "evidence_quote": '"protect coastlines"',
         }
     ]
 
 
 @pytest.mark.asyncio
-async def test_generate_answer_key_strips_nonverbatim_quotes_from_answer_expectation(
+async def test_generate_answer_key_ignores_guidance_like_answer_expectation_when_building_assessment_answer(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     request = _load_request_from_fixture()
@@ -517,10 +530,12 @@ async def test_generate_answer_key_strips_nonverbatim_quotes_from_answer_expecta
     )
 
     assert (
-        '"protects coastlines"'
-        not in result["assessment_answers"][0]["possible_answer"]
+        result["assessment_answers"][0]["possible_answer"]
+        == "The author wants to inform the reader using details from the passage."
     )
-    assert '"protect coastlines"' in result["assessment_answers"][0]["possible_answer"]
+    assert (
+        '"protect coastlines"' not in result["assessment_answers"][0]["possible_answer"]
+    )
 
 
 @pytest.mark.asyncio
@@ -566,7 +581,7 @@ async def test_generate_answer_key_derives_assessment_answers_when_model_omits_t
         {
             "question_number": 1,
             "question": "What is the author's purpose in this article?",
-            "possible_answer": 'Identify the purpose and explain it. Evidence from the passage: "protect coastlines".',
+            "possible_answer": "The author wants to inform the reader using details from the passage.",
             "evidence_quote": '"protect coastlines"',
         }
     ]
@@ -962,4 +977,6 @@ async def test_generate_answer_key_ignores_model_paraphrase_when_selecting_asses
     )
 
     assert result["assessment_answers"][0]["evidence_quote"] == '"protect coastlines"'
-    assert '"protect coastlines"' in result["assessment_answers"][0]["possible_answer"]
+    assert (
+        '"protect coastlines"' not in result["assessment_answers"][0]["possible_answer"]
+    )

@@ -112,67 +112,83 @@ def _strip_nonverbatim_quotes(value: str, exact_quote: str | None) -> str:
     return cleaned_value
 
 
-def _normalize_answer_expectation(value: str, exact_quote: str | None) -> str:
-    cleaned_value = _strip_nonverbatim_quotes(value.strip(), exact_quote)
-    if not cleaned_value:
-        return "Use the passage evidence to answer the question accurately."
-    if exact_quote is None:
-        return cleaned_value
+def _normalize_answer_expectation(question_text: str, question_type: str) -> str:
+    normalized_question = question_text.casefold()
+    normalized_type = question_type.casefold()
+
     if (
-        max(
-            SequenceMatcher(None, cleaned_value.lower(), exact_quote.lower()).ratio(),
-            _token_overlap_score(cleaned_value, exact_quote),
-        )
-        < 0.35
+        "author's purpose" in normalized_question
+        or "authors purpose" in normalized_question
     ):
-        return "Use the passage evidence to answer the question accurately."
-    return cleaned_value
+        return "State the author's purpose and explain how the passage supports it."
+    if normalized_question.startswith("how ") or " how " in normalized_question:
+        return "Explain how the passage details support your answer."
+    if normalized_question.startswith("why ") or " why " in normalized_question:
+        return "Explain why using details from the passage."
+    if normalized_type == "multiple_choice":
+        return "Choose the best answer and justify it with passage evidence."
+    return "Answer the question clearly and support it with passage evidence."
+
+
+def _collect_evidence_clues(assessment_passage: dict[str, Any]) -> list[str]:
+    return [
+        str(item).strip().strip('"')
+        for item in assessment_passage.get("evidence_clues", [])
+        if str(item).strip().strip('"')
+    ]
+
+
+def _normalize_evidence_requirement(
+    *,
+    question_text: str,
+    focus_hint: str | None,
+) -> str:
+    if focus_hint:
+        return f"Use one exact phrase from the part of the passage about {focus_hint}."
+
+    normalized_question = question_text.casefold()
+    if (
+        "author's purpose" in normalized_question
+        or "authors purpose" in normalized_question
+    ):
+        return "Use one exact phrase from the passage that best reveals the author's purpose."
+    return "Use one exact phrase from the passage that best supports your answer."
 
 
 def normalize_assessment_questions_payload(
     assessment_questions: dict[str, Any],
     assessment_passage: dict[str, Any],
 ) -> dict[str, Any]:
-    passage_text = "\n".join(assessment_passage.get("passage", []))
-    quote_candidates = _collect_quote_candidates(assessment_passage)
+    evidence_clues = _collect_evidence_clues(assessment_passage)
     normalized_questions: list[dict[str, Any]] = []
 
     for index, raw_question in enumerate(assessment_questions.get("questions", [])):
         question = dict(raw_question)
         question_text = str(question.get("question", "")).strip()
+        question_type = (
+            str(question.get("question_type", "short_response")).strip()
+            or "short_response"
+        )
         answer_expectation = str(question.get("answer_expectation", "")).strip()
         evidence_requirement = str(question.get("evidence_requirement", "")).strip()
 
-        quoted_targets = [
-            *_extract_quoted_phrases(question_text),
-            *_extract_quoted_phrases(answer_expectation),
-            *_extract_quoted_phrases(evidence_requirement),
-        ]
-        exact_quote = next(
-            (phrase for phrase in quoted_targets if phrase in passage_text), None
+        focus_hint = _best_matching_quote_candidate(
+            [question_text, answer_expectation, evidence_requirement],
+            evidence_clues,
         )
-        if exact_quote is None:
-            exact_quote = _best_matching_quote_candidate(
-                [question_text, answer_expectation, evidence_requirement],
-                quote_candidates,
-            )
 
         normalized_questions.append(
             {
                 "number": question.get("number", index + 1),
                 "question": question_text,
-                "question_type": str(
-                    question.get("question_type", "short_response")
-                ).strip()
-                or "short_response",
+                "question_type": question_type,
                 "answer_expectation": _normalize_answer_expectation(
-                    answer_expectation,
-                    exact_quote,
+                    question_text,
+                    question_type,
                 ),
-                "evidence_requirement": (
-                    f'Quote this exact phrase from the passage: "{exact_quote}".'
-                    if exact_quote is not None
-                    else evidence_requirement
+                "evidence_requirement": _normalize_evidence_requirement(
+                    question_text=question_text,
+                    focus_hint=focus_hint,
                 ),
             }
         )

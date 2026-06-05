@@ -583,7 +583,7 @@ async def test_study_guide_workflow_normalizes_answer_key_before_validation(
             {
                 "question_number": 1,
                 "question": "What is the author's purpose in this article?",
-                "possible_answer": 'Identify the purpose and explain it. Evidence from the passage: "protect coastlines".',
+                "possible_answer": "The author wants to inform the reader using details from the passage.",
                 "evidence_quote": '"protect coastlines"',
             }
         ]

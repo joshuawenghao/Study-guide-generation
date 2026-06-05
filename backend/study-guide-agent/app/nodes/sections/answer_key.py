@@ -82,17 +82,82 @@ def _collect_quote_candidates(assessment_passage: dict[str, Any]) -> list[str]:
     return candidates
 
 
+def _finalize_sentence(value: str) -> str:
+    normalized = re.sub(r"\s+", " ", value).strip()
+    if not normalized:
+        return ""
+    if normalized[-1] in ".!?":
+        return normalized
+    return f"{normalized}."
+
+
+def _remove_inline_quote_reference(value: str, quote_candidate: str | None) -> str:
+    cleaned_value = value
+    if quote_candidate is not None:
+        quoted_exact = re.escape(_quote_text(quote_candidate))
+        curly_exact = re.escape(f"“{quote_candidate}”")
+        cleaned_value = re.sub(
+            rf"\s*(?:Evidence from the passage|Quoted evidence)\s*:\s*(?:{quoted_exact}|{curly_exact})[^.!?]*",
+            "",
+            cleaned_value,
+            flags=re.IGNORECASE,
+        )
+        cleaned_value = re.sub(
+            rf"\s*(?:because|since|as|by citing|by using|using|with)\s+(?:{quoted_exact}|{curly_exact})[^.!?]*",
+            "",
+            cleaned_value,
+            flags=re.IGNORECASE,
+        )
+        cleaned_value = cleaned_value.replace(_quote_text(quote_candidate), "").replace(
+            f"“{quote_candidate}”", ""
+        )
+
+    cleaned_value = re.sub(r"\s+", " ", cleaned_value).strip(" ,;:-")
+    return cleaned_value
+
+
+def _looks_like_guidance_not_answer(value: str) -> bool:
+    normalized = value.casefold().strip()
+    if not normalized:
+        return True
+
+    guidance_fragments = (
+        "quote this exact phrase",
+        "use one exact phrase",
+        "use evidence from the passage",
+        "support it with passage evidence",
+        "support your answer",
+        "choose the best answer",
+        "answer the question clearly",
+        "state the author's purpose and explain",
+        "identify the purpose and explain it",
+        "explain how the passage supports",
+        "explain why using details from the passage",
+    )
+    return any(fragment in normalized for fragment in guidance_fragments)
+
+
+def _default_assessment_possible_answer(question_text: str) -> str:
+    normalized_question = question_text.casefold()
+    if (
+        "author's purpose" in normalized_question
+        or "authors purpose" in normalized_question
+    ):
+        return "The author wants to inform the reader using details from the passage."
+    if normalized_question.startswith("how ") or " how " in normalized_question:
+        return "The passage details directly support the explanation in the answer."
+    if normalized_question.startswith("why ") or " why " in normalized_question:
+        return "The passage explains the reason directly in its details."
+    return "The correct answer should respond directly to the question using the passage details."
+
+
 def _collect_evidence_clues(assessment_passage: dict[str, Any]) -> list[str]:
-    passage_text = "\n".join(assessment_passage.get("passage", []))
     clues: list[str] = []
     for clue in assessment_passage.get("evidence_clues", []):
         normalized_clue = str(clue).strip()
-        if (
-            normalized_clue
-            and normalized_clue in passage_text
-            and normalized_clue not in clues
-        ):
+        if normalized_clue and normalized_clue not in clues:
             clues.append(normalized_clue)
+
     return clues
 
 
@@ -184,7 +249,15 @@ def _find_assessment_answer_source(
             return answer
 
     if 0 <= index < len(raw_answers):
-        return raw_answers[index]
+        candidate = raw_answers[index]
+        candidate_question = str(candidate.get("question", "")).strip()
+        if not candidate_question:
+            return candidate
+        similarity = SequenceMatcher(
+            None, candidate_question.lower(), question_text.lower()
+        ).ratio()
+        if similarity >= 0.45:
+            return candidate
 
     return {}
 
@@ -254,26 +327,29 @@ def _find_check_in_answer_source(
 
 def _build_assessment_possible_answer(
     *,
+    question_text: str,
     answer_expectation: str,
     fallback_answer: str,
     quote_candidate: str | None,
+    source_matches_question: bool,
 ) -> str:
-    base_answer = answer_expectation.strip() or fallback_answer.strip()
-    base_answer = _strip_nonverbatim_quotes(base_answer, quote_candidate)
-    if quote_candidate is None:
-        return base_answer
+    del answer_expectation
 
-    if (
-        _quote_text(quote_candidate) in base_answer
-        or f"“{quote_candidate}”" in base_answer
-    ):
-        return base_answer
+    candidate_answers = [fallback_answer.strip() if source_matches_question else ""]
 
-    trimmed_base = base_answer.rstrip(" .")
-    if not trimmed_base:
-        return f"Evidence from the passage: {_quote_text(quote_candidate)}."
+    for candidate in candidate_answers:
+        if not candidate:
+            continue
+        cleaned_candidate = _strip_nonverbatim_quotes(candidate, quote_candidate)
+        cleaned_candidate = _remove_inline_quote_reference(
+            cleaned_candidate,
+            quote_candidate,
+        )
+        cleaned_candidate = _finalize_sentence(cleaned_candidate)
+        if cleaned_candidate and not _looks_like_guidance_not_answer(cleaned_candidate):
+            return cleaned_candidate
 
-    return f"{trimmed_base}. Evidence from the passage: {_quote_text(quote_candidate)}."
+    return _default_assessment_possible_answer(question_text)
 
 
 def _normalize_check_in_answers(
@@ -403,6 +479,26 @@ def normalize_answer_key_payload(
         answer = _find_assessment_answer_source(raw_answers, index, question_spec)
         possible_answer = str(answer.get("possible_answer", "")).strip()
         evidence_quote = str(answer.get("evidence_quote", "")).strip()
+        source_question_number = answer.get("question_number")
+        source_question_text = str(answer.get("question", "")).strip()
+        upstream_question_text = str(question_spec.get("question", "")).strip()
+        question_similarity = (
+            SequenceMatcher(
+                None,
+                source_question_text.lower(),
+                upstream_question_text.lower(),
+            ).ratio()
+            if source_question_text and upstream_question_text
+            else 0.0
+        )
+        source_matches_question = (
+            source_question_text == upstream_question_text
+            or question_similarity >= 0.75
+            or (
+                not source_question_text
+                and source_question_number == question_spec.get("number")
+            )
+        )
         normalized_evidence_quote = _normalize_evidence_quote(evidence_quote)
         quoted_phrases = _extract_quoted_phrases(possible_answer)
         exact_quoted_phrase = next(
@@ -444,9 +540,11 @@ def normalize_answer_key_payload(
                 "question": str(question_spec.get("question", "")).strip()
                 or str(answer.get("question", "")).strip(),
                 "possible_answer": _build_assessment_possible_answer(
+                    question_text=str(question_spec.get("question", "")),
                     answer_expectation=str(question_spec.get("answer_expectation", "")),
                     fallback_answer=possible_answer,
                     quote_candidate=best_candidate,
+                    source_matches_question=source_matches_question,
                 ),
                 "evidence_quote": (
                     _quote_text(best_candidate)

@@ -66,7 +66,13 @@ def build_prompt(
     model_quote_bank_text = "\n".join(f'- "{quote}"' for quote in model_quote_bank)
     assessment_passage_text = "\n".join(assessment_passage.get("passage", []))
     assessment_questions_text = "\n".join(
-        f"- Q{item.get('number', '?')}: {item.get('question', '')}"
+        "\n".join(
+            [
+                f"- Q{item.get('number', '?')}: {item.get('question', '')}",
+                f"  - Answer expectation guide: {item.get('answer_expectation', '')}",
+                f"  - Evidence requirement guide: {item.get('evidence_requirement', '')}",
+            ]
+        )
         for item in assessment_questions.get("questions", [])
     )
     quote_bank = _build_quote_bank(assessment_passage)
@@ -79,6 +85,14 @@ def build_prompt(
     answer_key_schema = """{
     "title": "Answer Key",
     "check_in_answers": [
+        {
+            "question_number": 1,
+            "question": "string",
+            "possible_answer": "string",
+            "evidence_quote": "string"
+        }
+    ],
+    "assessment_answers": [
         {
             "question_number": 1,
             "question": "string",
@@ -124,7 +138,12 @@ def build_prompt(
         "- Keep check_in_answers in the exact same order as the check-in questions above.",
         "- Copy each check_in_answers.question_number and check_in_answers.question exactly from the check-in questions above.",
         "- Answer only the specific check-in question attached to that entry; never swap or reuse an answer for a different check-in question.",
-        "- Do not include assessment_answers in the JSON payload. Assessment answers are derived downstream from the assessment questions and exact quote bank above.",
+        "- Provide one assessment_answers entry per assessment question.",
+        "- Keep assessment_answers in the exact same order as the assessment questions above.",
+        "- Copy each assessment_answers.question_number and assessment_answers.question exactly from the assessment questions above.",
+        "- For each assessment_answers entry, write possible_answer as a concise model answer to the question itself.",
+        "- Keep the exact quoted evidence only in evidence_quote. Do not repeat the exact evidence_quote inside possible_answer.",
+        "- For each assessment_answers entry, choose exactly one evidence_quote from the assessment quote bank above and copy it verbatim.",
         "- Do not place raw double-quoted evidence inside free-text fields such as check-in answers, step_up_answer.challenge_response, or teacher_note.",
         "- Provide a step_up_answer object that answers the step-up prompt directly and repeats the required_evidence list.",
         "- Keep answers concise, student-appropriate, and structurally ready for downstream quote validation.",

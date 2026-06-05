@@ -76,20 +76,22 @@ def validate_answer_key_quotes(
                 )
 
     for answer in answer_key.assessment_answers:
-        quoted_phrases = _extract_quoted_phrases(answer.possible_answer)
-        if not quoted_phrases:
+        normalized_quote = answer.evidence_quote.strip()
+        if not normalized_quote or normalized_quote == "N/A":
             failures.append(
-                f"Assessment question {answer.question_number} must include at least one quoted phrase in possible_answer."
+                f"Assessment question {answer.question_number} must include an evidence_quote taken verbatim from the assessment passage."
             )
             continue
 
+        quoted_phrases = _extract_quoted_phrases(normalized_quote)
+        candidate_quotes = quoted_phrases or [normalized_quote]
         matching_phrase = next(
-            (phrase for phrase in quoted_phrases if phrase in passage_text),
+            (phrase for phrase in candidate_quotes if phrase in passage_text),
             None,
         )
         if matching_phrase is None:
             failures.append(
-                f"Assessment question {answer.question_number} includes quoted phrase(s) that do not appear verbatim in the assessment passage: {', '.join(quoted_phrases)}."
+                f"Assessment question {answer.question_number} includes an evidence_quote that does not appear verbatim in the assessment passage: {normalized_quote}."
             )
 
     if failures:

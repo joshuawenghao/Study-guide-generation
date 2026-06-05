@@ -178,7 +178,7 @@ async def test_generate_validation_runs_schema_checks_for_each_section_payload(
                     "question": "What is the purpose?",
                     "question_type": "short_response",
                     "answer_expectation": "Identify the purpose and explain it.",
-                    "evidence_requirement": 'Quote this exact phrase from the passage: "protect coastlines".',
+                    "evidence_requirement": "Use one exact phrase from the part of the passage about protect coastlines.",
                 }
             ],
         },
@@ -307,7 +307,7 @@ async def test_generate_validation_aggregates_failures_and_skips_invalid_schema_
                     "question": "What is the purpose?",
                     "question_type": "short_response",
                     "answer_expectation": "Identify the purpose and explain it.",
-                    "evidence_requirement": 'Quote this exact phrase from the passage: "protect coastlines".',
+                    "evidence_requirement": "Use one exact phrase from the part of the passage about protect coastlines.",
                 }
             ],
         },
@@ -361,7 +361,7 @@ def test_validate_assessment_question_grounding_fails_when_evidence_quote_is_off
                     "question": "What is the purpose?",
                     "question_type": "short_response",
                     "answer_expectation": "Identify the purpose and explain it.",
-                    "evidence_requirement": 'Quote this exact phrase from the passage: "protects every shoreline family during storms".',
+                    "evidence_requirement": "Use one exact phrase from the part of the passage about protecting every shoreline family during storms.",
                 }
             ],
         }

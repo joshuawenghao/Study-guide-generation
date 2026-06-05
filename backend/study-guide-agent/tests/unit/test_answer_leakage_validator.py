@@ -27,7 +27,7 @@ def build_answer_key() -> AnswerKeySection:
             AnswerKeyItem(
                 question_number=2,
                 question="What is the author's purpose in this article?",
-                possible_answer='The author wants to inform readers because "protect coastlines" explains why mangroves matter.',
+                possible_answer="The author wants to inform readers about why mangroves matter.",
                 evidence_quote='"protect coastlines"',
             )
         ],
@@ -99,7 +99,7 @@ def test_validate_answer_leakage_ignores_assessment_questions_quotes() -> None:
                         question="Why are mangroves important?",
                         question_type="short_response",
                         answer_expectation="Explain why mangroves matter.",
-                        evidence_requirement='Quote the exact phrase "protect coastlines" from the passage.',
+                        evidence_requirement="Use one exact phrase from the part of the passage about coastal protection.",
                     )
                 ],
             )

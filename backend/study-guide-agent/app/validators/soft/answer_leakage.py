@@ -51,7 +51,7 @@ def _extract_quoted_phrases(answer_key: AnswerKeySection) -> list[str]:
     phrases: list[str] = []
     for answer in answer_key.assessment_answers:
         for straight_quote, curly_quote in QUOTED_PHRASE_PATTERN.findall(
-            answer.possible_answer
+            answer.evidence_quote
         ):
             phrase = straight_quote or curly_quote
             if phrase:

@@ -10,7 +10,9 @@ from app.types import (
 from app.validators.hard.answer_key_quotes import validate_answer_key_quotes
 
 
-def build_answer_key(*, possible_answer: str) -> AnswerKeySection:
+def build_answer_key(
+    *, possible_answer: str, evidence_quote: str = '"protect coastlines"'
+) -> AnswerKeySection:
     return AnswerKeySection(
         title="Answer Key",
         check_in_answers=[
@@ -26,7 +28,7 @@ def build_answer_key(*, possible_answer: str) -> AnswerKeySection:
                 question_number=2,
                 question="What is the author's purpose in this article?",
                 possible_answer=possible_answer,
-                evidence_quote='"protect coastlines"',
+                evidence_quote=evidence_quote,
             )
         ],
         step_up_answer=StepUpAnswer(
@@ -69,7 +71,7 @@ def build_model_passage() -> ModelPassageSection:
 def test_validate_answer_key_quotes_passes_for_verbatim_assessment_quote() -> None:
     result = validate_answer_key_quotes(
         answer_key=build_answer_key(
-            possible_answer='The author wants to inform readers because "protect coastlines" explains why mangroves matter.'
+            possible_answer="The author wants to inform readers about why mangroves matter."
         ),
         assessment_passage=build_assessment_passage(),
         model_passage=build_model_passage(),
@@ -80,10 +82,13 @@ def test_validate_answer_key_quotes_passes_for_verbatim_assessment_quote() -> No
     assert result.failures == {}
 
 
-def test_validate_answer_key_quotes_fails_when_assessment_answer_has_no_quote() -> None:
+def test_validate_answer_key_quotes_fails_when_assessment_answer_has_no_evidence_quote() -> (
+    None
+):
     result = validate_answer_key_quotes(
         answer_key=build_answer_key(
-            possible_answer="The author wants to inform readers because the passage explains why mangroves matter."
+            possible_answer="The author wants to inform readers because the passage explains why mangroves matter.",
+            evidence_quote="",
         ),
         assessment_passage=build_assessment_passage(),
         model_passage=build_model_passage(),
@@ -92,7 +97,7 @@ def test_validate_answer_key_quotes_fails_when_assessment_answer_has_no_quote() 
     assert result.passed is False
     assert result.failed_sections == ["answer_key"]
     assert any(
-        "must include at least one quoted phrase" in message
+        "must include an evidence_quote" in message
         for message in result.failures["answer_key"]
     )
 
@@ -100,7 +105,8 @@ def test_validate_answer_key_quotes_fails_when_assessment_answer_has_no_quote() 
 def test_validate_answer_key_quotes_fails_when_quote_is_not_verbatim() -> None:
     result = validate_answer_key_quotes(
         answer_key=build_answer_key(
-            possible_answer='The author wants to inform readers because "protects coastlines" explains why mangroves matter.'
+            possible_answer="The author wants to inform readers about why mangroves matter.",
+            evidence_quote='"protects coastlines"',
         ),
         assessment_passage=build_assessment_passage(),
         model_passage=build_model_passage(),
@@ -117,7 +123,7 @@ def test_validate_answer_key_quotes_fails_when_check_in_evidence_is_not_verbatim
     None
 ):
     answer_key = build_answer_key(
-        possible_answer='The author wants to inform readers because "protect coastlines" explains why mangroves matter.'
+        possible_answer="The author wants to inform readers about why mangroves matter."
     )
     answer_key.check_in_answers = [
         AnswerKeyItem(
