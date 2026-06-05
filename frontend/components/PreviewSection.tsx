@@ -54,6 +54,24 @@ function getNestedRecord(
   return isRecord(value) ? value : null;
 }
 
+function getNonEmptyEntries(record: ContentRecord): [string, unknown][] {
+  return Object.entries(record).filter(([, value]) => {
+    if (value === null || value === undefined) {
+      return false;
+    }
+
+    if (typeof value === "string") {
+      return value.trim().length > 0;
+    }
+
+    if (Array.isArray(value)) {
+      return value.length > 0;
+    }
+
+    return true;
+  });
+}
+
 function toSectionKey(sectionId: string): string {
   return sectionId.replace(/-\d+$/, "");
 }
@@ -97,25 +115,14 @@ function renderBullets(items: string[]): JSX.Element | null {
   );
 }
 
-function renderKeyValueGrid(record: ContentRecord): JSX.Element {
-  const entries = Object.entries(record).filter(([, value]) => {
-    if (value === null || value === undefined) {
-      return false;
-    }
-
-    if (typeof value === "string") {
-      return value.trim().length > 0;
-    }
-
-    if (Array.isArray(value)) {
-      return value.length > 0;
-    }
-
-    return true;
-  });
+function renderKeyValueGrid(
+  record: ContentRecord,
+  gridClassName = "grid gap-4",
+): JSX.Element {
+  const entries = getNonEmptyEntries(record);
 
   return (
-    <dl className="grid gap-4 sm:grid-cols-2">
+    <dl className={gridClassName}>
       {entries.map(([key, value]) => (
         <div
           key={key}
@@ -202,13 +209,43 @@ function renderLearningTargets(section: PreviewSectionData): JSX.Element {
   const competencyFocus = isRecord(section.content.competency_focus)
     ? section.content.competency_focus
     : null;
+  const lessonId = competencyFocus
+    ? getString(competencyFocus, "lesson_id")
+    : null;
+  const coreConcept = competencyFocus
+    ? getString(competencyFocus, "core_concept")
+    : null;
 
   return (
     <div className="space-y-5">
       {competencyFocus ? (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {renderKeyValueGrid(competencyFocus)}
-        </div>
+        <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Competency focus
+          </h3>
+          <div className="mt-4 grid gap-4">
+            {lessonId ? (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Lesson ID
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-700 break-words [overflow-wrap:anywhere]">
+                  {lessonId}
+                </p>
+              </div>
+            ) : null}
+            {coreConcept ? (
+              <div className="rounded-2xl border border-cyan-100 bg-cyan-50 px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-900">
+                  Core concept
+                </p>
+                <p className="mt-2 text-sm leading-7 text-slate-700 break-words [overflow-wrap:anywhere] sm:text-base">
+                  {coreConcept}
+                </p>
+              </div>
+            ) : null}
+          </div>
+        </section>
       ) : null}
       <div className="grid gap-4">
         {targets.map((target) => {
@@ -300,6 +337,469 @@ function renderPassage(section: PreviewSectionData): JSX.Element {
             </span>
           ))}
         </div>
+      ) : null}
+    </div>
+  );
+}
+
+function renderIntro(section: PreviewSectionData): JSX.Element {
+  const hook = getString(section.content, "hook");
+  const essentialQuestion = getString(section.content, "essential_question");
+  const paragraphs = getStringArray(section.content, "paragraphs");
+  const bridgeToLesson = getString(section.content, "bridge_to_lesson");
+
+  return (
+    <div className="space-y-5">
+      {hook ? (
+        <section className="rounded-[2rem] border border-cyan-100 bg-cyan-50 p-6 shadow-sm">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-cyan-900">
+            Hook
+          </h3>
+          <p className="mt-4 text-sm leading-7 text-slate-700 break-words [overflow-wrap:anywhere] sm:text-base">
+            {hook}
+          </p>
+        </section>
+      ) : null}
+      {essentialQuestion ? (
+        <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Essential question
+          </h3>
+          <p className="mt-4 text-sm leading-7 text-slate-700 break-words [overflow-wrap:anywhere] sm:text-base">
+            {essentialQuestion}
+          </p>
+        </section>
+      ) : null}
+      {renderParagraphs(paragraphs)}
+      {bridgeToLesson ? (
+        <section className="rounded-[2rem] border border-dashed border-slate-300 bg-slate-50 px-5 py-4">
+          <p className="text-sm leading-6 text-slate-700 break-words [overflow-wrap:anywhere] sm:text-base">
+            <span className="font-semibold text-slate-900">
+              Bridge to lesson:
+            </span>{" "}
+            {bridgeToLesson}
+          </p>
+        </section>
+      ) : null}
+    </div>
+  );
+}
+
+function renderWarmup(section: PreviewSectionData): JSX.Element {
+  const activityType = getString(section.content, "activity_type");
+  const purpose = getString(section.content, "purpose");
+  const instructions = getStringArray(section.content, "student_instructions");
+  const teacherTip = getString(section.content, "teacher_tip");
+  const estimatedMinutes = getNumber(section.content, "estimated_minutes");
+
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-4 md:grid-cols-2">
+        {activityType ? (
+          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Activity type
+            </p>
+            <p className="mt-2 text-sm leading-6 text-slate-700 break-words [overflow-wrap:anywhere]">
+              {activityType}
+            </p>
+          </div>
+        ) : null}
+        {estimatedMinutes !== null ? (
+          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Estimated time
+            </p>
+            <p className="mt-2 text-sm leading-6 text-slate-700">
+              {estimatedMinutes} minutes
+            </p>
+          </div>
+        ) : null}
+      </div>
+      {purpose ? (
+        <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Purpose
+          </h3>
+          <p className="mt-4 text-sm leading-7 text-slate-700 break-words [overflow-wrap:anywhere] sm:text-base">
+            {purpose}
+          </p>
+        </section>
+      ) : null}
+      {instructions.length > 0 ? (
+        <section className="space-y-3">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Student instructions
+          </h3>
+          <ol className="grid gap-3">
+            {instructions.map((instruction, index) => (
+              <li
+                key={`${index}-${instruction}`}
+                className="flex gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4"
+              >
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-cyan-100 text-xs font-semibold text-cyan-900">
+                  {index + 1}
+                </span>
+                <p className="min-w-0 text-sm leading-6 text-slate-700 break-words [overflow-wrap:anywhere]">
+                  {instruction}
+                </p>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ) : null}
+      {teacherTip ? (
+        <section className="rounded-[2rem] border border-amber-200 bg-amber-50 p-5 shadow-sm">
+          <p className="text-sm leading-6 text-amber-950 break-words [overflow-wrap:anywhere]">
+            <span className="font-semibold">Teacher tip:</span> {teacherTip}
+          </p>
+        </section>
+      ) : null}
+    </div>
+  );
+}
+
+function renderCoreExplainer(section: PreviewSectionData): JSX.Element {
+  const overview = getString(section.content, "overview");
+  const explainedPoints = getRecordArray(section.content, "explained_points");
+  const closingSummary = getString(section.content, "closing_summary");
+
+  return (
+    <div className="space-y-5">
+      {overview ? (
+        <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Overview
+          </h3>
+          <p className="mt-4 text-sm leading-7 text-slate-700 break-words [overflow-wrap:anywhere] sm:text-base">
+            {overview}
+          </p>
+        </section>
+      ) : null}
+      <div className="grid gap-4">
+        {explainedPoints.map((point, index) => {
+          const label = getString(point, "sub_competency_label");
+          const explanation = getString(point, "explanation");
+          const realWorldConnection = getString(point, "real_world_connection");
+
+          return (
+            <article
+              key={`${label ?? "point"}-${index}`}
+              className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"
+            >
+              {label ? (
+                <h3 className="text-lg font-semibold tracking-tight text-slate-950">
+                  {label}
+                </h3>
+              ) : null}
+              {explanation ? (
+                <p className="mt-4 text-sm leading-7 text-slate-700 break-words [overflow-wrap:anywhere] sm:text-base">
+                  {explanation}
+                </p>
+              ) : null}
+              {realWorldConnection ? (
+                <p className="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-700 break-words [overflow-wrap:anywhere]">
+                  <span className="font-semibold text-slate-900">
+                    Real-world connection:
+                  </span>{" "}
+                  {realWorldConnection}
+                </p>
+              ) : null}
+            </article>
+          );
+        })}
+      </div>
+      {closingSummary ? (
+        <section className="rounded-[2rem] border border-dashed border-slate-300 bg-slate-50 px-5 py-4">
+          <p className="text-sm leading-6 text-slate-700 break-words [overflow-wrap:anywhere] sm:text-base">
+            <span className="font-semibold text-slate-900">
+              Closing summary:
+            </span>{" "}
+            {closingSummary}
+          </p>
+        </section>
+      ) : null}
+    </div>
+  );
+}
+
+function renderStrategyList(section: PreviewSectionData): JSX.Element {
+  const strategies = getRecordArray(section.content, "strategies");
+
+  return (
+    <div className="grid gap-4">
+      {strategies.map((strategy, index) => {
+        const name = getString(strategy, "name") ?? `Strategy ${index + 1}`;
+        const whenToUse = getString(strategy, "when_to_use");
+        const steps = getStringArray(strategy, "steps");
+
+        return (
+          <article
+            key={`${name}-${index}`}
+            className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"
+          >
+            <h3 className="text-lg font-semibold tracking-tight text-slate-950">
+              {name}
+            </h3>
+            {whenToUse ? (
+              <p className="mt-4 text-sm leading-7 text-slate-700 break-words [overflow-wrap:anywhere] sm:text-base">
+                <span className="font-semibold text-slate-900">
+                  When to use:
+                </span>{" "}
+                {whenToUse}
+              </p>
+            ) : null}
+            {steps.length > 0 ? (
+              <ol className="mt-4 grid gap-3">
+                {steps.map((step, stepIndex) => (
+                  <li
+                    key={`${name}-${stepIndex}-${step}`}
+                    className="flex gap-3 rounded-2xl bg-slate-50 px-4 py-4"
+                  >
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-cyan-100 text-xs font-semibold text-cyan-900">
+                      {stepIndex + 1}
+                    </span>
+                    <p className="min-w-0 text-sm leading-6 text-slate-700 break-words [overflow-wrap:anywhere]">
+                      {step}
+                    </p>
+                  </li>
+                ))}
+              </ol>
+            ) : null}
+          </article>
+        );
+      })}
+    </div>
+  );
+}
+
+function renderQuestionCards(
+  title: string,
+  questions: ContentRecord[],
+  detailKey: string,
+  detailLabel: string,
+): JSX.Element | null {
+  if (questions.length === 0) {
+    return null;
+  }
+
+  return (
+    <section className="space-y-4">
+      <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+        {title}
+      </h3>
+      <div className="grid gap-4">
+        {questions.map((question, index) => {
+          const number = getNumber(question, "number");
+          const prompt = getString(question, "question");
+          const detail = getString(question, detailKey);
+          const expectedResponseType = getString(
+            question,
+            "expected_response_type",
+          );
+          const questionType = getString(question, "question_type");
+
+          return (
+            <article
+              key={`${title}-${number ?? index}`}
+              className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"
+            >
+              <div className="flex flex-wrap items-center gap-3">
+                {number !== null ? (
+                  <span className="rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-900">
+                    Question {number}
+                  </span>
+                ) : null}
+                {questionType ? (
+                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-700">
+                    {questionType}
+                  </span>
+                ) : null}
+                {expectedResponseType ? (
+                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-700">
+                    {expectedResponseType}
+                  </span>
+                ) : null}
+              </div>
+              {prompt ? (
+                <p className="mt-4 text-base font-semibold leading-7 text-slate-950 break-words [overflow-wrap:anywhere]">
+                  {prompt}
+                </p>
+              ) : null}
+              {detail ? (
+                <p className="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-700 break-words [overflow-wrap:anywhere]">
+                  <span className="font-semibold text-slate-900">
+                    {detailLabel}:
+                  </span>{" "}
+                  {detail}
+                </p>
+              ) : null}
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function renderCheckIn(section: PreviewSectionData): JSX.Element {
+  const passageTitle = getString(section.content, "passage_title");
+  const questions = getRecordArray(section.content, "questions");
+
+  return (
+    <div className="space-y-5">
+      {passageTitle ? (
+        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Passage title
+          </p>
+          <p className="mt-2 text-sm leading-6 text-slate-700 break-words [overflow-wrap:anywhere]">
+            {passageTitle}
+          </p>
+        </div>
+      ) : null}
+      {renderQuestionCards(
+        "Questions",
+        questions,
+        "evidence_hint",
+        "Evidence hint",
+      )}
+    </div>
+  );
+}
+
+function renderKeyPoints(section: PreviewSectionData): JSX.Element {
+  const points = getRecordArray(section.content, "points");
+
+  return (
+    <div className="grid gap-4">
+      {points.map((point, index) => {
+        const number = getNumber(point, "number");
+        const label = getString(point, "sub_competency_label");
+        const statement = getString(point, "statement");
+
+        return (
+          <article
+            key={`${number ?? index}-${label ?? "point"}`}
+            className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"
+          >
+            <div className="flex flex-wrap items-center gap-3">
+              {number !== null ? (
+                <span className="rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-900">
+                  Point {number}
+                </span>
+              ) : null}
+              {label ? (
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold tracking-[0.14em] text-slate-700 break-words [overflow-wrap:anywhere]">
+                  {label}
+                </span>
+              ) : null}
+            </div>
+            {statement ? (
+              <p className="mt-4 text-sm leading-7 text-slate-700 break-words [overflow-wrap:anywhere] sm:text-base">
+                {statement}
+              </p>
+            ) : null}
+          </article>
+        );
+      })}
+    </div>
+  );
+}
+
+function renderAssessmentQuestions(section: PreviewSectionData): JSX.Element {
+  const passageTitle = getString(section.content, "passage_title");
+  const questions = getRecordArray(section.content, "questions");
+
+  return (
+    <div className="space-y-5">
+      {passageTitle ? (
+        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Passage title
+          </p>
+          <p className="mt-2 text-sm leading-6 text-slate-700 break-words [overflow-wrap:anywhere]">
+            {passageTitle}
+          </p>
+        </div>
+      ) : null}
+      {renderQuestionCards(
+        "Questions",
+        questions,
+        "evidence_requirement",
+        "Evidence requirement",
+      )}
+      {questions.length > 0 ? (
+        <div className="grid gap-4">
+          {questions.map((question, index) => {
+            const prompt = getString(question, "question");
+            const answerExpectation = getString(question, "answer_expectation");
+
+            if (!answerExpectation) {
+              return null;
+            }
+
+            return (
+              <div
+                key={`${prompt ?? "expectation"}-${index}`}
+                className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4"
+              >
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Answer expectation
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-700 break-words [overflow-wrap:anywhere]">
+                  {answerExpectation}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function renderStepUp(section: PreviewSectionData): JSX.Element {
+  const challengePrompt = getString(section.content, "challenge_prompt");
+  const requiredEvidence = getStringArray(section.content, "required_evidence");
+  const successCriteria = getStringArray(section.content, "success_criteria");
+
+  return (
+    <div className="space-y-5">
+      {challengePrompt ? (
+        <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Challenge prompt
+          </h3>
+          <p className="mt-4 text-sm leading-7 text-slate-700 break-words [overflow-wrap:anywhere] sm:text-base">
+            {challengePrompt}
+          </p>
+        </section>
+      ) : null}
+      {requiredEvidence.length > 0 ? (
+        <section className="space-y-3">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Required evidence
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {requiredEvidence.map((item) => (
+              <span
+                key={item}
+                className="max-w-full rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-900 break-words [overflow-wrap:anywhere]"
+              >
+                {item}
+              </span>
+            ))}
+          </div>
+        </section>
+      ) : null}
+      {successCriteria.length > 0 ? (
+        <section className="space-y-3">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Success criteria
+          </h3>
+          {renderBullets(successCriteria)}
+        </section>
       ) : null}
     </div>
   );
@@ -712,13 +1212,29 @@ function renderGenericSection(section: PreviewSectionData): JSX.Element {
 
 function renderSectionBody(section: PreviewSectionData): JSX.Element {
   switch (section.section_type) {
+    case "intro":
+      return renderIntro(section);
     case "learning_targets":
       return renderLearningTargets(section);
+    case "warmup":
+      return renderWarmup(section);
     case "vocabulary":
       return renderVocabulary(section);
+    case "core_explainer":
+      return renderCoreExplainer(section);
+    case "strategy_list":
+      return renderStrategyList(section);
     case "model_passage":
     case "assessment_passage":
       return renderPassage(section);
+    case "check_in":
+      return renderCheckIn(section);
+    case "key_points":
+      return renderKeyPoints(section);
+    case "assessment_questions":
+      return renderAssessmentQuestions(section);
+    case "step_up":
+      return renderStepUp(section);
     case "subconcept":
       return renderSubconcept(section);
     case "deep_dive":
