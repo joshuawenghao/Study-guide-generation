@@ -582,7 +582,7 @@ async def test_study_guide_workflow_normalizes_answer_key_before_validation(
             {
                 "question_number": 1,
                 "question": "What is the author's purpose in this article?",
-                "possible_answer": "The author wants to inform the reader using details from the passage.",
+                "possible_answer": "The author wants to inform readers that mangrove forests protect coastlines from strong waves.",
                 "evidence_quote": '"protect coastlines"',
             }
         ]

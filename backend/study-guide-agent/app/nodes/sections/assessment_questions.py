@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 from typing import Any, cast
 
@@ -19,18 +20,75 @@ from app.prompts.templates.assessment_questions import (
 )
 from app.types import Blueprint, StudyGuideRequest
 
+SHORT_ANSWER_RESPONSE_TYPES = {
+    "short_response",
+    "short answer",
+    "short_answer",
+    "short-response",
+    "text",
+    "sentence",
+    "one sentence",
+    "one-sentence explanation",
+}
+MULTIPLE_CHOICE_RESPONSE_TYPES = {
+    "multiple_choice",
+    "multiple choice",
+    "multiple-choice",
+    "mcq",
+}
+PARAGRAPH_RESPONSE_TYPES = {
+    "paragraph",
+    "paragraph response",
+    "paragraph_response",
+    "extended response",
+    "extended_response",
+}
+
+
+def _question_has_choice_markers(question_text: str) -> bool:
+    return bool(
+        re.search(r"\b[A-D][\).]\s", question_text)
+        or re.search(r"\([A-D]\)", question_text)
+        or "option" in question_text.casefold()
+    )
+
+
+def _question_prefers_short_answer(question_text: str) -> bool:
+    normalized_question = question_text.casefold()
+    return (
+        normalized_question.startswith(
+            ("what ", "how ", "why ", "explain ", "describe ")
+        )
+        or "author's purpose" in normalized_question
+        or "authors purpose" in normalized_question
+        or "primary purpose" in normalized_question
+    )
+
 
 def _normalize_expected_response_type(question_text: str, question_type: str) -> str:
-    normalized_question = question_text.casefold()
     normalized_type = question_type.casefold()
 
-    if normalized_type == "multiple_choice":
-        return "multiple_choice"
+    if normalized_type in MULTIPLE_CHOICE_RESPONSE_TYPES:
+        if _question_has_choice_markers(
+            question_text
+        ) and not _question_prefers_short_answer(question_text):
+            return "Multiple choice"
+        return "Short answer"
+
+    if normalized_type in PARAGRAPH_RESPONSE_TYPES:
+        return "Paragraph response"
+
+    if normalized_type in SHORT_ANSWER_RESPONSE_TYPES:
+        return "Short answer"
+
     if normalized_type:
-        return normalized_type
-    if normalized_question.startswith(("which ", "what ", "how ", "why ")):
-        return "short_response"
-    return "text"
+        return normalized_type.replace("_", " ").strip().title()
+
+    if _question_prefers_short_answer(question_text) or _question_has_choice_markers(
+        question_text
+    ):
+        return "Short answer"
+    return "Short answer"
 
 
 def _normalize_evidence_hint(

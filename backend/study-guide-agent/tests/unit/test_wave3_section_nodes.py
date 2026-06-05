@@ -254,10 +254,52 @@ async def test_generate_assessment_questions_normalizes_to_check_in_shape(
         assessment_passage,
     )
 
-    assert result["questions"][0]["expected_response_type"] == "short_response"
+    assert result["questions"][0]["expected_response_type"] == "Short answer"
     assert (
         result["questions"][0]["evidence_hint"]
         == "Quote a phrase that shows why mangroves matter."
     )
     assert "evidence_requirement" not in result["questions"][0]
     assert "answer_expectation" not in result["questions"][0]
+
+
+@pytest.mark.asyncio
+async def test_generate_assessment_questions_overrides_bad_multiple_choice_on_author_purpose(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = _load_request_from_fixture()
+    blueprint = _build_blueprint(request)
+    assessment_passage = _build_assessment_passage()
+
+    async def fake_call_gemini(**_: object) -> str:
+        return json.dumps(
+            {
+                "title": "Assessment Questions",
+                "passage_title": "Assessment Passage",
+                "questions": [
+                    {
+                        "number": 1,
+                        "question": "What is the author's primary purpose in this article?",
+                        "expected_response_type": "multiple_choice",
+                        "evidence_hint": "Look at the opening paragraph where the author explains why mangroves help coastal communities.",
+                    },
+                    {
+                        "number": 2,
+                        "question": "How does the passage show that mangroves help communities?",
+                        "expected_response_type": "short_answer",
+                        "evidence_hint": "Look for the detail about strong waves.",
+                    },
+                ],
+            }
+        )
+
+    monkeypatch.setattr(sections_module, "call_gemini", fake_call_gemini)
+
+    result = await assessment_questions_module.generate_assessment_questions(
+        request,
+        blueprint,
+        assessment_passage,
+    )
+
+    assert result["questions"][0]["expected_response_type"] == "Short answer"
+    assert result["questions"][1]["expected_response_type"] == "Short answer"

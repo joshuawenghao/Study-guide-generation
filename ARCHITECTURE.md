@@ -57,16 +57,16 @@ flowchart LR
 
 ## 2. Tech stack decisions
 
-| Layer                      | Choice                                                       | Reason                                                                                                                 |
-| -------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
-| Frontend framework         | Next.js 14 (App Router)                                      | Single repo for UI and API proxy; SSE streaming support built in                                                       |
-| Styling                    | Tailwind CSS                                                 | Utility-first, no design system overhead for a prototype                                                               |
-| Agent framework            | Google ADK 2.0 Python (dynamic workflows)                    | `@node` + `ctx.run_node()` with automatic checkpointing; conditional retry via `while` loop; native Gemini integration |
-| LLM                        | Gemini 2.0 Flash                                             | Best cost/latency ratio for 17 sequential/parallel calls; ADK has first-class Gemini support                           |
-| PDF rendering              | WeasyPrint (Python)                                          | HTML/CSS → PDF with full layout control; runs server-side in the ADK process                                           |
-| Web preview                | Structured JSON → React components                           | Preview is assembled from the same section JSON that feeds the PDF renderer                                            |
-| Deployment (Fast local)    | Next.js dev server + scaffolded FastAPI backend              | Fastest iteration loop for feature work; no container build step                                                       |
-| Deployment (Local parity)  | Production-mode Next.js frontend + backend container locally | Mirrors the remote two-runtime topology and routing contract closely enough for production bug reproduction            |
+| Layer                      | Choice                                                           | Reason                                                                                                                                                                                     |
+| -------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Frontend framework         | Next.js 14 (App Router)                                          | Single repo for UI and API proxy; SSE streaming support built in                                                                                                                           |
+| Styling                    | Tailwind CSS                                                     | Utility-first, no design system overhead for a prototype                                                                                                                                   |
+| Agent framework            | Google ADK 2.0 Python (dynamic workflows)                        | `@node` + `ctx.run_node()` with automatic checkpointing; conditional retry via `while` loop; native Gemini integration                                                                     |
+| LLM                        | Gemini 2.0 Flash                                                 | Best cost/latency ratio for 17 sequential/parallel calls; ADK has first-class Gemini support                                                                                               |
+| PDF rendering              | WeasyPrint (Python)                                              | HTML/CSS → PDF with full layout control; runs server-side in the ADK process                                                                                                               |
+| Web preview                | Structured JSON → React components                               | Preview is assembled from the same section JSON that feeds the PDF renderer                                                                                                                |
+| Deployment (Fast local)    | Next.js dev server + scaffolded FastAPI backend                  | Fastest iteration loop for feature work; no container build step                                                                                                                           |
+| Deployment (Local parity)  | Production-mode Next.js frontend + backend container locally     | Mirrors the remote two-runtime topology and routing contract closely enough for production bug reproduction                                                                                |
 | Deployment (Managed cloud) | Firebase App Hosting (frontend) + Google Cloud Run (ADK backend) | Best fit for the split stack under the current platform constraints: App Hosting preserves the Next.js server runtime and thin proxy route, while Cloud Run fits Python ADK and WeasyPrint |
 
 ### Why ADK dynamic workflows over graph-based workflows or a plain orchestrator
@@ -501,14 +501,14 @@ ProgressEvent
 
 Hard validators block document assembly. A section that fails a hard validator is retried once. If the retry also fails, the document is assembled with a visible warning on the affected section.
 
-| Validator                       | What it checks                                                                                              | Section(s) it applies to       |
-| ------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------ |
-| `vocab_presence`                | Every vocabulary word from the blueprint appears (case-insensitive) in the combined body section text       | All body sections collectively |
-| `self_assess_targets`           | Each skill row in the self-assessment matches a learning target objective verbatim                          | `self_assessment`              |
+| Validator                       | What it checks                                                                                                 | Section(s) it applies to       |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| `vocab_presence`                | Every vocabulary word from the blueprint appears (case-insensitive) in the combined body section text          | All body sections collectively |
+| `self_assess_targets`           | Each skill row in the self-assessment matches a learning target objective verbatim                             | `self_assessment`              |
 | `answer_key_quotes`             | Each assessment answer evidence quote in the answer key contains a verbatim phrase from the assessment passage | `answer_key`                   |
-| `assessment_question_grounding` | Each assessment question evidence hint stays grounded to the assessment passage                             | `assessment_questions`         |
-| `passage_domain_diff`           | The topic domain of the assessment passage differs from the model passage domain                            | `assessment_passage`           |
-| `json_schema`                   | Each section output parses correctly against its expected JSON schema                                       | All section nodes              |
+| `assessment_question_grounding` | Each assessment question evidence hint stays grounded to the assessment passage, including location-style hints that still point to passage-supported content | `assessment_questions`         |
+| `passage_domain_diff`           | The topic domain of the assessment passage differs from the model passage domain                               | `assessment_passage`           |
+| `json_schema`                   | Each section output parses correctly against its expected JSON schema                                          | All section nodes              |
 
 ### Soft validators
 
@@ -675,12 +675,12 @@ flowchart LR
 
 The ADK backend is containerised and deployed to Google Cloud Run. The Next.js frontend is deployed to Firebase App Hosting. The same frontend proxy architecture is preserved in local and remote environments; the main environment-level change is the value of `ADK_BACKEND_URL`:
 
-| Environment  | `ADK_BACKEND_URL` value                        |
-| ------------ | ---------------------------------------------- |
-| Local dev    | `http://localhost:8000`                        |
-| Local parity | local backend URL exposed by the parity stack  |
-| Remote staging | `https://<staging-service>.run.app`          |
-| Production   | `https://your-service.run.app` (Cloud Run URL) |
+| Environment    | `ADK_BACKEND_URL` value                        |
+| -------------- | ---------------------------------------------- |
+| Local dev      | `http://localhost:8000`                        |
+| Local parity   | local backend URL exposed by the parity stack  |
+| Remote staging | `https://<staging-service>.run.app`            |
+| Production     | `https://your-service.run.app` (Cloud Run URL) |
 
 **No proxy architecture change is required** — the Next.js API route forwards requests to whatever URL `ADK_BACKEND_URL` points to. The frontend code should stay identical across fast local dev, parity mode, remote dev, and production.
 

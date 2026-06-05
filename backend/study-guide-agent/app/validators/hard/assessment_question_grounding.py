@@ -11,6 +11,56 @@ from app.types import (
 )
 
 QUOTED_PHRASE_PATTERN = re.compile(r'"([^"\n]+)"|“([^”\n]+)”')
+LOCATION_HINT_WORDS = {
+    "paragraph",
+    "sentence",
+    "line",
+    "opening",
+    "beginning",
+    "middle",
+    "end",
+    "final",
+    "first",
+    "second",
+    "third",
+    "last",
+    "article",
+    "passage",
+    "text",
+}
+GENERIC_HINT_WORDS = {
+    "the",
+    "a",
+    "an",
+    "look",
+    "for",
+    "at",
+    "to",
+    "of",
+    "in",
+    "on",
+    "part",
+    "phrase",
+    "detail",
+    "details",
+    "sentence",
+    "paragraph",
+    "line",
+    "passage",
+    "article",
+    "text",
+    "where",
+    "that",
+    "this",
+    "best",
+    "reveals",
+    "shows",
+    "show",
+    "explains",
+    "explain",
+    "supports",
+    "support",
+}
 
 
 def _success_result() -> ValidationResult:
@@ -50,6 +100,19 @@ def _token_overlap_score(left: str, right: str) -> float:
     return len(left_tokens & right_tokens) / len(left_tokens | right_tokens)
 
 
+def _content_tokens(value: str) -> set[str]:
+    return {
+        token
+        for token in re.findall(r"[A-Za-z0-9']+", value.lower())
+        if token and token not in GENERIC_HINT_WORDS
+    }
+
+
+def _looks_like_location_hint(value: str) -> bool:
+    tokens = set(re.findall(r"[A-Za-z0-9']+", value.lower()))
+    return bool(tokens & LOCATION_HINT_WORDS)
+
+
 def validate_assessment_question_grounding(
     *,
     assessment_questions: AssessmentQuestionsSection,
@@ -87,7 +150,25 @@ def validate_assessment_question_grounding(
             best_score = max(
                 best_score,
                 _token_overlap_score(evidence_hint, target),
+                _token_overlap_score(
+                    f"{question.question} {evidence_hint}",
+                    target,
+                ),
             )
+
+        if best_score < 0.25 and _looks_like_location_hint(evidence_hint):
+            supporting_tokens = (
+                _content_tokens(question.question)
+                | _content_tokens(" ".join(grounding_targets))
+                | _content_tokens(passage_text)
+            )
+            hint_tokens = _content_tokens(evidence_hint)
+            if hint_tokens:
+                location_overlap = len(hint_tokens & supporting_tokens) / len(
+                    hint_tokens
+                )
+                if location_overlap >= 0.25:
+                    continue
 
         if best_score < 0.25:
             failures.append(

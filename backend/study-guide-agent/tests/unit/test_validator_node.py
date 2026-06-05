@@ -381,3 +381,39 @@ def test_validate_assessment_question_grounding_fails_when_evidence_hint_is_off_
 
     assert result.passed is False
     assert result.failed_sections == ["assessment_questions"]
+
+
+def test_validate_assessment_question_grounding_accepts_location_style_hint_when_grounded() -> (
+    None
+):
+    assessment_questions = validator_module.AssessmentQuestionsSection.model_validate(
+        {
+            "title": "Assessment Questions",
+            "passage_title": "Assessment Passage",
+            "questions": [
+                {
+                    "number": 1,
+                    "question": "What is the author's primary purpose in this article?",
+                    "expected_response_type": "Short answer",
+                    "evidence_hint": "Look at the first paragraph where the article explains why mangroves protect coastlines.",
+                }
+            ],
+        }
+    )
+    assessment_passage = validator_module.AssessmentPassageSection.model_validate(
+        {
+            "title": "Assessment Passage",
+            "topic_domain": "mangrove forests",
+            "genre": "article",
+            "passage": ["Mangrove forests protect coastlines from strong waves."],
+            "evidence_clues": ["protect coastlines"],
+            "answerability_note": "Quote the text.",
+        }
+    )
+
+    result = validator_module.validate_assessment_question_grounding(
+        assessment_questions=assessment_questions,
+        assessment_passage=assessment_passage,
+    )
+
+    assert result.passed is True

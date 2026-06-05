@@ -470,7 +470,7 @@ async def test_generate_answer_key_realigns_assessment_answers_to_upstream_quest
         {
             "question_number": 1,
             "question": "What is the author's purpose in this article?",
-            "possible_answer": "The author wants to inform the reader using details from the passage.",
+            "possible_answer": "The author wants to inform readers that mangrove forests protect coastlines from strong waves.",
             "evidence_quote": '"protect coastlines"',
         }
     ]
@@ -529,7 +529,7 @@ async def test_generate_answer_key_ignores_guidance_like_evidence_hint_when_buil
 
     assert (
         result["assessment_answers"][0]["possible_answer"]
-        == "The author wants to inform the reader using details from the passage."
+        == "The author wants to inform readers that mangrove forests protect coastlines from strong waves."
     )
     assert (
         '"protect coastlines"' not in result["assessment_answers"][0]["possible_answer"]
@@ -579,7 +579,7 @@ async def test_generate_answer_key_derives_assessment_answers_when_model_omits_t
         {
             "question_number": 1,
             "question": "What is the author's purpose in this article?",
-            "possible_answer": "The author wants to inform the reader using details from the passage.",
+            "possible_answer": "The author wants to inform readers that mangrove forests protect coastlines from strong waves.",
             "evidence_quote": '"protect coastlines"',
         }
     ]

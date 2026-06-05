@@ -132,22 +132,82 @@ def _looks_like_guidance_not_answer(value: str) -> bool:
         "look for the specific detail",
         "choose the best answer",
         "answer the question clearly",
+        "the correct answer should",
+        "should respond directly to the question",
     )
     return any(fragment in normalized for fragment in guidance_fragments)
 
 
-def _default_assessment_possible_answer(question_text: str) -> str:
+def _quote_candidate_clause(quote_candidate: str | None) -> str | None:
+    if quote_candidate is None:
+        return None
+
+    normalized = re.sub(r"\s+", " ", quote_candidate).strip().strip('"')
+    if not normalized:
+        return None
+    normalized = normalized.rstrip(".?!")
+    if normalized and normalized[0].isupper():
+        normalized = normalized[0].lower() + normalized[1:]
+    return normalized
+
+
+def _answer_context_from_quote_candidate(
+    quote_candidate: str | None,
+    quote_candidates: list[str],
+) -> str | None:
+    if quote_candidate is None:
+        return None
+    if len(quote_candidate.split()) >= 4:
+        return quote_candidate
+
+    for candidate in quote_candidates:
+        if candidate == quote_candidate:
+            continue
+        if quote_candidate in candidate and len(candidate.split()) >= 5:
+            return candidate
+
+    return quote_candidate
+
+
+def _default_assessment_possible_answer(
+    question_text: str,
+    answer_context: str | None,
+) -> str:
     normalized_question = question_text.casefold()
+    quote_clause = _quote_candidate_clause(answer_context)
+
     if (
         "author's purpose" in normalized_question
         or "authors purpose" in normalized_question
     ):
+        if quote_clause:
+            return _finalize_sentence(
+                f"The author wants to inform readers that {quote_clause}"
+            )
         return "The author wants to inform the reader using details from the passage."
     if normalized_question.startswith("how ") or " how " in normalized_question:
+        if quote_clause:
+            return _finalize_sentence(f"The passage shows how {quote_clause}")
         return "The passage details directly support the explanation in the answer."
     if normalized_question.startswith("why ") or " why " in normalized_question:
+        if quote_clause:
+            return _finalize_sentence(f"It is important because {quote_clause}")
         return "The passage explains the reason directly in its details."
+    if quote_clause:
+        return _finalize_sentence(f"The passage shows that {quote_clause}")
     return "The correct answer should respond directly to the question using the passage details."
+
+
+def _assessment_answer_is_grounded(
+    value: str,
+    question_text: str,
+    quote_candidate: str | None,
+) -> bool:
+    if question_text and _quote_token_overlap_score(value, question_text) >= 0.15:
+        return True
+    if quote_candidate and _quote_token_overlap_score(value, quote_candidate) >= 0.15:
+        return True
+    return False
 
 
 def _collect_evidence_clues(assessment_passage: dict[str, Any]) -> list[str]:
@@ -329,9 +389,14 @@ def _build_assessment_possible_answer(
     question_text: str,
     fallback_answer: str,
     quote_candidate: str | None,
+    quote_candidates: list[str],
     source_matches_question: bool,
 ) -> str:
-    candidate_answers = [fallback_answer.strip() if source_matches_question else ""]
+    answer_context = _answer_context_from_quote_candidate(
+        quote_candidate,
+        quote_candidates,
+    )
+    candidate_answers = [fallback_answer.strip()]
 
     for candidate in candidate_answers:
         if not candidate:
@@ -342,10 +407,21 @@ def _build_assessment_possible_answer(
             quote_candidate,
         )
         cleaned_candidate = _finalize_sentence(cleaned_candidate)
-        if cleaned_candidate and not _looks_like_guidance_not_answer(cleaned_candidate):
+        if (
+            cleaned_candidate
+            and not _looks_like_guidance_not_answer(cleaned_candidate)
+            and (
+                source_matches_question
+                or _assessment_answer_is_grounded(
+                    cleaned_candidate,
+                    question_text,
+                    answer_context,
+                )
+            )
+        ):
             return cleaned_candidate
 
-    return _default_assessment_possible_answer(question_text)
+    return _default_assessment_possible_answer(question_text, answer_context)
 
 
 def _normalize_check_in_answers(
@@ -539,6 +615,7 @@ def normalize_answer_key_payload(
                     question_text=str(question_spec.get("question", "")),
                     fallback_answer=possible_answer,
                     quote_candidate=best_candidate,
+                    quote_candidates=quote_candidates,
                     source_matches_question=source_matches_question,
                 ),
                 "evidence_quote": (

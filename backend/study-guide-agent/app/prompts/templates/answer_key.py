@@ -143,6 +143,7 @@ def build_prompt(
         "- Copy each assessment_answers.question_number and assessment_answers.question exactly from the assessment questions above.",
         "- For each assessment_answers entry, write possible_answer as a concise model answer to the question itself.",
         "- Use the assessment question's evidence_hint and expected_response_type to keep the answer aligned to the student-facing prompt.",
+        "- Do not write generic meta-instructions such as 'The correct answer should...' or 'Respond directly to the question.' Write the actual answer instead.",
         "- Keep the exact quoted evidence only in evidence_quote. Do not repeat the exact evidence_quote inside possible_answer.",
         "- For each assessment_answers entry, choose exactly one evidence_quote from the assessment quote bank above and copy it verbatim.",
         "- Do not place raw double-quoted evidence inside free-text fields such as check-in answers, step_up_answer.challenge_response, or teacher_note.",
