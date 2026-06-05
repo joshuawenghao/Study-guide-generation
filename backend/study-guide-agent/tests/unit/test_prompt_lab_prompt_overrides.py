@@ -124,9 +124,8 @@ def _build_assessment_questions() -> dict[str, object]:
             {
                 "number": 1,
                 "question": "What is the author's purpose in this article?",
-                "question_type": "short_response",
-                "answer_expectation": "Identify the purpose and explain it.",
-                "evidence_requirement": "Quote a phrase that explains why mangroves matter.",
+                "expected_response_type": "short_response",
+                "evidence_hint": "Look for a phrase that explains why mangroves matter.",
             }
         ],
     }

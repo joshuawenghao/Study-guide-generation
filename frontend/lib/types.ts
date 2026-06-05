@@ -162,6 +162,34 @@ export interface Blueprint {
   core_concept: string;
 }
 
+export interface CheckInQuestion {
+  number: number;
+  question: string;
+  evidence_hint: string;
+  expected_response_type: string;
+}
+
+export interface CheckInSectionContent {
+  title: string;
+  passage_title: string;
+  questions: CheckInQuestion[];
+}
+
+export type AssessmentQuestionItem = CheckInQuestion;
+
+export interface AssessmentQuestionsSectionContent {
+  title: string;
+  passage_title: string;
+  questions: AssessmentQuestionItem[];
+}
+
+export interface AnswerKeyItem {
+  question_number: number;
+  question: string;
+  possible_answer: string;
+  evidence_quote: string;
+}
+
 export interface PreviewSection {
   section_id: string;
   section_type: string;

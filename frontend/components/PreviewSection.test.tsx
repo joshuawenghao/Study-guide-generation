@@ -157,10 +157,9 @@ describe("PreviewSection", () => {
           {
             number: 1,
             question: "What is the author's purpose in this article?",
-            question_type: "short_response",
-            answer_expectation: "Explain the purpose using evidence.",
-            evidence_requirement:
-              "Quote a phrase that explains why mangroves matter.",
+            expected_response_type: "short_response",
+            evidence_hint:
+              "Look for the line that explains why mangroves matter.",
           },
         ],
       },
@@ -171,10 +170,10 @@ describe("PreviewSection", () => {
     );
 
     expect(markup).toContain("Passage title");
-    expect(markup).toContain("Evidence requirement:");
-    expect(markup).toContain("Answer expectation");
+    expect(markup).toContain("Response type:");
+    expect(markup).toContain("Evidence hint:");
     expect(markup).not.toContain("{&quot;number&quot;");
-    expect(markup).not.toContain("question_type");
+    expect(markup).not.toContain("answer_expectation");
   });
 
   it("renders passage support details as labeled sections with evidence focus after text features", () => {
@@ -239,7 +238,7 @@ describe("PreviewSection", () => {
     expect(markup).toContain("Evidence hint:");
   });
 
-  it("keeps each assessment answer expectation with its corresponding question", () => {
+  it("keeps each assessment evidence hint with its corresponding question", () => {
     const section: PreviewSectionData = {
       section_id: "assessment_questions",
       section_type: "assessment_questions",
@@ -250,17 +249,14 @@ describe("PreviewSection", () => {
           {
             number: 1,
             question: "What is the author's purpose?",
-            question_type: "short_response",
-            evidence_requirement: "Quote one line about coastal protection.",
-            answer_expectation: "Explain that the article informs readers.",
+            expected_response_type: "short_response",
+            evidence_hint: "Look for one line about coastal protection.",
           },
           {
             number: 2,
             question: "How does the diagram support the article?",
-            question_type: "short_response",
-            evidence_requirement: "Refer to one diagram label.",
-            answer_expectation:
-              "Describe how the diagram adds visual evidence.",
+            expected_response_type: "short_response",
+            evidence_hint: "Refer to one diagram label.",
           },
         ],
       },
@@ -271,9 +267,9 @@ describe("PreviewSection", () => {
     );
 
     expect(
-      markup.indexOf("Explain that the article informs readers."),
+      markup.indexOf("Look for one line about coastal protection."),
     ).toBeLessThan(markup.indexOf("How does the diagram support the article?"));
-    expect(markup).toContain("Answer expectation:");
+    expect(markup).toContain("Evidence hint:");
   });
 
   it("labels answer key answer content and step-up evidence clearly", () => {

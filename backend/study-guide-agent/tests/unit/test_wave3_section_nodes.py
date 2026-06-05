@@ -109,9 +109,8 @@ def _build_assessment_questions() -> dict[str, object]:
             {
                 "number": 1,
                 "question": "What is the author's purpose in this article?",
-                "question_type": "short_response",
-                "answer_expectation": "Identify the purpose and explain it.",
-                "evidence_requirement": "Quote a phrase that shows why mangroves matter.",
+                "expected_response_type": "short_response",
+                "evidence_hint": "Look for a phrase that shows why mangroves matter.",
             }
         ],
     }
@@ -160,7 +159,7 @@ async def test_wave3_section_nodes_generate_structured_json(
             "assessment_questions": [
                 assessment_passage_lines[0],
                 assessment_evidence_clues[0],
-                "Use evidence_requirement as guidance only",
+                "Use the same question format as the check-in section",
             ],
             "step_up": [
                 assessment_passage_lines[0],
@@ -223,7 +222,7 @@ async def test_wave3_section_nodes_raise_on_malformed_json(
 
 
 @pytest.mark.asyncio
-async def test_generate_assessment_questions_normalizes_evidence_requirement_to_exact_quote(
+async def test_generate_assessment_questions_normalizes_to_check_in_shape(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     request = _load_request_from_fixture()
@@ -255,8 +254,10 @@ async def test_generate_assessment_questions_normalizes_evidence_requirement_to_
         assessment_passage,
     )
 
-    assert result["questions"][0]["evidence_requirement"].startswith(
-        "Use one exact phrase from the"
+    assert result["questions"][0]["expected_response_type"] == "short_response"
+    assert (
+        result["questions"][0]["evidence_hint"]
+        == "Quote a phrase that shows why mangroves matter."
     )
-    assert '"' not in result["questions"][0]["evidence_requirement"]
-    assert '"' not in result["questions"][0]["answer_expectation"]
+    assert "evidence_requirement" not in result["questions"][0]
+    assert "answer_expectation" not in result["questions"][0]

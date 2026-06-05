@@ -1,4 +1,4 @@
-"""Hard validator for grounding assessment-question evidence requirements to the passage."""
+"""Hard validator for grounding assessment-question evidence hints to the passage."""
 
 from __future__ import annotations
 
@@ -63,14 +63,14 @@ def validate_assessment_question_grounding(
     failures: list[str] = []
 
     for question in assessment_questions.questions:
-        requirement = question.evidence_requirement.strip()
-        if not requirement:
+        evidence_hint = question.evidence_hint.strip()
+        if not evidence_hint:
             failures.append(
-                f"Assessment question {question.number} must include a non-empty evidence_requirement grounded in the assessment passage."
+                f"Assessment question {question.number} must include a non-empty evidence_hint grounded in the assessment passage."
             )
             continue
 
-        quoted_phrases = _extract_quoted_phrases(requirement)
+        quoted_phrases = _extract_quoted_phrases(evidence_hint)
         if quoted_phrases:
             matching_phrase = next(
                 (phrase for phrase in quoted_phrases if phrase in passage_text),
@@ -78,7 +78,7 @@ def validate_assessment_question_grounding(
             )
             if matching_phrase is None:
                 failures.append(
-                    f"Assessment question {question.number} evidence_requirement includes quoted phrase(s) that do not appear verbatim in the assessment passage: {', '.join(quoted_phrases)}."
+                    f"Assessment question {question.number} evidence_hint includes quoted phrase(s) that do not appear verbatim in the assessment passage: {', '.join(quoted_phrases)}."
                 )
             continue
 
@@ -86,12 +86,12 @@ def validate_assessment_question_grounding(
         for target in grounding_targets:
             best_score = max(
                 best_score,
-                _token_overlap_score(requirement, target),
+                _token_overlap_score(evidence_hint, target),
             )
 
         if best_score < 0.25:
             failures.append(
-                f"Assessment question {question.number} evidence_requirement does not point to evidence that appears in the assessment passage: {requirement}."
+                f"Assessment question {question.number} evidence_hint does not point to evidence that appears in the assessment passage: {evidence_hint}."
             )
 
     if failures:

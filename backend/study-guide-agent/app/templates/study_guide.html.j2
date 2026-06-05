@@ -630,9 +630,8 @@
 				<div class="question-card">
 					<h3>Question {{ question.number }}</h3>
 					<p>{{ question.question }}</p>
-					<p><strong>Type:</strong> {{ question.question_type }}</p>
-					<p><strong>Answer expectation:</strong> {{ question.answer_expectation }}</p>
-					<p><strong>Evidence requirement:</strong> {{ question.evidence_requirement }}</p>
+					<p><strong>Response type:</strong> {{ question.expected_response_type }}</p>
+					<p><strong>Evidence hint:</strong> {{ question.evidence_hint }}</p>
 				</div>
 			{% endfor %}
 		</section>

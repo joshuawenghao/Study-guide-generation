@@ -797,10 +797,11 @@ function renderAssessmentQuestions(section: PreviewSectionData): JSX.Element {
       {renderQuestionCards(
         "Questions",
         questions,
-        "evidence_requirement",
-        "Evidence requirement",
-        "answer_expectation",
-        "Answer expectation",
+        "evidence_hint",
+        "Evidence hint",
+        undefined,
+        undefined,
+        "detail",
       )}
     </div>
   );

@@ -381,9 +381,8 @@ class CheckInSection(BaseModel):
 class AssessmentQuestionItem(BaseModel):
     number: int
     question: str
-    question_type: str
-    answer_expectation: str
-    evidence_requirement: str
+    evidence_hint: str
+    expected_response_type: str
 
 
 class AssessmentQuestionsSection(BaseModel):

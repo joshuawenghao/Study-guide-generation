@@ -97,9 +97,8 @@ def test_validate_answer_leakage_ignores_assessment_questions_quotes() -> None:
                     AssessmentQuestionItem(
                         number=1,
                         question="Why are mangroves important?",
-                        question_type="short_response",
-                        answer_expectation="Explain why mangroves matter.",
-                        evidence_requirement="Use one exact phrase from the part of the passage about coastal protection.",
+                        expected_response_type="short_response",
+                        evidence_hint="Look for the part of the passage about coastal protection.",
                     )
                 ],
             )

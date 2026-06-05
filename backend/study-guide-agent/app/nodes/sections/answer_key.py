@@ -127,12 +127,11 @@ def _looks_like_guidance_not_answer(value: str) -> bool:
         "use evidence from the passage",
         "support it with passage evidence",
         "support your answer",
+        "look for the part of the passage",
+        "look for the phrase",
+        "look for the specific detail",
         "choose the best answer",
         "answer the question clearly",
-        "state the author's purpose and explain",
-        "identify the purpose and explain it",
-        "explain how the passage supports",
-        "explain why using details from the passage",
     )
     return any(fragment in normalized for fragment in guidance_fragments)
 
@@ -328,13 +327,10 @@ def _find_check_in_answer_source(
 def _build_assessment_possible_answer(
     *,
     question_text: str,
-    answer_expectation: str,
     fallback_answer: str,
     quote_candidate: str | None,
     source_matches_question: bool,
 ) -> str:
-    del answer_expectation
-
     candidate_answers = [fallback_answer.strip() if source_matches_question else ""]
 
     for candidate in candidate_answers:
@@ -516,8 +512,8 @@ def normalize_answer_key_payload(
         if best_candidate is None:
             match_targets = [
                 str(question_spec.get("question", "")),
-                str(question_spec.get("answer_expectation", "")),
-                str(question_spec.get("evidence_requirement", "")),
+                str(question_spec.get("evidence_hint", "")),
+                str(question_spec.get("expected_response_type", "")),
             ]
             best_candidate = _best_matching_quote_candidate(
                 match_targets, quote_candidates
@@ -541,7 +537,6 @@ def normalize_answer_key_payload(
                 or str(answer.get("question", "")).strip(),
                 "possible_answer": _build_assessment_possible_answer(
                     question_text=str(question_spec.get("question", "")),
-                    answer_expectation=str(question_spec.get("answer_expectation", "")),
                     fallback_answer=possible_answer,
                     quote_candidate=best_candidate,
                     source_matches_question=source_matches_question,

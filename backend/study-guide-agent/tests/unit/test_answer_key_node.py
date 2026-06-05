@@ -102,9 +102,8 @@ def _build_assessment_questions() -> dict[str, object]:
             {
                 "number": 1,
                 "question": "What is the author's purpose in this article?",
-                "question_type": "short_response",
-                "answer_expectation": "Identify the purpose and explain it.",
-                "evidence_requirement": "Quote a phrase that explains why mangroves matter.",
+                "expected_response_type": "short_response",
+                "evidence_hint": "Look for a phrase that explains why mangroves matter.",
             }
         ],
     }
@@ -478,7 +477,7 @@ async def test_generate_answer_key_realigns_assessment_answers_to_upstream_quest
 
 
 @pytest.mark.asyncio
-async def test_generate_answer_key_ignores_guidance_like_answer_expectation_when_building_assessment_answer(
+async def test_generate_answer_key_ignores_guidance_like_evidence_hint_when_building_assessment_answer(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     request = _load_request_from_fixture()
@@ -489,9 +488,8 @@ async def test_generate_answer_key_ignores_guidance_like_answer_expectation_when
             {
                 "number": 1,
                 "question": "What is the author's purpose in this article?",
-                "question_type": "short_response",
-                "answer_expectation": 'The author informs readers because "protects coastlines" explains why mangroves matter.',
-                "evidence_requirement": "Quote a phrase that explains why mangroves matter.",
+                "expected_response_type": "short_response",
+                "evidence_hint": "Look for the phrase about protecting coastlines.",
             }
         ],
     }

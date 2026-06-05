@@ -36,8 +36,8 @@ FIELD_EXCLUSIONS = {
     "genre",
     "part_of_speech",
     "passage_title",
-    "question_type",
-    "evidence_requirement",
+    "expected_response_type",
+    "evidence_hint",
     "estimated_minutes",
     "activity_type",
 }

@@ -176,9 +176,8 @@ async def test_generate_validation_runs_schema_checks_for_each_section_payload(
                 {
                     "number": 1,
                     "question": "What is the purpose?",
-                    "question_type": "short_response",
-                    "answer_expectation": "Identify the purpose and explain it.",
-                    "evidence_requirement": "Use one exact phrase from the part of the passage about protect coastlines.",
+                    "expected_response_type": "short_response",
+                    "evidence_hint": "Look for the part of the passage about protect coastlines.",
                 }
             ],
         },
@@ -305,9 +304,8 @@ async def test_generate_validation_aggregates_failures_and_skips_invalid_schema_
                 {
                     "number": 1,
                     "question": "What is the purpose?",
-                    "question_type": "short_response",
-                    "answer_expectation": "Identify the purpose and explain it.",
-                    "evidence_requirement": "Use one exact phrase from the part of the passage about protect coastlines.",
+                    "expected_response_type": "short_response",
+                    "evidence_hint": "Look for the part of the passage about protect coastlines.",
                 }
             ],
         },
@@ -348,7 +346,7 @@ async def test_generate_validation_aggregates_failures_and_skips_invalid_schema_
     assert self_assessment_validator_called is False
 
 
-def test_validate_assessment_question_grounding_fails_when_evidence_quote_is_off_passage() -> (
+def test_validate_assessment_question_grounding_fails_when_evidence_hint_is_off_passage() -> (
     None
 ):
     assessment_questions = validator_module.AssessmentQuestionsSection.model_validate(
@@ -359,9 +357,8 @@ def test_validate_assessment_question_grounding_fails_when_evidence_quote_is_off
                 {
                     "number": 1,
                     "question": "What is the purpose?",
-                    "question_type": "short_response",
-                    "answer_expectation": "Identify the purpose and explain it.",
-                    "evidence_requirement": "Use one exact phrase from the part of the passage about protecting every shoreline family during storms.",
+                    "expected_response_type": "short_response",
+                    "evidence_hint": "Look for the part of the passage about protecting every shoreline family during storms.",
                 }
             ],
         }
