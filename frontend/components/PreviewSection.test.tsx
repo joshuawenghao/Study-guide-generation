@@ -176,4 +176,138 @@ describe("PreviewSection", () => {
     expect(markup).not.toContain("{&quot;number&quot;");
     expect(markup).not.toContain("question_type");
   });
+
+  it("renders passage support details as labeled sections with evidence focus after text features", () => {
+    const section: PreviewSectionData = {
+      section_id: "assessment_passage",
+      section_type: "assessment_passage",
+      title: "Assessment Passage",
+      icon_key: "book-open",
+      content: {
+        topic_domain: "Wetland conservation",
+        genre: "informational article",
+        passage: ["Mangroves reduce erosion and protect coastlines."],
+        text_features: ["Cause-and-effect headings", "Captioned diagram"],
+        evidence_focus: "Use the evidence to explain why mangroves matter.",
+        evidence_clues: [
+          "Look for phrases about coastline protection.",
+          "Use the diagram caption as support.",
+        ],
+      },
+    };
+
+    const markup = renderToStaticMarkup(
+      createElement(PreviewSection, { section, validation }),
+    );
+
+    expect(markup).toContain("Text features");
+    expect(markup).toContain("Evidence focus");
+    expect(markup).toContain("Evidence clues");
+    expect(markup.indexOf("Text features")).toBeLessThan(
+      markup.indexOf("Evidence focus"),
+    );
+    expect(markup).not.toContain("sm:grid-cols-3");
+  });
+
+  it("renders check-in response type below the question as a labeled detail", () => {
+    const section: PreviewSectionData = {
+      section_id: "check_in",
+      section_type: "check_in",
+      title: "Check In",
+      icon_key: "chat-circle",
+      content: {
+        passage_title: "Model Passage",
+        questions: [
+          {
+            number: 1,
+            question: "Which sentence best shows the writer's purpose?",
+            expected_response_type: "One-sentence explanation",
+            evidence_hint: "Look at the final paragraph.",
+          },
+        ],
+      },
+    };
+
+    const markup = renderToStaticMarkup(
+      createElement(PreviewSection, { section, validation }),
+    );
+
+    expect(markup).toContain("Response type:");
+    expect(
+      markup.indexOf("Which sentence best shows the writer&#x27;s purpose?"),
+    ).toBeLessThan(markup.indexOf("Response type:"));
+    expect(markup).toContain("Evidence hint:");
+  });
+
+  it("keeps each assessment answer expectation with its corresponding question", () => {
+    const section: PreviewSectionData = {
+      section_id: "assessment_questions",
+      section_type: "assessment_questions",
+      title: "Assessment Questions",
+      icon_key: "pencil",
+      content: {
+        questions: [
+          {
+            number: 1,
+            question: "What is the author's purpose?",
+            question_type: "short_response",
+            evidence_requirement: "Quote one line about coastal protection.",
+            answer_expectation: "Explain that the article informs readers.",
+          },
+          {
+            number: 2,
+            question: "How does the diagram support the article?",
+            question_type: "short_response",
+            evidence_requirement: "Refer to one diagram label.",
+            answer_expectation:
+              "Describe how the diagram adds visual evidence.",
+          },
+        ],
+      },
+    };
+
+    const markup = renderToStaticMarkup(
+      createElement(PreviewSection, { section, validation }),
+    );
+
+    expect(
+      markup.indexOf("Explain that the article informs readers."),
+    ).toBeLessThan(markup.indexOf("How does the diagram support the article?"));
+    expect(markup).toContain("Answer expectation:");
+  });
+
+  it("labels answer key answer content and step-up evidence clearly", () => {
+    const section: PreviewSectionData = {
+      section_id: "answer_key",
+      section_type: "answer_key",
+      title: "Answer Key",
+      icon_key: "check-square",
+      content: {
+        assessment_answers: [
+          {
+            question_number: 1,
+            question: "What is the author's purpose?",
+            possible_answer: "The author informs readers about mangroves.",
+            evidence_quote: "Mangroves protect shorelines from erosion.",
+          },
+        ],
+        step_up_answer: {
+          challenge_response:
+            "A strong response explains the passage purpose and cites the diagram.",
+          required_evidence: [
+            "A quoted sentence from the passage",
+            "A reference to the diagram caption",
+          ],
+        },
+      },
+    };
+
+    const markup = renderToStaticMarkup(
+      createElement(PreviewSection, { section, validation }),
+    );
+
+    expect(markup).toContain("Possible answer");
+    expect(markup).toContain("Evidence quote");
+    expect(markup).toContain("Required evidence");
+  });
 });

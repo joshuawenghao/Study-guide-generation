@@ -115,6 +115,32 @@ function renderBullets(items: string[]): JSX.Element | null {
   );
 }
 
+function renderLabeledListSection(
+  title: string,
+  items: string[],
+  sectionClassName = "rounded-[2rem] border border-slate-200 bg-slate-50 p-5",
+  itemClassName = "rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-700 break-words [overflow-wrap:anywhere]",
+): JSX.Element | null {
+  if (items.length === 0) {
+    return null;
+  }
+
+  return (
+    <section className={sectionClassName}>
+      <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+        {title}
+      </h3>
+      <ul className="mt-4 grid gap-3">
+        {items.map((item) => (
+          <li key={item} className={itemClassName}>
+            {item}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 function renderKeyValueGrid(
   record: ContentRecord,
   gridClassName = "grid gap-4",
@@ -294,51 +320,78 @@ function renderLearningTargets(section: PreviewSectionData): JSX.Element {
 
 function renderPassage(section: PreviewSectionData): JSX.Element {
   const passage = getStringArray(section.content, "passage");
-  const metadata = {
-    topic_domain: getString(section.content, "topic_domain"),
-    genre: getString(section.content, "genre"),
-    evidence_focus:
-      getString(section.content, "evidence_focus") ??
-      getString(section.content, "answerability_note"),
-  };
-  const chips = [
-    ...getStringArray(section.content, "text_features"),
-    ...getStringArray(section.content, "evidence_clues"),
-  ];
+  const topicDomain = getString(section.content, "topic_domain");
+  const genre = getString(section.content, "genre");
+  const evidenceFocus =
+    getString(section.content, "evidence_focus") ??
+    getString(section.content, "answerability_note");
+  const textFeatures = getStringArray(section.content, "text_features");
+  const evidenceClues = getStringArray(section.content, "evidence_clues");
 
   return (
     <div className="space-y-5">
-      <div className="grid gap-4 sm:grid-cols-3">
-        {Object.entries(metadata)
-          .filter(([, value]) => typeof value === "string" && value.length > 0)
-          .map(([key, value]) => (
-            <div
-              key={key}
-              className="rounded-2xl border border-slate-200 bg-white px-4 py-4"
-            >
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                {formatLabel(key)}
-              </p>
-              <p className="mt-2 text-sm leading-6 text-slate-700">{value}</p>
-            </div>
-          ))}
+      <div className="grid gap-4">
+        {topicDomain ? (
+          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Topic domain
+            </p>
+            <p className="mt-2 text-sm leading-6 text-slate-700 break-words [overflow-wrap:anywhere]">
+              {topicDomain}
+            </p>
+          </div>
+        ) : null}
+        {genre ? (
+          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Genre
+            </p>
+            <p className="mt-2 text-sm leading-6 text-slate-700 break-words [overflow-wrap:anywhere]">
+              {genre}
+            </p>
+          </div>
+        ) : null}
       </div>
       <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
         {renderParagraphs(passage)}
       </div>
-      {chips.length > 0 ? (
-        <div className="flex flex-wrap gap-2">
-          {chips.map((chip) => (
-            <span
-              key={chip}
-              className="rounded-full bg-slate-200 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700"
-            >
-              {chip}
-            </span>
-          ))}
-        </div>
+      {renderLabeledListSection("Text features", textFeatures)}
+      {evidenceFocus ? (
+        <section className="rounded-[2rem] border border-cyan-100 bg-cyan-50 p-5 shadow-sm">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-cyan-900">
+            Evidence focus
+          </h3>
+          <p className="mt-4 text-sm leading-7 text-slate-700 break-words [overflow-wrap:anywhere] sm:text-base">
+            {evidenceFocus}
+          </p>
+        </section>
       ) : null}
+      {renderLabeledListSection(
+        "Evidence clues",
+        evidenceClues,
+        "rounded-[2rem] border border-amber-200 bg-amber-50 p-5 shadow-sm",
+        "rounded-2xl border border-amber-200 bg-white px-4 py-3 text-sm leading-6 text-slate-700 break-words [overflow-wrap:anywhere]",
+      )}
     </div>
+  );
+}
+
+function renderQuestionDetail(
+  label: string,
+  value: string,
+  tone: "slate" | "amber" = "slate",
+): JSX.Element {
+  const toneClassName =
+    tone === "amber"
+      ? "border-amber-200 bg-amber-50 text-amber-950"
+      : "border-slate-200 bg-slate-50 text-slate-700";
+
+  return (
+    <p
+      className={`mt-4 rounded-2xl border px-4 py-3 text-sm leading-6 break-words [overflow-wrap:anywhere] ${toneClassName}`}
+    >
+      <span className="font-semibold text-slate-900">{label}:</span> {value}
+    </p>
   );
 }
 
@@ -578,6 +631,9 @@ function renderQuestionCards(
   questions: ContentRecord[],
   detailKey: string,
   detailLabel: string,
+  extraDetailKey?: string,
+  extraDetailLabel?: string,
+  responseTypeMode: "badge" | "detail" = "badge",
 ): JSX.Element | null {
   if (questions.length === 0) {
     return null;
@@ -593,6 +649,9 @@ function renderQuestionCards(
           const number = getNumber(question, "number");
           const prompt = getString(question, "question");
           const detail = getString(question, detailKey);
+          const extraDetail = extraDetailKey
+            ? getString(question, extraDetailKey)
+            : null;
           const expectedResponseType = getString(
             question,
             "expected_response_type",
@@ -615,7 +674,7 @@ function renderQuestionCards(
                     {questionType}
                   </span>
                 ) : null}
-                {expectedResponseType ? (
+                {expectedResponseType && responseTypeMode === "badge" ? (
                   <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-700">
                     {expectedResponseType}
                   </span>
@@ -626,14 +685,23 @@ function renderQuestionCards(
                   {prompt}
                 </p>
               ) : null}
-              {detail ? (
-                <p className="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-700 break-words [overflow-wrap:anywhere]">
-                  <span className="font-semibold text-slate-900">
-                    {detailLabel}:
-                  </span>{" "}
-                  {detail}
-                </p>
-              ) : null}
+              {expectedResponseType && responseTypeMode === "detail"
+                ? renderQuestionDetail(
+                    "Response type",
+                    expectedResponseType,
+                    "slate",
+                  )
+                : null}
+              {detail
+                ? renderQuestionDetail(
+                    detailLabel,
+                    detail,
+                    detailLabel === "Evidence hint" ? "amber" : "slate",
+                  )
+                : null}
+              {extraDetail && extraDetailLabel
+                ? renderQuestionDetail(extraDetailLabel, extraDetail, "slate")
+                : null}
             </article>
           );
         })}
@@ -663,6 +731,9 @@ function renderCheckIn(section: PreviewSectionData): JSX.Element {
         questions,
         "evidence_hint",
         "Evidence hint",
+        undefined,
+        undefined,
+        "detail",
       )}
     </div>
   );
@@ -728,33 +799,9 @@ function renderAssessmentQuestions(section: PreviewSectionData): JSX.Element {
         questions,
         "evidence_requirement",
         "Evidence requirement",
+        "answer_expectation",
+        "Answer expectation",
       )}
-      {questions.length > 0 ? (
-        <div className="grid gap-4">
-          {questions.map((question, index) => {
-            const prompt = getString(question, "question");
-            const answerExpectation = getString(question, "answer_expectation");
-
-            if (!answerExpectation) {
-              return null;
-            }
-
-            return (
-              <div
-                key={`${prompt ?? "expectation"}-${index}`}
-                className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4"
-              >
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  Answer expectation
-                </p>
-                <p className="mt-2 text-sm leading-6 text-slate-700 break-words [overflow-wrap:anywhere]">
-                  {answerExpectation}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -1047,14 +1094,24 @@ function renderAnswerGroup(
                 </p>
               ) : null}
               {possibleAnswer ? (
-                <p className="mt-3 text-sm leading-6 text-slate-700">
-                  {possibleAnswer}
-                </p>
+                <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    Possible answer
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-slate-700 break-words [overflow-wrap:anywhere]">
+                    {possibleAnswer}
+                  </p>
+                </div>
               ) : null}
               {evidenceQuote ? (
-                <p className="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm italic leading-6 text-slate-600">
-                  {evidenceQuote}
-                </p>
+                <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-900">
+                    Evidence quote
+                  </p>
+                  <p className="mt-2 text-sm italic leading-6 text-slate-700 break-words [overflow-wrap:anywhere]">
+                    {evidenceQuote}
+                  </p>
+                </div>
               ) : null}
             </article>
           );
@@ -1105,15 +1162,20 @@ function renderAnswerKey(section: PreviewSectionData): JSX.Element {
                 </p>
               ) : null}
               {requiredEvidence.length > 0 ? (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {requiredEvidence.map((item) => (
-                    <span
-                      key={item}
-                      className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-amber-900"
-                    >
-                      {item}
-                    </span>
-                  ))}
+                <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-900">
+                    Required evidence
+                  </p>
+                  <ul className="mt-3 grid gap-3">
+                    {requiredEvidence.map((item) => (
+                      <li
+                        key={item}
+                        className="rounded-2xl border border-amber-200 bg-white px-4 py-3 text-sm leading-6 text-slate-700 break-words [overflow-wrap:anywhere]"
+                      >
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               ) : null}
             </div>
