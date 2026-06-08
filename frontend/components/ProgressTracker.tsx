@@ -3,6 +3,7 @@ import type {
   ProgressEvent,
   ProgressTrackerProps,
 } from "@/lib/types";
+import { isRetryPassActive } from "@/lib/progress";
 
 type StepKey =
   | "blueprint"
@@ -102,6 +103,7 @@ function getActiveStep(
   events: ProgressEvent[],
 ): StepKey | null {
   const latestEvent = getLatestEvent(events);
+  const retryActive = isRetryPassActive(events);
 
   if (stage === "error") {
     if (latestEvent?.type === "error") {
@@ -128,12 +130,10 @@ function getActiveStep(
     return "render";
   }
   if (stage === "validating") {
-    return hasEvent(events, (event) => event.type === "retry_started")
-      ? "retry"
-      : "validation";
+    return retryActive ? "retry" : "validation";
   }
   if (stage === "generating") {
-    if (latestEvent?.type === "retry_started") {
+    if (retryActive) {
       return "retry";
     }
     if (latestEvent && BLUEPRINT_NODES.has(normalizeNode(latestEvent.node))) {
@@ -148,11 +148,12 @@ function getActiveStep(
   return null;
 }
 
-function buildSteps(
+export function buildSteps(
   stage: GenerationStage,
   events: ProgressEvent[],
 ): TrackerStep[] {
   const activeStep = getActiveStep(stage, events);
+  const retryActive = isRetryPassActive(events);
   const blueprintComplete = hasEvent(
     events,
     (event) =>
@@ -203,7 +204,7 @@ function buildSteps(
           ? "active"
           : "pending",
     retry:
-      retryStarted && (renderStarted || done || stage === "rendering")
+      retryStarted && !retryActive
         ? "complete"
         : activeStep === "retry"
           ? "active"

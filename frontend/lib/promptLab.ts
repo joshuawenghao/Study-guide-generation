@@ -1,32 +1,13 @@
 import {
   PROMPT_LAB_SECTION_KEYS,
   type GenerateRequest,
-  type GenerationStage,
-  type ProgressEvent,
   type PromptLabGenerateRequest,
   type PromptLabSampleCaseId,
   type PromptLabSectionKey,
 } from "@/lib/types";
+import { parseEventStage } from "@/lib/progress";
 
-export function parseEventStage(event: ProgressEvent): GenerationStage | null {
-  if (event.type === "error") {
-    return "error";
-  }
-  if (event.type === "done") {
-    return "done";
-  }
-  if (event.type === "render_started") {
-    return "rendering";
-  }
-  if (event.type === "validation_started" || event.type === "retry_started") {
-    return "validating";
-  }
-  if (event.type === "node_started" || event.type === "node_complete") {
-    return "generating";
-  }
-
-  return null;
-}
+export { parseEventStage };
 
 export function parseSseBlock(
   block: string,

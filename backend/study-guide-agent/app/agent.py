@@ -144,6 +144,18 @@ class RetryNodeInput(ValidationNodeInput):
 
 PromptBuilder = Callable[[Any, Blueprint, GenerateRequest], str]
 
+DOWNSTREAM_RETRY_DEPENDENCIES: dict[str, tuple[str, ...]] = {
+    "model_passage": ("check_in", "answer_key"),
+    "check_in": ("answer_key",),
+    "assessment_passage": (
+        "assessment_questions",
+        "step_up",
+        "answer_key",
+    ),
+    "assessment_questions": ("step_up", "answer_key"),
+    "step_up": ("answer_key",),
+}
+
 
 def _with_retry_guidance(prompt: str, failure_messages: list[str]) -> str:
     guidance_lines = [
@@ -417,6 +429,12 @@ async def _refresh_downstream_sections(
             sections["assessment_questions"],
             sections["model_passage"],
         )
+
+
+def _refreshed_sections_for_retry(section_key: str) -> set[str]:
+    refreshed = {section_key}
+    refreshed.update(DOWNSTREAM_RETRY_DEPENDENCIES.get(section_key, ()))
+    return refreshed
 
 
 async def _generate_intro_node(node_input: SectionNodeInput) -> dict[str, Any]:
@@ -747,7 +765,10 @@ async def study_guide_workflow(
 
     retry_count = 0
     while not validation.passed and retry_count < 1:
+        handled_sections: set[str] = set()
         for section_key in validation.failed_sections:
+            if section_key in handled_sections:
+                continue
             retry_node = _build_retry_node(section_key, retry_count + 1)
             sections[section_key] = await ctx.run_node(
                 retry_node,
@@ -766,6 +787,7 @@ async def study_guide_workflow(
                 sections,
                 section_key,
             )
+            handled_sections.update(_refreshed_sections_for_retry(section_key))
         validation = await ctx.run_node(
             validation_workflow_node,
             ValidationNodeInput(

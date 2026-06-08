@@ -105,6 +105,45 @@ describe("prompt lab utilities", () => {
         type: "done",
       }),
     ).toBe("done");
+    expect(
+      parseEventStage(
+        {
+          ...event,
+          type: "node_started",
+          node: "check_in",
+        },
+        [
+          event,
+          {
+            ...event,
+            type: "retry_started",
+            node: "model_passage",
+          },
+        ],
+      ),
+    ).toBe("validating");
+    expect(
+      parseEventStage(
+        {
+          ...event,
+          type: "node_started",
+          node: "check_in",
+        },
+        [
+          event,
+          {
+            ...event,
+            type: "retry_started",
+            node: "model_passage",
+          },
+          {
+            ...event,
+            type: "validation_started",
+            node: "validation",
+          },
+        ],
+      ),
+    ).toBe("generating");
   });
 
   it("parses SSE blocks with event and data lines", () => {

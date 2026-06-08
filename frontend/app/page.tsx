@@ -6,6 +6,7 @@ import DownloadButton from "@/components/DownloadButton";
 import InputForm from "@/components/InputForm";
 import ProgressTracker from "@/components/ProgressTracker";
 import WebPreview from "@/components/WebPreview";
+import { parseEventStage } from "@/lib/progress";
 import type {
   GenerateRequest,
   GenerateResponse,
@@ -14,26 +15,6 @@ import type {
 } from "@/lib/types";
 
 type ResultsView = "preview" | "download";
-
-function parseEventStage(event: ProgressEvent): GenerationStage | null {
-  if (event.type === "error") {
-    return "error";
-  }
-  if (event.type === "done") {
-    return "done";
-  }
-  if (event.type === "render_started") {
-    return "rendering";
-  }
-  if (event.type === "validation_started" || event.type === "retry_started") {
-    return "validating";
-  }
-  if (event.type === "node_started" || event.type === "node_complete") {
-    return "generating";
-  }
-
-  return null;
-}
 
 function parseSseBlock(
   block: string,
@@ -191,12 +172,13 @@ export default function Home() {
 
             if (eventName === "progress") {
               const progressEvent = payload as ProgressEvent;
-              setProgressEvents((current) => [...current, progressEvent]);
-
-              const nextStage = parseEventStage(progressEvent);
-              if (nextStage) {
-                setStage(nextStage);
-              }
+              setProgressEvents((current) => {
+                const nextStage = parseEventStage(progressEvent, current);
+                if (nextStage) {
+                  setStage(nextStage);
+                }
+                return [...current, progressEvent];
+              });
 
               if (progressEvent.type === "error") {
                 setPageError(

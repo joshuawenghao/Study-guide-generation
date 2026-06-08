@@ -228,12 +228,13 @@ export default function PromptLabPage() {
 
           if (eventName === "progress") {
             const progressEvent = parsedPayload as ProgressEvent;
-            setProgressEvents((current) => [...current, progressEvent]);
-
-            const nextStage = parseEventStage(progressEvent);
-            if (nextStage) {
-              setStage(nextStage);
-            }
+            setProgressEvents((current) => {
+              const nextStage = parseEventStage(progressEvent, current);
+              if (nextStage) {
+                setStage(nextStage);
+              }
+              return [...current, progressEvent];
+            });
 
             if (progressEvent.type === "error") {
               setRunError(

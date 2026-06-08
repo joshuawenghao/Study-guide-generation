@@ -1320,3 +1320,262 @@ async def test_study_guide_workflow_refreshes_answer_key_after_check_in_retry(
     assert result.success is True
     assert validation_passes == 2
     assert result.validation.failed_sections == []
+
+
+@pytest.mark.asyncio
+async def test_study_guide_workflow_skips_stale_downstream_retries_after_assessment_passage_retry(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = _load_request_from_fixture()
+    blueprint = _build_blueprint(request)
+    context = FakeContext()
+
+    async def fake_blueprint_node(request_input: GenerateRequest) -> Blueprint:
+        assert request_input == request
+        return blueprint
+
+    monkeypatch.setattr(agent_module.blueprint_node, "_func", fake_blueprint_node)
+    monkeypatch.setattr(
+        agent_module, "normalize_answer_key_payload", lambda *args: args[0]
+    )
+
+    async def fake_generate_simple_section(
+        request_input: GenerateRequest,
+        blueprint_input: Blueprint,
+    ) -> dict[str, Any]:
+        assert request_input == request
+        assert blueprint_input == blueprint
+        return {"title": "Section"}
+
+    async def fake_generate_subconcept(
+        request_input: GenerateRequest,
+        blueprint_input: Blueprint,
+        sub_competency: Any,
+    ) -> dict[str, Any]:
+        assert request_input == request
+        assert blueprint_input == blueprint
+        return {"title": f"Subconcept {sub_competency.id}"}
+
+    async def fake_generate_model_passage(
+        request_input: GenerateRequest,
+        blueprint_input: Blueprint,
+    ) -> dict[str, Any]:
+        assert request_input == request
+        assert blueprint_input == blueprint
+        return {"title": "Model Passage", "section": "model_passage"}
+
+    async def fake_generate_assessment_passage(
+        request_input: GenerateRequest,
+        blueprint_input: Blueprint,
+    ) -> dict[str, Any]:
+        assert request_input == request
+        assert blueprint_input == blueprint
+        return {
+            "title": "Assessment Passage",
+            "section": "assessment_passage",
+            "attempt": 1,
+        }
+
+    async def fake_generate_check_in(
+        request_input: GenerateRequest,
+        blueprint_input: Blueprint,
+        model_passage: dict[str, Any],
+    ) -> dict[str, Any]:
+        assert request_input == request
+        assert blueprint_input == blueprint
+        assert model_passage["section"] == "model_passage"
+        return {"title": "Check In", "section": "check_in"}
+
+    assessment_question_attempts: list[int] = []
+
+    async def fake_generate_assessment_questions(
+        request_input: GenerateRequest,
+        blueprint_input: Blueprint,
+        assessment_passage: dict[str, Any],
+    ) -> dict[str, Any]:
+        assert request_input == request
+        assert blueprint_input == blueprint
+        assessment_question_attempts.append(assessment_passage["attempt"])
+        return {
+            "title": "Assessment Questions",
+            "section": "assessment_questions",
+            "attempt": assessment_passage["attempt"],
+        }
+
+    step_up_attempts: list[int] = []
+
+    async def fake_generate_step_up(
+        request_input: GenerateRequest,
+        blueprint_input: Blueprint,
+        assessment_passage: dict[str, Any],
+        assessment_questions: dict[str, Any],
+    ) -> dict[str, Any]:
+        assert request_input == request
+        assert blueprint_input == blueprint
+        assert assessment_passage["attempt"] == assessment_questions["attempt"]
+        step_up_attempts.append(assessment_questions["attempt"])
+        return {
+            "title": "Step Up",
+            "section": "step_up",
+            "attempt": assessment_questions["attempt"],
+        }
+
+    answer_key_attempts: list[tuple[int, int, int]] = []
+
+    async def fake_generate_answer_key(
+        request_input: GenerateRequest,
+        blueprint_input: Blueprint,
+        model_passage: dict[str, Any],
+        check_in: dict[str, Any],
+        assessment_passage: dict[str, Any],
+        assessment_questions: dict[str, Any],
+        step_up: dict[str, Any],
+    ) -> dict[str, Any]:
+        assert request_input == request
+        assert blueprint_input == blueprint
+        assert model_passage["section"] == "model_passage"
+        assert check_in["section"] == "check_in"
+        answer_key_attempts.append(
+            (
+                assessment_passage["attempt"],
+                assessment_questions["attempt"],
+                step_up["attempt"],
+            )
+        )
+        return {
+            "title": "Answer Key",
+            "section": "answer_key",
+            "attempt": assessment_questions["attempt"],
+        }
+
+    validation_passes = 0
+
+    async def fake_generate_validation(
+        request_input: GenerateRequest,
+        blueprint_input: Blueprint,
+        sections: dict[str, Any],
+    ) -> ValidationResult:
+        nonlocal validation_passes
+        assert request_input == request
+        assert blueprint_input == blueprint
+        validation_passes += 1
+        if validation_passes == 1:
+            assert sections["assessment_passage"]["attempt"] == 1
+            assert sections["assessment_questions"]["attempt"] == 1
+            assert sections["step_up"]["attempt"] == 1
+            assert sections["answer_key"]["attempt"] == 1
+            return ValidationResult(
+                passed=False,
+                failed_sections=[
+                    "assessment_passage",
+                    "assessment_questions",
+                    "step_up",
+                    "answer_key",
+                ],
+                failures={
+                    "assessment_passage": ["Passage needs revision."],
+                    "assessment_questions": ["Questions need revision."],
+                    "step_up": ["Step-up needs revision."],
+                    "answer_key": ["Answer key needs revision."],
+                },
+                warnings=[],
+                best_effort_sections=[],
+            )
+
+        assert sections["assessment_passage"]["attempt"] == 2
+        assert sections["assessment_questions"]["attempt"] == 2
+        assert sections["step_up"]["attempt"] == 2
+        assert sections["answer_key"]["attempt"] == 2
+        return ValidationResult(
+            passed=True,
+            failed_sections=[],
+            failures={},
+            warnings=[],
+            best_effort_sections=[],
+        )
+
+    async def fake_call_gemini(**kwargs: Any) -> str:
+        assert kwargs["temperature"] == agent_module.TEMP_RETRY
+        assert kwargs["context_label"] == "assessment_passage_retry"
+        assert "Passage needs revision." in kwargs["user_prompt"]
+        return json.dumps(
+            {
+                "title": "Assessment Passage",
+                "section": "assessment_passage",
+                "attempt": 2,
+            }
+        )
+
+    async def fake_generate_rendered_response(
+        blueprint_input: Blueprint,
+        sections: dict[str, Any],
+        validation: ValidationResult,
+    ) -> GenerateResponse:
+        assert blueprint_input == blueprint
+        assert validation.passed is True
+        assert sections["answer_key"]["attempt"] == 2
+        return GenerateResponse.model_validate(
+            {
+                "success": True,
+                "pdf_base64": "cGRm",
+                "preview": {"sections": []},
+                "validation": validation.model_dump(mode="json"),
+                "error": None,
+            }
+        )
+
+    monkeypatch.setattr(agent_module, "generate_intro", fake_generate_simple_section)
+    monkeypatch.setattr(
+        agent_module, "generate_learning_targets", fake_generate_simple_section
+    )
+    monkeypatch.setattr(agent_module, "generate_warmup", fake_generate_simple_section)
+    monkeypatch.setattr(
+        agent_module, "generate_vocabulary", fake_generate_simple_section
+    )
+    monkeypatch.setattr(
+        agent_module, "generate_key_points", fake_generate_simple_section
+    )
+    monkeypatch.setattr(
+        agent_module, "generate_self_assessment", fake_generate_simple_section
+    )
+    monkeypatch.setattr(
+        agent_module, "generate_core_explainer", fake_generate_simple_section
+    )
+    monkeypatch.setattr(agent_module, "generate_subconcept", fake_generate_subconcept)
+    monkeypatch.setattr(
+        agent_module, "generate_strategy_list", fake_generate_simple_section
+    )
+    monkeypatch.setattr(
+        agent_module, "generate_deep_dive", fake_generate_simple_section
+    )
+    monkeypatch.setattr(
+        agent_module, "generate_model_passage", fake_generate_model_passage
+    )
+    monkeypatch.setattr(
+        agent_module, "generate_assessment_passage", fake_generate_assessment_passage
+    )
+    monkeypatch.setattr(agent_module, "generate_check_in", fake_generate_check_in)
+    monkeypatch.setattr(
+        agent_module,
+        "generate_assessment_questions",
+        fake_generate_assessment_questions,
+    )
+    monkeypatch.setattr(agent_module, "generate_step_up", fake_generate_step_up)
+    monkeypatch.setattr(agent_module, "generate_answer_key", fake_generate_answer_key)
+    monkeypatch.setattr(agent_module, "generate_validation", fake_generate_validation)
+    monkeypatch.setattr(agent_module, "call_gemini", fake_call_gemini)
+    monkeypatch.setattr(
+        agent_module, "generate_rendered_response", fake_generate_rendered_response
+    )
+
+    result = await cast(Any, agent_module.study_guide_workflow)._func(context, request)
+
+    retry_calls = [
+        node_name for node_name in context.node_calls if node_name.startswith("retry_")
+    ]
+    assert retry_calls == ["retry_assessment_passage_1"]
+    assert assessment_question_attempts == [1, 2]
+    assert step_up_attempts == [1, 2]
+    assert answer_key_attempts == [(1, 1, 1), (2, 2, 2)]
+    assert validation_passes == 2
+    assert result.validation.failed_sections == []
