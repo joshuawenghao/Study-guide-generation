@@ -25,9 +25,6 @@ from app.types import (
     ValidationResult,
 )
 from app.validators.hard.answer_key_quotes import validate_answer_key_quotes
-from app.validators.hard.assessment_question_grounding import (
-    validate_assessment_question_grounding,
-)
 from app.validators.hard.json_schema import validate_json_schema
 from app.validators.hard.passage_domain_diff import validate_passage_domain_diff
 from app.validators.hard.self_assess_targets import validate_self_assess_targets
@@ -188,18 +185,6 @@ async def generate_validation(
     ):
         validated_answer_key = AnswerKeySection.model_validate(
             normalized_answer_key_payload
-        )
-
-    if (
-        validated_assessment_questions is not None
-        and validated_assessment_passage is not None
-    ):
-        result = _merge_results(
-            result,
-            validate_assessment_question_grounding(
-                assessment_questions=validated_assessment_questions,
-                assessment_passage=validated_assessment_passage,
-            ),
         )
 
     if validated_answer_key is not None and validated_assessment_passage is not None:
