@@ -28,6 +28,16 @@ LOCATION_HINT_WORDS = {
     "passage",
     "text",
 }
+GUIDANCE_HINT_WORDS = {
+    "look",
+    "find",
+    "search",
+    "check",
+    "focus",
+    "think",
+    "consider",
+    "use",
+}
 QUESTION_ALIGNMENT_WORDS = {
     "search",
     "think",
@@ -156,6 +166,11 @@ def _looks_like_purpose_hint(value: str) -> bool:
     return bool(tokens & PURPOSE_HINT_WORDS)
 
 
+def _looks_like_guidance_hint(value: str) -> bool:
+    tokens = set(re.findall(r"[A-Za-z0-9']+", value.lower()))
+    return bool(tokens & GUIDANCE_HINT_WORDS)
+
+
 def validate_assessment_question_grounding(
     *,
     assessment_questions: AssessmentQuestionsSection,
@@ -230,6 +245,14 @@ def validate_assessment_question_grounding(
             best_score < 0.25
             and _looks_like_purpose_hint(evidence_hint)
             and question_alignment >= 0.3
+            and passage_alignment >= 0.1
+        ):
+            continue
+
+        if (
+            best_score < 0.25
+            and _looks_like_guidance_hint(evidence_hint)
+            and question_alignment >= 0.45
             and passage_alignment >= 0.1
         ):
             continue

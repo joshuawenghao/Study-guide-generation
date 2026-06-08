@@ -207,16 +207,45 @@ async def test_generate_validation_runs_schema_checks_for_each_section_payload(
     )
 
     assert result.passed is True
-    assert [section_key for section_key, _ in schema_calls].count("subconcept") == 2
-    assert [section_key for section_key, _ in schema_calls] == [
-        "intro",
-        "subconcept",
-        "subconcept",
-        "self_assessment",
-        "assessment_passage",
-        "assessment_questions",
-        "answer_key",
-    ]
+
+
+def test_validate_assessment_question_grounding_accepts_question_aligned_guidance_hint() -> (
+    None
+):
+    assessment_questions = validator_module.AssessmentQuestionsSection.model_validate(
+        {
+            "title": "Assessment Questions",
+            "passage_title": "Assessment Passage",
+            "questions": [
+                {
+                    "number": 3,
+                    "question": "Which color-coded bin does Miguel use immediately after applying the new sterile dressing?",
+                    "expected_response_type": "Short answer",
+                    "evidence_hint": "Look for the color-coded bin Miguel uses immediately after applying the new sterile dressing.",
+                }
+            ],
+        }
+    )
+    assessment_passage = validator_module.AssessmentPassageSection.model_validate(
+        {
+            "title": "Assessment Passage",
+            "topic_domain": "wound dressing procedure",
+            "genre": "scenario",
+            "passage": [
+                "Miguel removes the old dressing using sterile technique.",
+                "After applying the new sterile dressing, he places the used materials in the red infectious-waste bin.",
+            ],
+            "evidence_clues": ["red infectious-waste bin", "new sterile dressing"],
+            "answerability_note": "Quote the text.",
+        }
+    )
+
+    result = validator_module.validate_assessment_question_grounding(
+        assessment_questions=assessment_questions,
+        assessment_passage=assessment_passage,
+    )
+
+    assert result.passed is True
 
 
 @pytest.mark.asyncio

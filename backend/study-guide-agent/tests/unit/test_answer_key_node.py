@@ -477,6 +477,85 @@ async def test_generate_answer_key_realigns_assessment_answers_to_upstream_quest
 
 
 @pytest.mark.asyncio
+async def test_generate_answer_key_prefers_assessment_question_text_over_wrong_number(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = _load_request_from_fixture()
+    blueprint = _build_blueprint(request)
+    assessment_questions = {
+        "title": "Assessment Questions",
+        "questions": [
+            {
+                "number": 1,
+                "question": "What is the author's purpose in this article?",
+                "expected_response_type": "short_response",
+                "evidence_hint": "Look for a phrase that explains why mangroves matter.",
+            },
+            {
+                "number": 2,
+                "question": "How does the passage show that mangroves help communities?",
+                "expected_response_type": "short_response",
+                "evidence_hint": "Look for the detail about strong waves.",
+            },
+        ],
+    }
+
+    async def fake_call_gemini(**_: object) -> str:
+        return json.dumps(
+            {
+                "title": "Answer Key",
+                "check_in_answers": [],
+                "assessment_answers": [
+                    {
+                        "question_number": 1,
+                        "question": "How does the passage show that mangroves help communities?",
+                        "possible_answer": "The passage shows that mangroves protect coastlines from strong waves and help people stay safe.",
+                        "evidence_quote": '"protect coastlines"',
+                    },
+                    {
+                        "question_number": 2,
+                        "question": "What is the author's purpose in this article?",
+                        "possible_answer": "The author wants to inform readers about why mangroves matter to coastal communities.",
+                        "evidence_quote": '"protect coastlines"',
+                    },
+                ],
+                "step_up_answer": {
+                    "challenge_response": "The passage explains why the evidence matters.",
+                    "required_evidence": ["protect coastlines"],
+                },
+                "teacher_note": "Accept concise answers that explain the purpose and cite evidence.",
+            }
+        )
+
+    monkeypatch.setattr(answer_key_module, "call_gemini", fake_call_gemini)
+
+    result = await answer_key_module.generate_answer_key(
+        request,
+        blueprint,
+        _build_model_passage(),
+        _build_check_in(),
+        _build_assessment_passage(),
+        assessment_questions,
+        _build_step_up(),
+    )
+
+    assert result["assessment_answers"] == [
+        {
+            "question_number": 1,
+            "question": "What is the author's purpose in this article?",
+            "possible_answer": "The author wants to inform readers about why mangroves matter to coastal communities.",
+            "evidence_quote": '"protect coastlines"',
+        },
+        {
+            "question_number": 2,
+            "question": "How does the passage show that mangroves help communities?",
+            "possible_answer": "The passage shows that mangroves protect coastlines from strong waves and help people stay safe.",
+            "evidence_quote": '"protect coastlines"',
+        },
+    ]
+
+
+@pytest.mark.asyncio
 async def test_generate_answer_key_ignores_guidance_like_evidence_hint_when_building_assessment_answer(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

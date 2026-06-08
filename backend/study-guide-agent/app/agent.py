@@ -284,6 +284,141 @@ def _build_retry_node(section_key: str, attempt: int) -> Any:
     return retry_node
 
 
+async def _regenerate_check_in(
+    ctx: Context,
+    request: StudyGuideRequest,
+    blueprint: Blueprint,
+    sections: dict[str, Any],
+) -> dict[str, Any]:
+    return await ctx.run_node(
+        check_in_workflow_node,
+        CheckInNodeInput(
+            request=request,
+            blueprint=blueprint,
+            model_passage=sections["model_passage"],
+        ),
+    )
+
+
+async def _regenerate_assessment_questions(
+    ctx: Context,
+    request: StudyGuideRequest,
+    blueprint: Blueprint,
+    sections: dict[str, Any],
+) -> dict[str, Any]:
+    return await ctx.run_node(
+        assessment_questions_workflow_node,
+        AssessmentQuestionsNodeInput(
+            request=request,
+            blueprint=blueprint,
+            assessment_passage=sections["assessment_passage"],
+        ),
+    )
+
+
+async def _regenerate_step_up(
+    ctx: Context,
+    request: StudyGuideRequest,
+    blueprint: Blueprint,
+    sections: dict[str, Any],
+) -> dict[str, Any]:
+    return await ctx.run_node(
+        step_up_workflow_node,
+        StepUpNodeInput(
+            request=request,
+            blueprint=blueprint,
+            assessment_passage=sections["assessment_passage"],
+            assessment_questions=sections["assessment_questions"],
+        ),
+    )
+
+
+async def _regenerate_answer_key(
+    ctx: Context,
+    request: StudyGuideRequest,
+    blueprint: Blueprint,
+    sections: dict[str, Any],
+) -> dict[str, Any]:
+    regenerated = await ctx.run_node(
+        answer_key_workflow_node,
+        AnswerKeyNodeInput(
+            request=request,
+            blueprint=blueprint,
+            model_passage=sections["model_passage"],
+            check_in=sections["check_in"],
+            assessment_passage=sections["assessment_passage"],
+            assessment_questions=sections["assessment_questions"],
+            step_up=sections["step_up"],
+        ),
+    )
+    return normalize_answer_key_payload(
+        regenerated,
+        sections["check_in"],
+        sections["assessment_passage"],
+        sections["assessment_questions"],
+        sections["model_passage"],
+    )
+
+
+async def _refresh_downstream_sections(
+    ctx: Context,
+    request: StudyGuideRequest,
+    blueprint: Blueprint,
+    sections: dict[str, Any],
+    changed_section_key: str,
+) -> None:
+    if changed_section_key == "model_passage":
+        sections["check_in"] = await _regenerate_check_in(
+            ctx, request, blueprint, sections
+        )
+        sections["answer_key"] = await _regenerate_answer_key(
+            ctx, request, blueprint, sections
+        )
+        return
+
+    if changed_section_key == "check_in":
+        sections["answer_key"] = await _regenerate_answer_key(
+            ctx, request, blueprint, sections
+        )
+        return
+
+    if changed_section_key == "assessment_passage":
+        sections["assessment_questions"] = await _regenerate_assessment_questions(
+            ctx, request, blueprint, sections
+        )
+        sections["step_up"] = await _regenerate_step_up(
+            ctx, request, blueprint, sections
+        )
+        sections["answer_key"] = await _regenerate_answer_key(
+            ctx, request, blueprint, sections
+        )
+        return
+
+    if changed_section_key == "assessment_questions":
+        sections["step_up"] = await _regenerate_step_up(
+            ctx, request, blueprint, sections
+        )
+        sections["answer_key"] = await _regenerate_answer_key(
+            ctx, request, blueprint, sections
+        )
+        return
+
+    if changed_section_key == "step_up":
+        sections["answer_key"] = await _regenerate_answer_key(
+            ctx, request, blueprint, sections
+        )
+        return
+
+    if changed_section_key == "answer_key":
+        sections["answer_key"] = normalize_answer_key_payload(
+            sections["answer_key"],
+            sections["check_in"],
+            sections["assessment_passage"],
+            sections["assessment_questions"],
+            sections["model_passage"],
+        )
+
+
 async def _generate_intro_node(node_input: SectionNodeInput) -> dict[str, Any]:
     return await generate_intro(node_input.request, node_input.blueprint)
 
@@ -624,14 +759,13 @@ async def study_guide_workflow(
                     failure_messages=validation.failures.get(section_key, []),
                 ),
             )
-            if section_key == "answer_key":
-                sections[section_key] = normalize_answer_key_payload(
-                    sections[section_key],
-                    sections["check_in"],
-                    sections["assessment_passage"],
-                    sections["assessment_questions"],
-                    sections["model_passage"],
-                )
+            await _refresh_downstream_sections(
+                ctx,
+                request,
+                blueprint,
+                sections,
+                section_key,
+            )
         validation = await ctx.run_node(
             validation_workflow_node,
             ValidationNodeInput(
