@@ -248,6 +248,45 @@ def test_validate_assessment_question_grounding_accepts_question_aligned_guidanc
     assert result.passed is True
 
 
+def test_validate_assessment_question_grounding_accepts_paragraph_hint_backed_by_passage_even_when_evidence_clues_are_narrow() -> (
+    None
+):
+    assessment_questions = validator_module.AssessmentQuestionsSection.model_validate(
+        {
+            "title": "Assessment Questions",
+            "passage_title": "Assessment Passage",
+            "questions": [
+                {
+                    "number": 4,
+                    "question": "What action does Clara take with the used forceps after securing the new dressing?",
+                    "expected_response_type": "Short answer",
+                    "evidence_hint": "Check the final paragraph for the step involving the disposal or placement of the metal instruments.",
+                }
+            ],
+        }
+    )
+    assessment_passage = validator_module.AssessmentPassageSection.model_validate(
+        {
+            "title": "Assessment Passage",
+            "topic_domain": "sterile dressing change",
+            "genre": "scenario",
+            "passage": [
+                "Clara cleans the wound bed before preparing the fresh sterile dressing.",
+                "After securing the new dressing, she places the used forceps in the metal tray for contaminated instruments.",
+            ],
+            "evidence_clues": ["fresh sterile dressing", "wound bed"],
+            "answerability_note": "Quote the text.",
+        }
+    )
+
+    result = validator_module.validate_assessment_question_grounding(
+        assessment_questions=assessment_questions,
+        assessment_passage=assessment_passage,
+    )
+
+    assert result.passed is True
+
+
 @pytest.mark.asyncio
 async def test_generate_validation_aggregates_failures_and_skips_invalid_schema_slice(
     monkeypatch: pytest.MonkeyPatch,

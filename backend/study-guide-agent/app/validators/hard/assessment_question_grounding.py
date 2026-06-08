@@ -180,7 +180,10 @@ def validate_assessment_question_grounding(
     evidence_clues = [
         clue for clue in assessment_passage.evidence_clues if clue.strip()
     ]
-    grounding_targets = evidence_clues or list(assessment_passage.passage)
+    grounding_targets = [
+        *evidence_clues,
+        *[paragraph for paragraph in assessment_passage.passage if paragraph.strip()],
+    ]
     failures: list[str] = []
 
     for question in assessment_questions.questions:
