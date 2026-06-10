@@ -7,7 +7,7 @@ Follow all instructions below when generating, editing, or reviewing code for th
 
 ## Project overview
 
-A web app that takes structured lesson inputs from a teacher and generates a complete, curriculum-aligned study guide as a PDF and web preview. Generation is powered by a Google ADK 2.0 agent graph running Gemini 2.0 Flash. The study guide always has a fixed 17-section structure regardless of subject or grade.
+A web app that takes structured lesson inputs from a teacher and generates a complete, curriculum-aligned study guide as a PDF and web preview. Generation is powered by a Google ADK 2.0 agent graph running Gemini 3.5 Flash. The study guide always has a fixed 17-section structure regardless of subject or grade.
 
 Key reference documents (read these before making architectural decisions):
 
@@ -23,7 +23,7 @@ Key reference documents (read these before making architectural decisions):
 ```
 /
 ├── frontend/    # Next.js 14 (App Router), TypeScript, Tailwind CSS
-└── backend/     # Python, Google ADK 2.0, Gemini 2.0 Flash, WeasyPrint
+└── backend/     # Python, Google ADK 2.0, Gemini 3.5 Flash, WeasyPrint
 ```
 
 These are two separate runtimes. They share no code — only a JSON contract documented in `ARCHITECTURE.md` section 6.

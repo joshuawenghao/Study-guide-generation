@@ -42,7 +42,7 @@ flowchart LR
 
     subgraph Backend ["ADK Backend (localhost:8000 / Cloud Run)"]
         Workflow["Dynamic Workflow\n(blueprint → sections →\nvalidate → retry? → render)"]
-        Gemini["Gemini 2.0 Flash\n(all LLM calls)"]
+        Gemini["Gemini 3.5 Flash\n(all LLM calls)"]
         Workflow --> Gemini
     end
 
@@ -62,7 +62,7 @@ flowchart LR
 | Frontend framework         | Next.js 14 (App Router)                                          | Single repo for UI and API proxy; SSE streaming support built in                                                                                                                           |
 | Styling                    | Tailwind CSS                                                     | Utility-first, no design system overhead for a prototype                                                                                                                                   |
 | Agent framework            | Google ADK 2.0 Python (dynamic workflows)                        | `@node` + `ctx.run_node()` with automatic checkpointing; conditional retry via `while` loop; native Gemini integration                                                                     |
-| LLM                        | Gemini 2.0 Flash                                                 | Best cost/latency ratio for 17 sequential/parallel calls; ADK has first-class Gemini support                                                                                               |
+| LLM                        | Gemini 3.5 Flash                                                 | Best cost/latency ratio for 17 sequential/parallel calls; ADK has first-class Gemini support                                                                                               |
 | PDF rendering              | WeasyPrint (Python)                                              | HTML/CSS → PDF with full layout control; runs server-side in the ADK process                                                                                                               |
 | Web preview                | Structured JSON → React components                               | Preview is assembled from the same section JSON that feeds the PDF renderer                                                                                                                |
 | Deployment (Fast local)    | Next.js dev server + scaffolded FastAPI backend                  | Fastest iteration loop for feature work; no container build step                                                                                                                           |
@@ -333,7 +333,7 @@ Each section node is a `@node`-decorated function following this pattern:
 
 1. Receive `blueprint` (and any dependency outputs) as input from `ctx.run_node()`
 2. Build a section-specific prompt using the corresponding template from `prompts/templates/`
-3. Call Gemini 2.0 Flash with `response_mime_type="application/json"`
+3. Call Gemini 3.5 Flash with `response_mime_type="application/json"`
 4. Parse and structurally validate the JSON response (schema check only — content validation happens in the validator node)
 5. Return the parsed dict
 
@@ -647,7 +647,7 @@ Across all four modes, the application contract stays the same: the frontend tal
 flowchart LR
     Browser --> NextJS["Next.js dev server\nlocalhost:3000"]
     NextJS --> ADK["Scaffolded backend server\nlocalhost:8000\n(uv run uvicorn app.fast_api_app:app)"]
-    ADK --> Gemini["Gemini 2.0 Flash\n(Google API)"]
+    ADK --> Gemini["Gemini 3.5 Flash\n(Google API)"]
 ```
 
 Next.js and the ADK backend run as separate local processes. The Next.js API proxy reads `ADK_BACKEND_URL=http://localhost:8000` from `frontend/.env.local` and forwards requests there. No cloud infrastructure required.
@@ -669,7 +669,7 @@ This mode is slower than normal development and should not replace the default l
 flowchart LR
   Browser --> AppHosting["Firebase App Hosting\n(Next.js)"]
   AppHosting --> CloudRun["Google Cloud Run\n(ADK backend)"]
-    CloudRun --> Gemini["Gemini 2.0 Flash\n(Google API)"]
+    CloudRun --> Gemini["Gemini 3.5 Flash\n(Google API)"]
 ```
 
 The ADK backend is containerised and deployed to Google Cloud Run. The Next.js frontend is deployed to Firebase App Hosting. The same frontend proxy architecture is preserved in local and remote environments; the main environment-level change is the value of `ADK_BACKEND_URL`:

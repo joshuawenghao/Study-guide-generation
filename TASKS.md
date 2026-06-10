@@ -318,7 +318,7 @@ Requirements:
 
 2. MAX_OUTPUT_TOKENS = 2048
 
-3. MODEL_NAME = "gemini-2.0-flash"
+3. MODEL_NAME = "gemini-3.5-flash"
 
 4. async def call_gemini(system_prompt, user_prompt, temperature, max_retries=2, context_label="unknown") -> str
    - Calls Gemini with response_mime_type="application/json"
@@ -351,7 +351,7 @@ Update backend/study-guide-agent/app/agent.py so it is no longer the sample scaf
 For now, keep it as a minimal study-guide-specific bootstrap until the full dynamic workflow is implemented.
 
 Requirements:
-- Use model="gemini-2.0-flash"
+- Use model="gemini-3.5-flash"
 - Agent name should be study-guide specific
 - Description should mention structured K-12 study guide generation
 - Instruction should mention the fixed 17-section format and asking for missing curriculum details instead of inventing them

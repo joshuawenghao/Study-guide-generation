@@ -48,7 +48,7 @@ Teachers in K–12 markets (initially PH, JP, VN) spend disproportionate time ma
 
 ### The technology context
 
-- Gemini 2.0 Flash is the chosen LLM for all generation calls due to cost and latency profile.
+- Gemini 3.5 Flash is the chosen LLM for all generation calls due to cost and latency profile.
 - The study guide is long enough (17 sections) that a single LLM call cannot produce it reliably — multi-step generation with shared context is required.
 - Some sections have hard dependencies on prior sections (answer key depends on all question sections; check-in depends on the model passage) — naive parallelisation will produce incoherent output.
 - Validators must run programmatically after generation to catch constraint violations before the document is assembled, and must trigger targeted section retries automatically as part of the validation pass — not as a separate manual step.
