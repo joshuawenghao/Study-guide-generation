@@ -298,6 +298,8 @@ async def _generate_retry_payload(node_input: RetryNodeInput) -> Any:
             node_input.sections["assessment_questions"],
             node_input.sections["model_passage"],
         )
+    if node_input.section_key == "model_passage":
+        parsed_response.setdefault("evidence_focus", "")
     return parsed_response
 
 

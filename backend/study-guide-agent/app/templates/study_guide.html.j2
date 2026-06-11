@@ -563,7 +563,7 @@
 				{% endfor %}
 			</div>
 			<p><strong>Text features:</strong> {{ model_passage.text_features|join(', ') }}</p>
-			<p><strong>Evidence focus:</strong> {{ model_passage.evidence_focus }}</p>
+			<p><strong>Evidence focus:</strong> {{ model_passage.evidence_focus|default("") }}</p>
 		</section>
 	{% endif %}
 
