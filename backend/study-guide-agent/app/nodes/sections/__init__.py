@@ -258,6 +258,19 @@ def _parse_section_response(response_text: str, context_label: str) -> dict[str,
         payload = json.loads(response_text)
     except json.JSONDecodeError as error:
         parse_error: json.JSONDecodeError = error
+        # Gemini occasionally appends extra characters (e.g. a stray }) after the
+        # closing brace of a valid JSON object.  raw_decode parses only the first
+        # complete value and ignores the trailing garbage.
+        if error.msg == "Extra data":
+            try:
+                payload, _ = json.JSONDecoder().raw_decode(response_text.lstrip())
+            except json.JSONDecodeError:
+                pass
+            else:
+                if isinstance(payload, dict):
+                    normalized_payload = _normalize_payload_value(payload)
+                    if isinstance(normalized_payload, dict):
+                        return normalized_payload
         repaired_response = _repair_invalid_json_escapes(response_text)
         if repaired_response != response_text:
             try:

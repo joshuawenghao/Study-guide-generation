@@ -450,6 +450,12 @@ Notes: Two targeted improvements to answer-key evidence-quote selection. (1) **P
 Status: `complete`
 Notes: Gemini occasionally omits `evidence_focus` from the `model_passage` JSON response, causing a `jinja2.UndefinedError` (`'dict object' has no attribute 'evidence_focus'`) when the renderer renders the study guide with `StrictUndefined`. Three targeted changes: (1) **Template** (`backend/study-guide-agent/app/templates/study_guide.html.j2:566`) — changed `{{ model_passage.evidence_focus }}` to `{{ model_passage.evidence_focus|default("") }}` as a renderer-level safety net; (2) **Generator** (`backend/study-guide-agent/app/nodes/sections/model_passage.py`) — added `result.setdefault("evidence_focus", "")` after the `generate_section` call so the field is always present in the stored dict, preventing unnecessary schema-validation failures; (3) **Retry path** (`backend/study-guide-agent/app/agent.py` in `_generate_retry_payload`) — added the same `setdefault` guard for the model_passage retry case. All 105 backend tests pass, Pyright 0 errors, and `./scripts/validate-task.sh` passed.
 
+
+### Task 15.3 — Fix answer_key parse failure when Gemini appends trailing extra brace
+
+Status: `complete`
+Notes: Gemini occasionally emits a stray `}` after the closing brace of the answer_key JSON object, causing `json.loads` to raise `JSONDecodeError: Extra data`. None of the existing repair steps in `_parse_section_response` handled this case, so the error propagated. Fix: added a targeted `raw_decode` branch immediately after the initial `json.loads` failure — if `error.msg == "Extra data"`, `json.JSONDecoder().raw_decode(response_text.lstrip())` parses only the first valid JSON object and silently ignores everything after it. One new unit test in `tests/unit/test_section_generation.py` verifies recovery from a trailing extra brace. All 105 backend tests pass, Pyright 0 errors, `./scripts/validate-task.sh` passed.
+
 ## Guidance for future chats
 
 - Read this file and `TASKS.md` together before starting new implementation work.

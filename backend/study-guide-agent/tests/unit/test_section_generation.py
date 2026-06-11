@@ -393,3 +393,16 @@ def test_best_matching_quote_candidate_weights_favour_evidence_hint() -> None:
     assert result == "infection control hygiene", (
         f"expected evidence_hint-aligned candidate, got {result!r}"
     )
+
+
+def test_parse_section_response_strips_trailing_extra_brace() -> None:
+    """Gemini sometimes appends a stray } after the closing brace; raw_decode should recover."""
+    from app.nodes.sections import _parse_section_response  # type: ignore[attr-defined]
+
+    payload_with_trailing = (
+        '{ "title": "Answer Key", "check_in_answers": [], '
+        '"assessment_answers": [], "step_up_answer": {}, "teacher_note": "ok" } }'
+    )
+    result = _parse_section_response(payload_with_trailing, "answer_key")
+    assert result["title"] == "Answer Key"
+    assert result["check_in_answers"] == []
