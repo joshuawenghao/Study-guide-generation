@@ -52,6 +52,9 @@ _CONCATENATED_QUOTED_LIST_ANNOTATION_PATTERN = re.compile(
     r'\[\s*"\s*(?:\+\s*"(?:\\.|[^"\n])*"\s*)+\+\s*"\s*\]'
 )
 _STANDALONE_QUOTED_LINE_PATTERN = re.compile(r'^\s*"[^"\n]*",?\s*$')
+_BARE_STRING_FRAGMENT_SUFFIX_PATTERN = re.compile(
+    r'(?<=[.!?]")(?:\s+[A-Za-z][^"\n]+")+(?=\s*[}\],])'
+)
 _HTML_LINE_BREAK_TAG_PATTERN = re.compile(r"(?is)<\s*(?:br|/p|/div|/li|/tr)\s*/?\s*>")
 _HTML_TAG_PATTERN = re.compile(r"(?is)</?[a-z][^>]*>")
 _LITERAL_DISPLAY_ESCAPES_PATTERN = re.compile(r"\\[nrt]")
@@ -59,6 +62,10 @@ _NON_LINEBREAK_CONTROL_ESCAPE_TO_PREFIX = {
     "\b": "b",
     "\f": "f",
 }
+
+
+def _strip_bare_string_fragment_suffixes(response_text: str) -> str:
+    return _BARE_STRING_FRAGMENT_SUFFIX_PATTERN.sub("", response_text)
 
 
 def _repair_invalid_json_escapes(response_text: str) -> str:
@@ -171,10 +178,11 @@ def _repair_mismatched_json_closers(response_text: str) -> str:
             stack.append(character)
             continue
         if character == "]":
-            while stack and stack[-1] == "{":
-                repaired.insert(len(repaired) - 1, "}")
+            if stack and stack[-1] == "{":
+                # ] used instead of } to close object — replace rather than insert+leave
+                repaired[-1] = "}"
                 stack.pop()
-            if stack and stack[-1] == "[":
+            elif stack and stack[-1] == "[":
                 stack.pop()
             continue
         if character == "}":
@@ -286,6 +294,9 @@ def _parse_section_response(response_text: str, context_label: str) -> dict[str,
             annotation_stripped_response
         )
         annotation_stripped_response = _strip_concatenated_quoted_list_annotations(
+            annotation_stripped_response
+        )
+        annotation_stripped_response = _strip_bare_string_fragment_suffixes(
             annotation_stripped_response
         )
         multiline_annotation_stripped_response = (

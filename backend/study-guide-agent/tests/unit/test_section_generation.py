@@ -308,3 +308,34 @@ async def test_answer_key_output_shape(
     }
     assert result["check_in_answers"][0]["question_number"] == 1
     assert result["assessment_answers"][0]["evidence_quote"] == '"protect coastlines"'
+
+
+def test_repair_mismatched_json_closers_replaces_bracket_with_brace() -> None:
+    """Gemini uses ] instead of } to close an object — should produce valid JSON."""
+    from app.nodes.sections import _repair_mismatched_json_closers  # type: ignore[attr-defined]
+
+    malformed = (
+        '{"step_up_answer": {"challenge_response": "ok",'
+        '"required_evidence": ["item1", "item2"]'
+        '], "teacher_note": "accept any"}'
+    )
+    repaired = _repair_mismatched_json_closers(malformed)
+    import json
+    parsed = json.loads(repaired)
+    assert parsed["step_up_answer"]["challenge_response"] == "ok"
+    assert parsed["teacher_note"] == "accept any"
+    assert "}]" not in repaired
+
+
+def test_strip_bare_string_fragment_suffixes_removes_trailing_fragments() -> None:
+    """Bare word fragments after a JSON string value are stripped."""
+    from app.nodes.sections import _strip_bare_string_fragment_suffixes  # type: ignore[attr-defined]
+
+    malformed = (
+        '{"teacher_note": "Understand infection control." infection." '
+        'infection in everyday scenarios." }'
+    )
+    stripped = _strip_bare_string_fragment_suffixes(malformed)
+    import json
+    parsed = json.loads(stripped)
+    assert parsed["teacher_note"] == "Understand infection control."
