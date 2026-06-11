@@ -545,6 +545,8 @@ async def test_study_guide_workflow_normalizes_answer_key_before_validation(
         assert assessment_passage["title"] == "Assessment Passage"
         assert assessment_questions["title"] == "Assessment Questions"
         assert step_up["title"] == "Step Up"
+        # Real generate_answer_key always normalizes before returning.
+        # This fake returns the already-normalized form.
         return {
             "title": "Answer Key",
             "check_in_answers": [
@@ -552,15 +554,15 @@ async def test_study_guide_workflow_normalizes_answer_key_before_validation(
                     "question_number": 1,
                     "question": "What clues show the author's purpose?",
                     "possible_answer": "The descriptive details guide the reader toward the main idea.",
-                    "evidence_quote": None,
+                    "evidence_quote": "N/A",
                 }
             ],
             "assessment_answers": [
                 {
                     "question_number": 1,
-                    "question": "Different question",
-                    "possible_answer": 'The author wants readers to care because "the mangrove roots keep every shoreline family safe during strong storms".',
-                    "evidence_quote": '"the mangrove roots keep every shoreline family safe during strong storms"',
+                    "question": "What is the author's purpose in this article?",
+                    "possible_answer": "The author wants readers to care because the mangrove roots keep every shoreline family safe during strong storms.",
+                    "evidence_quote": '"protect coastlines"',
                 }
             ],
             "step_up_answer": {

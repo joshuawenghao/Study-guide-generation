@@ -259,7 +259,9 @@ def _parse_section_response(response_text: str, context_label: str) -> dict[str,
                 pass
             else:
                 if isinstance(payload, dict):
-                    return payload
+                    normalized_payload = _normalize_payload_value(payload)
+                    if isinstance(normalized_payload, dict):
+                        return normalized_payload
         annotation_stripped_response = _strip_inline_quoted_list_annotations(
             repaired_response
         )

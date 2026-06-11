@@ -197,6 +197,8 @@ It is intended to answer, in words, what currently exists in the repository with
 - The frontend now also declares CSS imports for TypeScript through `frontend/global.d.ts`, so App Router files like `frontend/app/layout.tsx` no longer depend on editor-local suppression behavior for `globals.css` side-effect imports.
 - The repo now includes a root `.editorconfig` to standardize LF endings and final newlines, reducing formatter-only post-commit diffs across frontend and backend files.
 
+- - Four backend parsing bugs in the section-generation and retry pipeline are now fixed: `_parse_section_response` now calls `_normalize_payload_value` on the invalid-escape repair path (was previously skipped, leaving HTML tags and display escapes in section content); `_generate_retry_payload` now passes section-specific `max_output_tokens` so `answer_key` retries use 8192 tokens and `strategy_list` retries use 4096 instead of the 2048 default (the root cause of intermittent truncated-JSON errors on nursing guides); and two redundant `normalize_answer_key_payload` calls in `_regenerate_answer_key` and `study_guide_workflow` have been removed since `generate_answer_key` already normalises before returning. The full suite of 101 backend tests passes after these fixes, and the repo done gate `./scripts/validate-task.sh` still passes end to end.
+
 ## Current Product Gaps
 
 - Wave 1, Wave 2, Wave 3, and answer-key generation are implemented; the validator layer now includes its aggregator node, six hard validators, two soft validators, broad isolated test coverage, and the complete Phase 6 renderer slice including template, node, and focused renderer tests.

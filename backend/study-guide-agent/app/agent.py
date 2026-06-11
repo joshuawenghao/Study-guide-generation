@@ -16,7 +16,14 @@ from google.adk import Context
 from google.adk.apps import App
 from google.adk.workflow import Workflow, node
 
-from app.nodes.base import TEMP_RETRY, call_gemini, call_gemini_and_parse_json
+from app.nodes.base import (
+    MAX_ANSWER_KEY_OUTPUT_TOKENS,
+    MAX_OUTPUT_TOKENS,
+    MAX_STRATEGY_LIST_OUTPUT_TOKENS,
+    TEMP_RETRY,
+    call_gemini,
+    call_gemini_and_parse_json,
+)
 from app.nodes.blueprint import blueprint_node
 from app.nodes.renderer import generate_rendered_response
 from app.nodes.sections import _parse_section_response
@@ -156,6 +163,11 @@ DOWNSTREAM_RETRY_DEPENDENCIES: dict[str, tuple[str, ...]] = {
     "step_up": ("answer_key",),
 }
 
+_RETRY_MAX_OUTPUT_TOKENS: dict[str, int] = {
+    "answer_key": MAX_ANSWER_KEY_OUTPUT_TOKENS,
+    "strategy_list": MAX_STRATEGY_LIST_OUTPUT_TOKENS,
+}
+
 
 def _with_retry_guidance(prompt: str, failure_messages: list[str]) -> str:
     guidance_lines = [
@@ -273,6 +285,9 @@ async def _generate_retry_payload(node_input: RetryNodeInput) -> Any:
             node_input.section_key,
         ),
         call_model=call_gemini,
+        max_output_tokens=_RETRY_MAX_OUTPUT_TOKENS.get(
+            node_input.section_key, MAX_OUTPUT_TOKENS
+        ),
         context_label=f"{node_input.section_key}_retry",
     )
     if node_input.section_key == "answer_key":
@@ -351,7 +366,7 @@ async def _regenerate_answer_key(
     blueprint: Blueprint,
     sections: dict[str, Any],
 ) -> dict[str, Any]:
-    regenerated = await ctx.run_node(
+    return await ctx.run_node(
         answer_key_workflow_node,
         AnswerKeyNodeInput(
             request=request,
@@ -362,13 +377,6 @@ async def _regenerate_answer_key(
             assessment_questions=sections["assessment_questions"],
             step_up=sections["step_up"],
         ),
-    )
-    return normalize_answer_key_payload(
-        regenerated,
-        sections["check_in"],
-        sections["assessment_passage"],
-        sections["assessment_questions"],
-        sections["model_passage"],
     )
 
 
@@ -746,14 +754,6 @@ async def study_guide_workflow(
         "self_assessment": self_assessment,
         "answer_key": answer_key,
     }
-    sections["answer_key"] = normalize_answer_key_payload(
-        sections["answer_key"],
-        sections["check_in"],
-        assessment_passage,
-        assessment_questions,
-        model_passage,
-    )
-
     validation = await ctx.run_node(
         validation_workflow_node,
         ValidationNodeInput(
