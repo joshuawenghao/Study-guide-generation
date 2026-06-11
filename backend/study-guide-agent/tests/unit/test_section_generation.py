@@ -312,7 +312,9 @@ async def test_answer_key_output_shape(
 
 def test_repair_mismatched_json_closers_replaces_bracket_with_brace() -> None:
     """Gemini uses ] instead of } to close an object — should produce valid JSON."""
-    from app.nodes.sections import _repair_mismatched_json_closers  # type: ignore[attr-defined]
+    from app.nodes.sections import (
+        _repair_mismatched_json_closers,  # type: ignore[attr-defined]
+    )
 
     malformed = (
         '{"step_up_answer": {"challenge_response": "ok",'
@@ -321,6 +323,7 @@ def test_repair_mismatched_json_closers_replaces_bracket_with_brace() -> None:
     )
     repaired = _repair_mismatched_json_closers(malformed)
     import json
+
     parsed = json.loads(repaired)
     assert parsed["step_up_answer"]["challenge_response"] == "ok"
     assert parsed["teacher_note"] == "accept any"
@@ -329,7 +332,9 @@ def test_repair_mismatched_json_closers_replaces_bracket_with_brace() -> None:
 
 def test_strip_bare_string_fragment_suffixes_removes_trailing_fragments() -> None:
     """Bare word fragments after a JSON string value are stripped."""
-    from app.nodes.sections import _strip_bare_string_fragment_suffixes  # type: ignore[attr-defined]
+    from app.nodes.sections import (
+        _strip_bare_string_fragment_suffixes,  # type: ignore[attr-defined]
+    )
 
     malformed = (
         '{"teacher_note": "Understand infection control." infection." '
@@ -337,5 +342,54 @@ def test_strip_bare_string_fragment_suffixes_removes_trailing_fragments() -> Non
     )
     stripped = _strip_bare_string_fragment_suffixes(malformed)
     import json
+
     parsed = json.loads(stripped)
     assert parsed["teacher_note"] == "Understand infection control."
+
+
+def test_top_quotes_for_question_ranks_hint_aligned_fragment_first() -> None:
+    """Evidence-hint keywords should pull the matching fragment to the top."""
+    from app.prompts.templates.answer_key import (
+        _top_quotes_for_question,  # type: ignore[attr-defined]
+    )
+
+    passage = {
+        "passage": [
+            "Standard precautions are essential in all clinical settings.",
+            "Hand hygiene prevents the spread of infection between patients.",
+        ],
+        "evidence_clues": ["hand hygiene", "standard precautions"],
+    }
+    results = _top_quotes_for_question(
+        passage,
+        question_text="What is the most important infection-control practice?",
+        evidence_hint="Look for the specific hygiene measure mentioned in the passage.",
+        n=3,
+    )
+    # The fragment mentioning hand hygiene / hygiene should rank ahead of the
+    # standard precautions sentence because the hint overlaps with "hygiene".
+    assert results, "should return at least one candidate"
+    assert any("hygiene" in r.lower() or "hand" in r.lower() for r in results[:2])
+
+
+def test_best_matching_quote_candidate_weights_favour_evidence_hint() -> None:
+    """With weights=[1.0, 2.5, 0.5], evidence_hint (index 1) should dominate."""
+    from app.nodes.sections.answer_key import (
+        _best_matching_quote_candidate,  # type: ignore[attr-defined]
+    )
+
+    # question_text overlaps only with candidate_a
+    # evidence_hint overlaps only with candidate_b
+    candidates = ["author purpose text", "infection control hygiene"]
+    question_text = "What is the author purpose?"
+    evidence_hint = "Look for infection control or hygiene information."
+    expected_response = "short_response"
+
+    result = _best_matching_quote_candidate(
+        [question_text, evidence_hint, expected_response],
+        candidates,
+        weights=[1.0, 2.5, 0.5],
+    )
+    assert result == "infection control hygiene", (
+        f"expected evidence_hint-aligned candidate, got {result!r}"
+    )

@@ -265,26 +265,36 @@ def _quote_token_overlap_score(candidate: str, target: str) -> float:
 
 
 def _best_matching_quote_candidate(
-    targets: list[str], quote_candidates: list[str]
+    targets: list[str],
+    quote_candidates: list[str],
+    *,
+    weights: list[float] | None = None,
 ) -> str | None:
+    """Return the candidate with the highest cumulative weighted relevance score.
+
+    Cumulative scoring across targets (vs. the old max-over-pairs) means a candidate
+    that partially matches several targets beats one that strongly matches only one
+    irrelevant target.  Weights let callers signal which target matters most;
+    evidence_hint should receive the highest weight because it was written specifically
+    to point at the right passage excerpt.
+    """
+    effective_weights = weights if weights is not None else [1.0] * len(targets)
     best_candidate: str | None = None
     best_score = 0.0
 
     for candidate in quote_candidates:
-        for target in targets:
+        total = 0.0
+        for target, weight in zip(targets, effective_weights, strict=False):
             normalized_target = target.strip()
             if not normalized_target:
                 continue
-            sequence_score = SequenceMatcher(
-                None, candidate.lower(), normalized_target.lower()
-            ).ratio()
-            overlap_score = _quote_token_overlap_score(candidate, normalized_target)
-            score = max(sequence_score, overlap_score)
-            if score > best_score:
-                best_score = score
-                best_candidate = candidate
+            overlap = _quote_token_overlap_score(candidate, normalized_target)
+            total += overlap * weight
+        if total > best_score:
+            best_score = total
+            best_candidate = candidate
 
-    if best_score >= 0.4:
+    if best_score >= 0.2:
         return best_candidate
     return None
 
@@ -532,7 +542,9 @@ def _normalize_check_in_answers(
                 normalized_evidence_quote,
             ]
             best_candidate = _best_matching_quote_candidate(
-                match_targets, quote_candidates
+                match_targets,
+                quote_candidates,
+                weights=[1.0, 0.5, 2.5, 1.0],
             )
 
         if best_candidate is None and should_normalize_quote:
@@ -641,7 +653,9 @@ def normalize_answer_key_payload(
                 str(question_spec.get("expected_response_type", "")),
             ]
             best_candidate = _best_matching_quote_candidate(
-                match_targets, quote_candidates
+                match_targets,
+                quote_candidates,
+                weights=[1.0, 2.5, 0.5],
             )
         if best_candidate is None:
             best_candidate = _fallback_quote_candidate(
