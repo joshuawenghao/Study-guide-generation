@@ -406,3 +406,92 @@ def test_parse_section_response_strips_trailing_extra_brace() -> None:
     result = _parse_section_response(payload_with_trailing, "answer_key")
     assert result["title"] == "Answer Key"
     assert result["check_in_answers"] == []
+
+
+def test_collect_quote_candidates_filters_lowercase_fragments() -> None:
+    """Comma-split fragments starting with lowercase should be excluded."""
+    from app.nodes.sections.answer_key import (
+        _collect_quote_candidates,  # type: ignore[attr-defined]
+    )
+
+    passage = {
+        "passage": [
+            "Nurses must treat all blood, body fluids, and non-intact skin as potentially infectious."
+        ],
+        "evidence_clues": [],
+    }
+    candidates = _collect_quote_candidates(passage)
+    # "and non-intact skin as potentially infectious." starts with lowercase — must not appear
+    assert not any(c.startswith("and ") for c in candidates), (
+        f"lowercase-starting fragment found in candidates: {candidates}"
+    )
+    # The full sentence should still be present
+    assert any("non-intact skin" in c for c in candidates)
+
+
+def test_is_clean_quote_rejects_mid_sentence_long_fragments() -> None:
+    from app.nodes.sections.answer_key import (
+        _is_clean_quote,  # type: ignore[attr-defined]
+    )
+
+    # Long lowercase-starting fragments (mid-sentence) must be rejected
+    assert not _is_clean_quote("and non-intact skin as potentially infectious.")
+    assert not _is_clean_quote("completing a cycle of care that safeguards the worker.")
+    # Short phrases (≤ 5 words) are always accepted regardless of case
+    assert _is_clean_quote("encouraging tone")
+    assert _is_clean_quote("protect coastlines")
+    # Uppercase-starting sentences are accepted
+    assert _is_clean_quote(
+        "Nurses must treat all blood, body fluids, and non-intact skin as potentially infectious."
+    )
+    # Excessively long quotes are rejected
+    assert not _is_clean_quote("This is a very long sentence " + "word " * 25 + "end.")
+
+
+def test_normalize_answer_key_rejects_mid_sentence_verbatim_quote() -> None:
+    """A Gemini evidence_quote starting with lowercase should fall through to scored selection."""
+    from app.nodes.sections.answer_key import (
+        normalize_answer_key_payload,  # type: ignore[attr-defined]
+    )
+
+    passage_sentence = (
+        "Nurses must treat all blood and non-intact skin as potentially infectious."
+    )
+    answer_key = {
+        "title": "Answer Key",
+        "check_in_answers": [],
+        "assessment_answers": [
+            {
+                "question_number": 1,
+                "question": "What must nurses treat as potentially infectious?",
+                "possible_answer": "Nurses treat blood and non-intact skin as potentially infectious.",
+                # Mid-sentence fragment Gemini returned
+                "evidence_quote": "and non-intact skin as potentially infectious.",
+            }
+        ],
+        "step_up_answer": {"challenge_response": "test", "required_evidence": []},
+        "teacher_note": "",
+    }
+    assessment_passage = {
+        "passage": [passage_sentence],
+        "evidence_clues": ["Nurses must treat all blood"],
+    }
+    assessment_questions = {
+        "questions": [
+            {
+                "number": 1,
+                "question": "What must nurses treat as potentially infectious?",
+                "evidence_hint": "Look for what nurses must treat as potentially infectious.",
+                "expected_response_type": "Short answer",
+            }
+        ]
+    }
+    result = normalize_answer_key_payload(
+        answer_key, {}, assessment_passage, assessment_questions
+    )
+    evidence_quote = result["assessment_answers"][0]["evidence_quote"]
+    # The returned quote must not start with lowercase (the mid-sentence fragment was rejected)
+    inner = evidence_quote.strip('"')
+    assert inner[:1].isupper() or inner == "", (
+        f"mid-sentence fragment leaked into final quote: {evidence_quote!r}"
+    )

@@ -456,6 +456,14 @@ Notes: Gemini occasionally omits `evidence_focus` from the `model_passage` JSON 
 Status: `complete`
 Notes: Gemini occasionally emits a stray `}` after the closing brace of the answer_key JSON object, causing `json.loads` to raise `JSONDecodeError: Extra data`. None of the existing repair steps in `_parse_section_response` handled this case, so the error propagated. Fix: added a targeted `raw_decode` branch immediately after the initial `json.loads` failure — if `error.msg == "Extra data"`, `json.JSONDecoder().raw_decode(response_text.lstrip())` parses only the first valid JSON object and silently ignores everything after it. One new unit test in `tests/unit/test_section_generation.py` verifies recovery from a trailing extra brace. All 105 backend tests pass, Pyright 0 errors, `./scripts/validate-task.sh` passed.
 
+
+## Phase 17 — Check-in UX and evidence quote quality
+
+### Task 17.1 — Fix check-in response type labels and improve evidence quote selection
+
+Status: `complete`
+Notes: Two targeted improvements addressing user-observed issues after the nursing study guide run. (1) **Check-in response_type labels** (`backend/study-guide-agent/app/prompts/templates/check_in.py`) — added a prompt instruction `"Use short, display-friendly expected_response_type labels such as 'Short answer', 'Extended response', or 'Paragraph response'."` to match the assessment_questions prompt, which already had this instruction. (2) **Evidence quote normalization** (`backend/study-guide-agent/app/nodes/sections/answer_key.py`) — four related changes: (a) new `_is_clean_quote()` helper rejects verbatim Gemini quotes that start mid-sentence (lowercase first word, > 5 words) or are excessively long (> 25 words), short phrases ≤ 5 words are always accepted regardless of case; (b) mid-sentence/long verbatim quotes now fall through to scored candidate selection instead of being used as-is; (c) `_collect_quote_candidates` now adds sentence-level candidates (split on `. ` + uppercase) before full paragraphs, and filters comma-split fragments that start with a lowercase letter, eliminating "and non-intact skin…"-style fragments from the candidate pool; (d) `_best_matching_quote_candidate` weights updated in both normalization paths — `possible_answer` added as a target (weight 1.5) and question text weight reduced from 1.0 to 0.3 to prevent evidence quotes from matching question wording rather than the answer content. Three new unit tests added. 109/109 backend tests pass, Pyright 0 errors, `./scripts/validate-task.sh` passed.
+
 ## Guidance for future chats
 
 - Read this file and `TASKS.md` together before starting new implementation work.

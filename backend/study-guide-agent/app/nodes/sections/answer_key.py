@@ -48,6 +48,9 @@ def _normalize_evidence_quote(value: str) -> str:
     return value.strip()
 
 
+_SENTENCE_BOUNDARY_RE = re.compile(r"(?<=[.?!])\s+(?=[A-Z])")
+
+
 def _collect_quote_candidates(assessment_passage: dict[str, Any]) -> list[str]:
     passage_lines = [
         str(item).strip()
@@ -67,13 +70,27 @@ def _collect_quote_candidates(assessment_passage: dict[str, Any]) -> list[str]:
             candidates.append(normalized_clue)
 
     for paragraph in passage_lines:
+        # Sentence-level candidates come before the full paragraph so that
+        # _fallback_quote_candidate picks shorter, more specific quotes first.
+        for sentence in _SENTENCE_BOUNDARY_RE.split(paragraph):
+            normalized_sentence = sentence.strip()
+            if (
+                len(normalized_sentence.split()) >= 4
+                and normalized_sentence in passage_text
+                and normalized_sentence not in candidates
+            ):
+                candidates.append(normalized_sentence)
+
         if paragraph and paragraph not in candidates:
             candidates.append(paragraph)
 
+        # Comma-split sub-clauses — only include fragments that start with an
+        # uppercase letter (ruling out mid-sentence fragments like "and non-intact…").
         for fragment in paragraph.replace(";", ",").split(","):
             normalized_fragment = fragment.strip()
             if (
                 len(normalized_fragment.split()) >= 3
+                and normalized_fragment[:1].isupper()
                 and normalized_fragment in passage_text
                 and normalized_fragment not in candidates
             ):
@@ -297,6 +314,27 @@ def _best_matching_quote_candidate(
     if best_score >= 0.2:
         return best_candidate
     return None
+
+
+def _is_clean_quote(quote: str, max_words: int = 25) -> bool:
+    """Return True when the quote looks like a clean, usable evidence fragment.
+
+    Short phrases (≤ 5 words) are always accepted — they are likely specific
+    evidence clues or named concepts and are valid regardless of case.
+
+    For longer fragments we reject quotes that start with a lowercase letter
+    (suggesting the quote begins mid-sentence, e.g. "and non-intact skin…") or
+    that are so long they likely span multiple sentences.
+    """
+    stripped = quote.strip()
+    if not stripped:
+        return False
+    word_count = len(stripped.split())
+    if word_count <= 5:
+        return True
+    if word_count > max_words:
+        return False
+    return stripped[:1].isupper()
 
 
 def _quote_text(value: str) -> str:
@@ -531,6 +569,7 @@ def _normalize_check_in_answers(
             best_candidate is None
             and should_normalize_quote
             and normalized_evidence_quote in model_passage_text
+            and _is_clean_quote(normalized_evidence_quote)
         ):
             best_candidate = normalized_evidence_quote
 
@@ -544,7 +583,11 @@ def _normalize_check_in_answers(
             best_candidate = _best_matching_quote_candidate(
                 match_targets,
                 quote_candidates,
-                weights=[1.0, 0.5, 2.5, 1.0],
+                # evidence_hint (index 2) is the strongest signal; possible_answer
+                # (index 1) aligns the quote with what the answer says; question text
+                # (index 0) is reduced to avoid picking fragments that echo the question
+                # wording rather than supporting the answer.
+                weights=[0.3, 1.5, 2.5, 0.5],
             )
 
         if best_candidate is None and should_normalize_quote:
@@ -644,6 +687,7 @@ def normalize_answer_key_payload(
             best_candidate is None
             and normalized_evidence_quote
             and normalized_evidence_quote in passage_text
+            and _is_clean_quote(normalized_evidence_quote)
         ):
             best_candidate = normalized_evidence_quote
         if best_candidate is None:
@@ -651,11 +695,15 @@ def normalize_answer_key_payload(
                 str(question_spec.get("question", "")),
                 str(question_spec.get("evidence_hint", "")),
                 str(question_spec.get("expected_response_type", "")),
+                possible_answer,
             ]
             best_candidate = _best_matching_quote_candidate(
                 match_targets,
                 quote_candidates,
-                weights=[1.0, 2.5, 0.5],
+                # evidence_hint (index 1) is the primary signal; possible_answer
+                # (index 3) ensures the quote supports the answer rather than just
+                # echoing the question wording (index 0, low weight).
+                weights=[0.3, 2.5, 0.2, 1.5],
             )
         if best_candidate is None:
             best_candidate = _fallback_quote_candidate(

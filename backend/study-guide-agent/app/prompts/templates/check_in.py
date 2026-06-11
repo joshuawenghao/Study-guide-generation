@@ -41,6 +41,7 @@ def build_prompt(
         "- Make each evidence_hint point students toward a specific clue or phrase in the passage.",
         "- Keep the questions aligned to the lesson's core concept and author-purpose analysis.",
         f"- Keep the reading demand close to Grade {request.lesson_metadata.grade_level}.",
+        "- Use short, display-friendly expected_response_type labels such as 'Short answer', 'Extended response', or 'Paragraph response'.",
         "Expected JSON schema:",
         check_in_schema,
         "Return only JSON.",
