@@ -1,6 +1,6 @@
 # Codebase State
 
-Last updated: 2026-06-05
+Last updated: 2026-06-12
 
 This document is the live plain-language summary of the shipped codebase.
 It is intended to answer, in words, what currently exists in the repository without requiring a reader to inspect source files directly.
@@ -37,6 +37,12 @@ It is intended to answer, in words, what currently exists in the repository with
 - The shared preview contract now includes optional renderer-owned `icon_key` metadata so presentation-only iconography can flow from the backend to the frontend without changing teacher input payloads.
 - The backend renderer and PDF template now include a first-pass deterministic iconography system for section headers and repeated callouts using inline SVG markup that survives WeasyPrint.
 - The web preview now consumes renderer-selected icon metadata through a local React icon mapping, so the browser preview and PDF now share the same section-header and recurring-callout iconography family, including the newer literal section-specific icons such as compass, gamepad, stacked books, reader, notes, and pencil treatments.
+- The backend section-generation pipeline now has hardened JSON parsing: four bugs were fixed in the parser's repair path (invalid-escape normalisation, mismatched closer recovery, bare string fragment stripping, and trailing extra-brace recovery), two additional `answer_key` parse failures specific to nursing-length outputs were fixed, and all retries now use section-correct output token budgets instead of the 2048-token default.
+- Evidence quote selection for the answer key is now significantly more accurate: the answer-key prompt now pre-scores all passage fragments per question and embeds the top 3 ranked verbatim candidates inline with each question block, so Gemini receives question-specific guidance rather than a single generic quote pool.
+- The check-in section now emits short, display-friendly `expected_response_type` labels (e.g. "Short answer", "Extended response") matching the style already used by assessment questions.
+- The deep dive section is now fully subject-agnostic: `TopicDomains` carries only `model_passage` and `assessment_passage`; `Blueprint` carries `deep_dive_dimensions: list[str]` so the dimension labels are generated fresh for each subject; `DeepDiveExample` fields were renamed `mode → dimension` and `signal_words → key_terms`; the blueprint and deep dive prompt templates were rewritten to drive from those dynamic dimension labels with no hardcoded ELA framing.
+- The teacher input form (`InputForm.tsx`) no longer shows the three ELA-specific "entertain/inform/persuade example domain" fields that were removed when `TopicDomains` was simplified; the optional inputs section now contains only vocabulary seeds, model passage domain, assessment passage domain, tone register, and length preset.
+- The backend Gemini API call wrapper now enforces a 180-second per-call timeout via `asyncio.wait_for`, converting silent Cloud Run request hangs (previously possible when Gemini stalled with no response) into fast failures that the existing retry path can recover from.
 
 ## Repository Shape
 
@@ -140,6 +146,17 @@ It is intended to answer, in words, what currently exists in the repository with
 - Core typed contracts are implemented in `backend/study-guide-agent/app/types.py` and mirrored in `frontend/lib/types.ts`.
 - The shared preview contract in those files now includes optional presentation-only `icon_key` metadata on `PreviewSection`, and no teacher-facing request fields were added for icon configuration.
 
+- The backend section parser now has four additional repair stages: (1) the `_repair_invalid_json_escapes` branch now calls `_normalize_payload_value` on its output so HTML tags and display escapes are stripped on all code paths; (2) `_repair_mismatched_json_closers` now swaps `]` for `}` in-place rather than insert-and-leave, fixing nursing `step_up_answer` closure failures; (3) a new `_strip_bare_string_fragment_suffixes` stage removes Python-style concatenated string suffixes after closing quotes; (4) a new `raw_decode` branch catches trailing extra-brace `answer_key` responses and silently discards the stray closer.
+- All section retry calls in `app/agent.py` now pass the correct section-specific `max_output_tokens`: `answer_key` retries use `MAX_ANSWER_KEY_OUTPUT_TOKENS` (8192) and `strategy_list` retries use `MAX_STRATEGY_LIST_OUTPUT_TOKENS` (4096), matching first-pass budgets; this was the root cause of intermittent truncated-JSON errors on nursing runs.
+- `app/nodes/sections/model_passage.py` now calls `result.setdefault("evidence_focus", "")` after generation and the retry path does the same, preventing `jinja2.UndefinedError` when Gemini omits that optional field.
+- `app/prompts/templates/answer_key.py` now builds per-question suggested verbatim quotes: for each assessment question the template pre-scores all passage fragments using `_score_quote_for_question` (evidence-hint overlap weighted 3×, question-text overlap weighted 1.5×) and embeds the top 3 as inline "Suggested verbatim quotes" under that question, replacing the single 8-quote global pool.
+- `app/prompts/templates/check_in.py` now includes an instruction to use short display-friendly `expected_response_type` labels, matching the equivalent requirement already present in the assessment-questions prompt.
+- `app/types.py` `TopicDomains` now has exactly two fields (`model_passage`, `assessment_passage`); `Blueprint` now has `deep_dive_dimensions: list[str]`; `DeepDiveExample` fields are `dimension` (was `mode`) and `key_terms` (was `signal_words`).
+- `app/prompts/templates/blueprint.py` now instructs Gemini to generate `deep_dive_dimensions` as 2–4 subject-appropriate dimension labels and no longer references the three removed ELA-specific `TopicDomains` fields.
+- `app/prompts/templates/deep_dive.py` now reads `blueprint.deep_dive_dimensions` to build the dimension list and JSON schema dynamically; no ELA-specific framing remains in the template.
+- `app/nodes/base.py` now wraps each `generate_content` call with `asyncio.wait_for(timeout=180.0)`, converting silent Gemini API stalls into fast `TimeoutError`s that the existing retry path can handle; Cloud Run's 900-second request timeout can no longer be reached by a single stuck Gemini call.
+- All three prompt-lab sample input files (`nursing_grade12_ph.json`, `science_grade8_ph.json`, `social_studies_grade7_ph.json`) have had the three removed `TopicDomains` ELA fields dropped, now containing only `model_passage` and `assessment_passage` in their `optional.topic_domains` objects.
+
 ## Shipped Frontend
 
 - The frontend runtime now has a teacher-facing shell: `frontend/app/layout.tsx` sets study-guide product metadata and a persistent header, while `frontend/app/globals.css` defines the shared canvas, typography, and surface styling for the app.
@@ -163,6 +180,10 @@ It is intended to answer, in words, what currently exists in the repository with
 - `frontend/lib/types.ts` now also exports the shared `DownloadButtonProps` contract for the PDF download control.
 - Frontend formatting is now codified in a checked-in Prettier configuration at the repo root, with `frontend/.prettierignore` covering generated output paths so TypeScript and TSX save-time formatting matches the committed repository style.
 - The main unfinished user-facing work has moved beyond the core results experience; the remaining product gaps now sit in Phase 12 end-to-end validation and the unfinished Phase 13 deployment and parity tasks.
+
+- `frontend/lib/types.ts` `TopicDomains` interface now carries only `model_passage` and `assessment_passage`; `Blueprint` interface now includes `deep_dive_dimensions: string[]`, keeping the frontend type contract in sync with the backend after the Phase 18 changes.
+- `frontend/components/PreviewSection.tsx` now renders deep dive examples using `dimension` and `key_terms` (renamed from `mode` and `signal_words`), and displays "Key terms" instead of "Signal words" in the section preview.
+- `frontend/components/InputForm.tsx` no longer exposes the three ELA-specific "entertain example domain", "inform example domain", and "persuade example domain" state fields or their JSX input blocks; `parseTopicDomains` now accepts only `modelPassage` and `assessmentPassage`.
 
 ## Automation Workflow
 
@@ -199,12 +220,13 @@ It is intended to answer, in words, what currently exists in the repository with
 
 - - Four backend parsing bugs in the section-generation and retry pipeline are now fixed: `_parse_section_response` now calls `_normalize_payload_value` on the invalid-escape repair path (was previously skipped, leaving HTML tags and display escapes in section content); `_generate_retry_payload` now passes section-specific `max_output_tokens` so `answer_key` retries use 8192 tokens and `strategy_list` retries use 4096 instead of the 2048 default (the root cause of intermittent truncated-JSON errors on nursing guides); and two redundant `normalize_answer_key_payload` calls in `_regenerate_answer_key` and `study_guide_workflow` have been removed since `generate_answer_key` already normalises before returning. The full suite of 101 backend tests passes after these fixes, and the repo done gate `./scripts/validate-task.sh` still passes end to end.
 
+- The full backend test suite now has 114 passing tests after the Phase 15–18 additions, covering parser hardening (mismatched closer recovery, bare fragment stripping, trailing extra brace), evidence quote scoring, check-in label validation, and deep dive field renaming across all fixture files.
+- `backend/study-guide-agent/tests/unit/test_deep_dive_prompt.py` now provides five focused unit tests for the subject-agnostic deep dive prompt, covering nursing and ELA subject cases, schema field names, and the absence of hardcoded ELA strings.
+
 ## Current Product Gaps
 
-- Wave 1, Wave 2, Wave 3, and answer-key generation are implemented; the validator layer now includes its aggregator node, six hard validators, two soft validators, broad isolated test coverage, and the complete Phase 6 renderer slice including template, node, and focused renderer tests.
-- Workflow orchestration and focused backend integration coverage are now implemented.
-- The remaining major gaps now sit after the completed staging deployment slice, primarily the still-incomplete release-candidate checkpoint in Task 13.6 and any later production-environment rollout hardening.
-- Deployment is now specified and partially validated remotely: the backend image, local parity stack, Cloud Run staging service, Firebase App Hosting staging frontend, and remote proxy-plus-SSE path are all working, while the final release-candidate smoke checkpoint in Task 13.6 still remains to be recorded.
-- The 2026-06-02 staging reruns cleared the original discontinued-model failure and then several later truncation failures by increasing blueprint, `strategy_list`, and `answer_key` output budgets for `gemini-2.5-flash`; however, the release-candidate nursing smoke still does not complete end to end, and the newest staged rerun on Cloud Run revision `study-guide-agent-staging-00014-wpn` now fails on a truncated `intro` JSON response. The final Task 13.6 checkpoint therefore remains blocked on additional long-section output handling rather than on deployment reachability.
-- The backend now also has a shared parse-aware retry path around Gemini JSON generation: blueprint generation, standard section generation, answer-key generation, and retry generation all detect likely truncated JSON responses and automatically retry with progressively larger output budgets instead of relying on a growing list of section-specific hardcoded token caps.
-- The newest staging backend revision `study-guide-agent-staging-00015-tpm` now serves that shared truncation fix, and a fresh hosted nursing smoke on `https://study-guide-frontend-staging--manabie-ai.asia-southeast1.hosted.app` completed end to end with streamed progress, rendered preview, and the PDF download workspace all working. The remaining visible quality issues in that smoke were non-blocking reading-level warnings only, so the Phase 13.6 release-candidate checkpoint is now satisfied.
+- All core generation phases are now complete through Phase 18: Wave 1–3 generation, answer key, validator aggregation, PDF rendering, workflow orchestration, staging deployment, prompt lab, parser hardening, evidence quote quality, check-in UX fixes, and subject-agnostic deep dive.
+- The staging deployment (Cloud Run backend + Firebase App Hosting frontend) is live and has been validated end to end with the nursing Grade 12 subject as the stress case; the staging revision at the time of the Phase 18 deploy was `study-guide-agent-staging-00035-lz6`.
+- The production deployment path has not yet been formalized: the current staging service uses a literal `GOOGLE_API_KEY` Cloud Run env-var workaround because the runtime service account does not yet have Secret Manager access; production hardening (secret-backed deploy, service account IAM, custom domain) is the primary remaining infrastructure gap.
+- The Gemini 180-second per-call timeout prevents silent hangs but does not guarantee end-to-end success when Gemini is slow; a Cloud Run request near the 900-second limit will still fail after exhausting all retries. This is an acceptable operational risk for the prototype stage.
+- No additional task phases are currently planned; new work would require a new `/spec-groom` → `/spec-to-tasks` pass.

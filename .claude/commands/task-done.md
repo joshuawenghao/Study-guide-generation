@@ -23,7 +23,8 @@ A task can be marked `complete` only if **all** of the following are true:
 4. The implementation does not violate repo instructions or architecture constraints.
 5. Any required paired updates (e.g., mirrored type changes in both `types.py` and `types.ts`) are present.
 6. `TASK_STATUS.md` notes match reality.
-7. If the task is deployment- or parity-related, the task-specific environment validation required by `TASKS.md` has passed, or any remaining blocked external step is recorded explicitly.
+7. `CODEBASE_STATE.md` has been updated to reflect any changed shipped behavior, validation surfaces, or developer-facing capabilities (this update happens in the `/docs-drift` step that immediately follows — do not mark the task complete in git until that step is done).
+8. If the task is deployment- or parity-related, the task-specific environment validation required by `TASKS.md` has passed, or any remaining blocked external step is recorded explicitly.
 
 If any item fails, mark the task `partial` or keep it `not started` depending on actual state.
 
