@@ -259,6 +259,25 @@ MARKET_DEFAULT=PH
 
 ---
 
+## Path disambiguation note
+
+This repo lives inside `Documents - Joshua's MacBook Pro/` where the apostrophe is **Unicode U+2019** (RIGHT SINGLE QUOTATION MARK). There is a second similarly-named folder in the same `Documents/` directory that uses an ASCII U+0027 apostrophe — that folder is an iCloud artifact and does NOT contain the repo.
+
+**Shell scripts and Python code must never use `glob` patterns with `iterdir()` to locate this repo**, because iteration order is non-deterministic and may return the wrong directory first. Always anchor on the git directory:
+
+```bash
+# Bash — always use this pattern
+GITDIR=$(ls -d ~/Documents/Documents*/Study-guide-generation/.git 2>/dev/null | head -1)
+WORKTREE="${GITDIR%/.git}"
+```
+
+```python
+# Python — always pass the path as a CLI argument, not via iterdir()
+# Or use: pathlib.Path(os.environ["STUDY_GUIDE_REPO"])
+```
+
+The env var `STUDY_GUIDE_REPO` is set in `~/.zshrc` pointing to the correct Unicode-apostrophe path, and can be used as the canonical reference.
+
 ## Running locally
 
 ```bash
