@@ -125,10 +125,13 @@ async def call_gemini(
                 len(user_prompt),
             )
 
-            response = await _get_client().aio.models.generate_content(
-                model=MODEL_NAME,
-                contents=user_prompt,
-                config=config,
+            response = await asyncio.wait_for(
+                _get_client().aio.models.generate_content(
+                    model=MODEL_NAME,
+                    contents=user_prompt,
+                    config=config,
+                ),
+                timeout=180.0,
             )
 
             response_text = getattr(response, "text", None)
