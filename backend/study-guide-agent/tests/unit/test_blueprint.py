@@ -96,15 +96,12 @@ async def test_generate_blueprint_returns_valid_blueprint(
                 ],
                 "topic_domains": {
                     "model_passage": "school talent show announcement",
-                    "assessment_passage": "mangrove forest protection article",
-                    "entertain_example": "barangay festival story",
-                    "inform_example": "typhoon safety guide",
-                    "persuade_example": "clean classroom campaign",
-                },
+                    "assessment_passage": "mangrove forest protection article",                },
                 "sub_competencies": [
                     item.model_dump() for item in request.curriculum.sub_competencies
                 ],
                 "core_concept": request.instructional_design.core_concept,
+                "deep_dive_dimensions": ["entertain", "inform", "persuade"],
             }
         )
 
@@ -122,6 +119,7 @@ async def test_generate_blueprint_returns_valid_blueprint(
         "topic_domains",
         "sub_competencies",
         "core_concept",
+        "deep_dive_dimensions",
     }
     assert result.lesson_id == "E6_Q1_0201"
     assert result.title == "Identifying Author's Purpose"
@@ -177,15 +175,12 @@ async def test_generate_blueprint_retries_truncated_json_with_higher_budget(
                 ],
                 "topic_domains": {
                     "model_passage": "school clinic triage",
-                    "assessment_passage": "medical ward wound dressing",
-                    "entertain_example": "healthcare role-play",
-                    "inform_example": "infection prevention guidelines",
-                    "persuade_example": "patient safety campaign",
-                },
+                    "assessment_passage": "medical ward wound dressing",                },
                 "sub_competencies": [
                     item.model_dump() for item in request.curriculum.sub_competencies
                 ],
                 "core_concept": request.instructional_design.core_concept,
+                "deep_dive_dimensions": ["assessment", "intervention", "evaluation"],
             }
         )
 

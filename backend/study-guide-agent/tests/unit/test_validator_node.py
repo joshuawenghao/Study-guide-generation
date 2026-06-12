@@ -68,12 +68,10 @@ def build_blueprint() -> Blueprint:
         topic_domains=TopicDomains(
             model_passage="school talent show announcement",
             assessment_passage="mangrove forest protection article",
-            entertain_example="games",
-            inform_example="science",
-            persuade_example="community",
         ),
         sub_competencies=[SubCompetency(id="sc-1", label="Purpose clues")],
         core_concept="Authors choose details for a purpose.",
+        deep_dive_dimensions=["entertain", "inform", "persuade"],
     )
 
 

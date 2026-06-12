@@ -9,7 +9,7 @@ def _deep_dive_length_guidance(request: GenerateRequest) -> str:
     if grade_level <= 5:
         return (
             "Keep compare_focus and takeaway to one short sentence each, and keep every "
-            "example explanation to one short sentence followed by simple signal words."
+            "example explanation to one short sentence followed by a brief key_terms list."
         )
     return (
         "Keep compare_focus brief, write each explanation in 1 or 2 short sentences, "
@@ -17,42 +17,54 @@ def _deep_dive_length_guidance(request: GenerateRequest) -> str:
     )
 
 
+def _build_schema(dimensions: list[str]) -> str:
+    example_items = []
+    for d in dimensions:
+        example_items.append(
+            '        {\n'
+            f'            "dimension": "{d}",\n'
+            '            "topic_domain": "string",\n'
+            '            "explanation": "string",\n'
+            '            "key_terms": ["string"]\n'
+            '        }'
+        )
+    examples_block = ",\n".join(example_items)
+    return (
+        "{\n"
+        '    "title": "Deep Dive",\n'
+        '    "compare_focus": "string",\n'
+        '    "examples": [\n'
+        + examples_block + "\n"
+        '    ],\n'
+        '    "takeaway": "string"\n'
+        "}"
+    )
+
+
 def build_prompt(spec, blueprint: Blueprint, request: GenerateRequest) -> str:
     del spec
 
-    deep_dive_schema = """{
-    "title": "Deep Dive",
-    "compare_focus": "string",
-    "examples": [
-        {
-            "mode": "string",
-            "topic_domain": "string",
-            "explanation": "string",
-            "signal_words": [
-                "string"
-            ]
-        }
-    ],
-    "takeaway": "string"
-}"""
+    dimensions = blueprint.deep_dive_dimensions
+    dimensions_text = "\n".join(f"  - {d}" for d in dimensions)
 
     prompt_lines = [
-        "Create the deep dive section for a K-12 study guide.",
+        "Create the deep dive section for a study guide.",
         f"- Lesson title: {blueprint.title}",
         f"- Core concept: {blueprint.core_concept}",
-        "- Topic domains for rhetorical examples:",
-        f"  - entertain_example: {blueprint.topic_domains.entertain_example}",
-        f"  - inform_example: {blueprint.topic_domains.inform_example}",
-        f"  - persuade_example: {blueprint.topic_domains.persuade_example}",
+        f"- Subject: {request.lesson_metadata.subject}",
+        "- Compare/contrast dimensions for this subject and lesson:",
+        dimensions_text,
         "Requirements:",
-        "- Compare how entertain, inform, and persuade differ in purpose.",
-        "- Use the blueprint example domains directly so the examples stay distinct.",
-        "- Include signal_words lists that help students notice clues in texts.",
+        f"- Write one example block for each of the {len(dimensions)} dimensions listed above.",
+        "- In each example, set dimension to the label exactly as listed above.",
+        "- Choose a topic_domain that gives a concrete, subject-appropriate context for that dimension.",
+        "- Write an explanation that shows how the core concept applies in that dimension.",
+        "- List key_terms that help students recognize or apply that dimension.",
         f"- Keep the reading level close to Grade {request.lesson_metadata.grade_level}.",
         f"- {_deep_dive_length_guidance(request)}",
-        "- Use plain language to contrast the three purposes.",
+        "- Use plain language throughout.",
         "Expected JSON schema:",
-        deep_dive_schema,
+        _build_schema(dimensions),
         "Return only JSON.",
     ]
 

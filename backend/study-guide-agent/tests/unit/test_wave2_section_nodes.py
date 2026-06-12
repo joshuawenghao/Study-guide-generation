@@ -82,16 +82,13 @@ def _build_blueprint(request: GenerateRequest) -> Blueprint:
             ],
             "topic_domains": {
                 "model_passage": "school talent show announcement",
-                "assessment_passage": "mangrove forest protection article",
-                "entertain_example": "barangay festival story",
-                "inform_example": "typhoon safety guide",
-                "persuade_example": "clean classroom campaign",
-            },
+                "assessment_passage": "mangrove forest protection article",            },
             "sub_competencies": [
                 item.model_dump() for item in request.curriculum.sub_competencies
             ],
             "core_concept": request.instructional_design.core_concept,
-        }
+            "deep_dive_dimensions": ["entertain", "inform", "persuade"],
+            }
     )
 
 
@@ -127,7 +124,7 @@ async def test_wave2_section_nodes_generate_structured_json(
             "core_explainer": [blueprint.core_concept, first_subcompetency.label],
             "subconcept": [first_subcompetency.id, first_subcompetency.label],
             "strategy_list": [blueprint.essential_question],
-            "deep_dive": [blueprint.topic_domains.entertain_example],
+            "deep_dive": blueprint.deep_dive_dimensions,
             "model_passage": [blueprint.topic_domains.model_passage],
             "assessment_passage": [
                 blueprint.topic_domains.assessment_passage,

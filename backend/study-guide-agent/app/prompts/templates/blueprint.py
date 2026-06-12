@@ -67,11 +67,9 @@ def build_prompt(spec, blueprint, request: GenerateRequest) -> str:
   ],
   "topic_domains": {
     "model_passage": "string",
-    "assessment_passage": "string",
-    "entertain_example": "string",
-    "inform_example": "string",
-    "persuade_example": "string"
+    "assessment_passage": "string"
   },
+  "deep_dive_dimensions": ["string", "string", "string"],
   "sub_competencies": [
     {
       "id": "string",
@@ -116,8 +114,11 @@ def build_prompt(spec, blueprint, request: GenerateRequest) -> str:
             "real-world context."
         ),
         (
-            "Also fill entertain_example, inform_example, and persuade_example with distinct, "
-            "instructionally useful topic domains that support later writing tasks."
+            "Set deep_dive_dimensions to a list of 2 to 4 short, subject-appropriate labels that name "
+            "the key compare/contrast dimensions for this lesson. For an ELA author-purpose lesson the "
+            "labels might be entertain, inform, and persuade. For a nursing lesson they might be "
+            "assessment, intervention, and evaluation. Choose labels that reflect the subject "
+            "and competency described in the lesson context."
         ),
         (
             "Set sub_competencies to the same ordered list provided in the request and copy "

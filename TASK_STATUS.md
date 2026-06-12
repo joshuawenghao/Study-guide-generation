@@ -470,3 +470,15 @@ Notes: Two targeted improvements addressing user-observed issues after the nursi
 - Update the status of the exact matching task after implementation and a focused validation step.
 - Build on `complete` tasks freely.
 - Treat `partial` tasks as existing scaffolds that may need refactoring before extension.
+
+## Phase 18 — Subject-agnostic deep dive
+
+### Task 18.1 — Remove ELA-hardcoded fields and rewrite backend prompts
+
+Status: `complete`
+Notes: `TopicDomains` now has exactly two fields (`model_passage`, `assessment_passage`); `Blueprint` has `deep_dive_dimensions: list[str]`; `DeepDiveExample` fields renamed `mode → dimension` and `signal_words → key_terms`. Blueprint prompt template updated to remove ELA schema fields and instruct Gemini to generate 2–4 subject-appropriate dimension labels as `deep_dive_dimensions`. Deep dive prompt template fully rewritten to read `blueprint.deep_dive_dimensions` dynamically — no hardcoded ELA framing. All test fixtures across 13 files updated to remove the three removed `TopicDomains` fields and add `deep_dive_dimensions` to Blueprint constructions. Five focused unit tests added in `tests/unit/test_deep_dive_prompt.py` covering nursing and ELA subject cases, schema field names, and absence of hardcoded ELA strings. `ARCHITECTURE.md` section 6 Blueprint contract updated. Validation: 103/103 unit tests pass, Pyright 0 errors.
+
+### Task 18.2 — Align renderer and frontend preview to new field names
+
+Status: `not started`
+Notes: Updates `study_guide.html.j2` (`example.dimension`, `example.key_terms`, "Key terms" label), `test_renderer.py` fixtures, `frontend/components/PreviewSection.tsx` (field name reads + label), and `frontend/components/PreviewSection.test.tsx` fixture. Depends on Task 18.1.
