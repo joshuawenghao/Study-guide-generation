@@ -1,6 +1,6 @@
 # Task Status
 
-Last updated: 2026-06-05
+Last updated: 2026-06-12
 
 This file mirrors the structure of `TASKS.md` and records the current repo state against each task directly.
 Use it together with `TASKS.md`:
