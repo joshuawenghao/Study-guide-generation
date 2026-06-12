@@ -96,7 +96,8 @@ async def test_generate_blueprint_returns_valid_blueprint(
                 ],
                 "topic_domains": {
                     "model_passage": "school talent show announcement",
-                    "assessment_passage": "mangrove forest protection article",                },
+                    "assessment_passage": "mangrove forest protection article",
+                },
                 "sub_competencies": [
                     item.model_dump() for item in request.curriculum.sub_competencies
                 ],
@@ -175,7 +176,8 @@ async def test_generate_blueprint_retries_truncated_json_with_higher_budget(
                 ],
                 "topic_domains": {
                     "model_passage": "school clinic triage",
-                    "assessment_passage": "medical ward wound dressing",                },
+                    "assessment_passage": "medical ward wound dressing",
+                },
                 "sub_competencies": [
                     item.model_dump() for item in request.curriculum.sub_competencies
                 ],

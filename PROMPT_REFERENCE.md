@@ -131,7 +131,7 @@ Generate exactly 5 vocabulary entries. Choose words that are central to the less
 
 Set topic_domains.model_passage and topic_domains.assessment_passage to DIFFERENT topic domains. They must not overlap, paraphrase each other, or name the same real-world context.
 
-Also fill entertain_example, inform_example, and persuade_example with distinct, instructionally useful topic domains that support later writing tasks.
+Set deep_dive_dimensions to a list of 2–4 short, subject-appropriate labels that name the key compare/contrast dimensions for this lesson (e.g. entertain/inform/persuade for ELA, or assessment/intervention/evaluation for nursing).
 
 Set sub_competencies to the same ordered list provided in the request and copy core_concept directly from the request.
 
@@ -149,11 +149,9 @@ Expected Blueprint JSON schema:
   ],
   "topic_domains": {
     "model_passage": "string",
-    "assessment_passage": "string",
-    "entertain_example": "string",
-    "inform_example": "string",
-    "persuade_example": "string"
+    "assessment_passage": "string"
   },
+  "deep_dive_dimensions": ["string", "string", "string"],
   "sub_competencies": [
     { "id": "string", "label": "string" }
   ],
@@ -579,31 +577,32 @@ Return only JSON.
 
 #### Deep Dive (`deep_dive`)
 
-Compares how entertain, inform, and persuade differ using the three blueprint-assigned topic domains.
+Compares how the lesson's key dimensions differ using blueprint-assigned topic domains. Dimensions are subject-appropriate (e.g. entertain/inform/persuade for ELA, or assessment/intervention/evaluation for nursing).
 
 **Prompt Lab override key:** `deep_dive`
 
-**Context from blueprint:** title, core concept, topic_domains (entertain_example, inform_example, persuade_example)
+**Context from blueprint:** title, core concept, subject, deep_dive_dimensions
 
 **Prompt sent to model:**
 
 ```
-Create the deep dive section for a K-12 study guide.
+Create the deep dive section for a study guide.
 - Lesson title: «blueprint.title»
 - Core concept: «blueprint.core_concept»
-- Topic domains for rhetorical examples:
-  - entertain_example: «blueprint.topic_domains.entertain_example»
-  - inform_example: «blueprint.topic_domains.inform_example»
-  - persuade_example: «blueprint.topic_domains.persuade_example»
+- Subject: «request.subject»
+- Compare/contrast dimensions for this subject and lesson:
+  «blueprint.deep_dive_dimensions (one bullet per dimension)»
 
 Requirements:
-- Compare how entertain, inform, and persuade differ in purpose.
-- Use the blueprint example domains directly so the examples stay distinct.
-- Include signal_words lists that help students notice clues in texts.
+- Write one example block for each dimension listed above.
+- In each example, set dimension to the label exactly as listed above.
+- Choose a topic_domain that gives a concrete, subject-appropriate context for that dimension.
+- Write an explanation that shows how the core concept applies in that dimension.
+- List key_terms that help students recognize or apply that dimension.
 - Keep the reading level close to Grade «grade_level».
-- [Grade ≤ 5] Keep compare_focus and takeaway to one short sentence each, and keep every example explanation to one short sentence followed by simple signal words.
+- [Grade ≤ 5] Keep compare_focus and takeaway to one short sentence each, and keep every example explanation to one short sentence.
 - [Grade ≥ 6] Keep compare_focus brief, write each explanation in 1 or 2 short sentences, and keep the takeaway to one short summary sentence.
-- Use plain language to contrast the three purposes.
+- Use plain language throughout.
 
 Expected JSON schema:
 {
@@ -611,10 +610,10 @@ Expected JSON schema:
   "compare_focus": "string",
   "examples": [
     {
-      "mode": "string",
+      "dimension": "string",
       "topic_domain": "string",
       "explanation": "string",
-      "signal_words": ["string"]
+      "key_terms": ["string"]
     }
   ],
   "takeaway": "string"

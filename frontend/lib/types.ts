@@ -5,9 +5,6 @@ export type LengthPreset = "short" | "standard" | "long";
 export interface TopicDomains {
   model_passage: string;
   assessment_passage: string;
-  entertain_example: string;
-  inform_example: string;
-  persuade_example: string;
 }
 
 export interface SubCompetency {
@@ -160,6 +157,7 @@ export interface Blueprint {
   topic_domains: TopicDomains;
   sub_competencies: SubCompetency[];
   core_concept: string;
+  deep_dive_dimensions: string[];
 }
 
 export interface CheckInQuestion {

@@ -43,10 +43,7 @@
       ],
       "topic_domains": {
         "model_passage": "school clinic triage",
-        "assessment_passage": "medical ward wound dressing",
-        "entertain_example": "healthcare role-play",
-        "inform_example": "infection prevention guidelines",
-        "persuade_example": "patient safety campaign"
+        "assessment_passage": "medical ward wound dressing"
       },
       "tone_register": "academic",
       "length_preset": "standard"

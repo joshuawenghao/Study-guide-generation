@@ -56,11 +56,11 @@ describe("PreviewSection", () => {
         takeaway: "Purpose changes language choices.",
         examples: [
           {
-            mode: "Inform",
+            dimension: "Inform",
             topic_domain: "science guide",
             explanation:
               "This example teaches the reader using factual language.",
-            signal_words: ["for example", "according to", "in addition"],
+            key_terms: ["for example", "according to", "in addition"],
           },
         ],
       },
@@ -70,7 +70,7 @@ describe("PreviewSection", () => {
       createElement(PreviewSection, { section, validation }),
     );
 
-    expect(markup).toContain("Signal words");
+    expect(markup).toContain("Key terms");
     expect(markup).toContain("for example");
     expect(markup).toContain("according to");
     expect(markup).not.toContain(

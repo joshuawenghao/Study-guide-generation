@@ -51,10 +51,7 @@
       ],
       "topic_domains": {
         "model_passage": "barangay museum exhibit",
-        "assessment_passage": "local newspaper history feature",
-        "entertain_example": "history-detective game",
-        "inform_example": "archive research guide",
-        "persuade_example": "community heritage campaign"
+        "assessment_passage": "local newspaper history feature"
       },
       "tone_register": "warm-formal",
       "length_preset": "standard"

@@ -34,16 +34,10 @@ function parseLineList(value: string): string[] | undefined {
 function parseTopicDomains(
   modelPassage: string,
   assessmentPassage: string,
-  entertainExample: string,
-  informExample: string,
-  persuadeExample: string,
 ): Record<string, string> | undefined {
   const entries = Object.entries({
     model_passage: modelPassage.trim(),
     assessment_passage: assessmentPassage.trim(),
-    entertain_example: entertainExample.trim(),
-    inform_example: informExample.trim(),
-    persuade_example: persuadeExample.trim(),
   }).filter(([, value]) => value.length > 0);
 
   return entries.length > 0 ? Object.fromEntries(entries) : undefined;
@@ -75,9 +69,6 @@ export default function InputForm({ onSubmit, isLoading }: InputFormProps) {
   const [vocabularySeeds, setVocabularySeeds] = useState("");
   const [modelPassageDomain, setModelPassageDomain] = useState("");
   const [assessmentPassageDomain, setAssessmentPassageDomain] = useState("");
-  const [entertainExampleDomain, setEntertainExampleDomain] = useState("");
-  const [informExampleDomain, setInformExampleDomain] = useState("");
-  const [persuadeExampleDomain, setPersuadeExampleDomain] = useState("");
   const [toneRegister, setToneRegister] = useState("warm-formal");
   const [lengthPreset, setLengthPreset] = useState<LengthPreset>("standard");
 
@@ -215,9 +206,6 @@ export default function InputForm({ onSubmit, isLoading }: InputFormProps) {
         topic_domains: parseTopicDomains(
           modelPassageDomain,
           assessmentPassageDomain,
-          entertainExampleDomain,
-          informExampleDomain,
-          persuadeExampleDomain,
         ),
         tone_register: trimmedToneRegister,
         length_preset: lengthPreset,
@@ -578,42 +566,6 @@ export default function InputForm({ onSubmit, isLoading }: InputFormProps) {
             value={assessmentPassageDomain}
             onChange={(event) => setAssessmentPassageDomain(event.target.value)}
             placeholder="reef conservation"
-          />
-        </label>
-
-        <label className="space-y-2">
-          <span className="text-sm font-medium text-slate-800">
-            Entertain example domain
-          </span>
-          <input
-            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
-            value={entertainExampleDomain}
-            onChange={(event) => setEntertainExampleDomain(event.target.value)}
-            placeholder="folktales"
-          />
-        </label>
-
-        <label className="space-y-2">
-          <span className="text-sm font-medium text-slate-800">
-            Inform example domain
-          </span>
-          <input
-            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
-            value={informExampleDomain}
-            onChange={(event) => setInformExampleDomain(event.target.value)}
-            placeholder="science articles"
-          />
-        </label>
-
-        <label className="space-y-2">
-          <span className="text-sm font-medium text-slate-800">
-            Persuade example domain
-          </span>
-          <input
-            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
-            value={persuadeExampleDomain}
-            onChange={(event) => setPersuadeExampleDomain(event.target.value)}
-            placeholder="school campaigns"
           />
         </label>
 

@@ -24,7 +24,9 @@ def _make_blueprint(dimensions: list[str], subject_label: str = "Nursing") -> Bl
         essential_question="How do nurses protect patients?",
         introduction_hook="Nurses apply precautions in every interaction.",
         learning_targets=[
-            LearningTarget(number=1, bloom_verb="identify", objective="Identify precautions.")
+            LearningTarget(
+                number=1, bloom_verb="identify", objective="Identify precautions."
+            )
         ],
         vocabulary=[
             VocabEntry(
@@ -33,7 +35,9 @@ def _make_blueprint(dimensions: list[str], subject_label: str = "Nursing") -> Bl
                 example_sentence="PPE protects nurses.",
             )
         ],
-        topic_domains=TopicDomains(model_passage="triage", assessment_passage="wound care"),
+        topic_domains=TopicDomains(
+            model_passage="triage", assessment_passage="wound care"
+        ),
         sub_competencies=[SubCompetency(id="sc-1", label="Hand hygiene")],
         core_concept="Infection prevention",
         deep_dive_dimensions=dimensions,
@@ -74,7 +78,9 @@ def test_deep_dive_prompt_includes_all_dimensions() -> None:
 
 
 def test_deep_dive_prompt_schema_uses_dimension_and_key_terms() -> None:
-    prompt = build_prompt(None, _make_blueprint(["assessment", "intervention"]), _make_request())
+    prompt = build_prompt(
+        None, _make_blueprint(["assessment", "intervention"]), _make_request()
+    )
     assert '"dimension"' in prompt
     assert '"key_terms"' in prompt
     assert '"signal_words"' not in prompt
@@ -82,7 +88,11 @@ def test_deep_dive_prompt_schema_uses_dimension_and_key_terms() -> None:
 
 
 def test_deep_dive_prompt_has_no_hardcoded_ela_strings_for_nursing_subject() -> None:
-    prompt = build_prompt(None, _make_blueprint(["assessment", "intervention", "evaluation"]), _make_request())
+    prompt = build_prompt(
+        None,
+        _make_blueprint(["assessment", "intervention", "evaluation"]),
+        _make_request(),
+    )
     # The ELA author-purpose labels must NOT appear as hardcoded strings in the generated prompt
     # (they may appear if the blueprint happens to use them, but must not be hardcoded)
     assert "entertain, inform, and persuade" not in prompt

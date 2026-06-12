@@ -61,13 +61,14 @@ def _build_blueprint(request: GenerateRequest) -> Blueprint:
             ],
             "topic_domains": {
                 "model_passage": "school talent show announcement",
-                "assessment_passage": "mangrove forest protection article",            },
+                "assessment_passage": "mangrove forest protection article",
+            },
             "sub_competencies": [
                 item.model_dump() for item in request.curriculum.sub_competencies
             ],
             "core_concept": request.instructional_design.core_concept,
             "deep_dive_dimensions": ["entertain", "inform", "persuade"],
-            }
+        }
     )
 
 

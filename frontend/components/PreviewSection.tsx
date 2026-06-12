@@ -952,19 +952,20 @@ function renderDeepDive(section: PreviewSectionData): JSX.Element {
 
       <div className="grid gap-4">
         {examples.map((example, index) => {
-          const mode = getString(example, "mode") ?? `Example ${index + 1}`;
+          const dimension =
+            getString(example, "dimension") ?? `Example ${index + 1}`;
           const topicDomain = getString(example, "topic_domain");
           const explanation = getString(example, "explanation");
-          const signalWords = getStringArray(example, "signal_words");
+          const keyTerms = getStringArray(example, "key_terms");
 
           return (
             <article
-              key={`${mode}-${topicDomain ?? index}`}
+              key={`${dimension}-${topicDomain ?? index}`}
               className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"
             >
               <div className="flex flex-wrap items-center gap-3">
                 <h3 className="text-lg font-semibold tracking-tight text-slate-950">
-                  {mode}
+                  {dimension}
                 </h3>
                 {topicDomain ? (
                   <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold tracking-[0.14em] text-slate-700 break-words [overflow-wrap:anywhere]">
@@ -979,15 +980,15 @@ function renderDeepDive(section: PreviewSectionData): JSX.Element {
                 </p>
               ) : null}
 
-              {signalWords.length > 0 ? (
+              {keyTerms.length > 0 ? (
                 <div className="mt-4 space-y-2">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    Signal words
+                    Key terms
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {signalWords.map((word) => (
+                    {keyTerms.map((word) => (
                       <span
-                        key={`${mode}-${word}`}
+                        key={`${dimension}-${word}`}
                         className="max-w-full rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold text-cyan-900 break-words [overflow-wrap:anywhere]"
                       >
                         {word}

@@ -480,5 +480,5 @@ Notes: `TopicDomains` now has exactly two fields (`model_passage`, `assessment_p
 
 ### Task 18.2 — Align renderer and frontend preview to new field names
 
-Status: `not started`
-Notes: Updates `study_guide.html.j2` (`example.dimension`, `example.key_terms`, "Key terms" label), `test_renderer.py` fixtures, `frontend/components/PreviewSection.tsx` (field name reads + label), and `frontend/components/PreviewSection.test.tsx` fixture. Depends on Task 18.1.
+Status: `complete`
+Notes: Updated `study_guide.html.j2` — replaced `example.mode|title` with `example.dimension|title`, `example.signal_words|join(', ')` with `example.key_terms|join(', ')`, and "Signal words" label with "Key terms". Updated `frontend/components/PreviewSection.tsx` — renamed `getString(example, "mode")` → `getString(example, "dimension")`, `getStringArray(example, "signal_words")` → `getStringArray(example, "key_terms")`, local variables `mode`/`signalWords` → `dimension`/`keyTerms`, and the "Signal words" label → "Key terms". Updated `frontend/components/PreviewSection.test.tsx` fixture — `mode: "Inform"` → `dimension: "Inform"`, `signal_words` → `key_terms`, assertion updated to `"Key terms"`. Also fixed `run_demo.py` which still referenced three removed `TopicDomains` fields and was missing `deep_dive_dimensions` (caught by `ty check`). Validation: 114/114 tests, 0 Pyright errors, frontend build clean.

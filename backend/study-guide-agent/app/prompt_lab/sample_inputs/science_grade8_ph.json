@@ -51,10 +51,7 @@
       ],
       "topic_domains": {
         "model_passage": "sports drink and hydration",
-        "assessment_passage": "saltwater fish tank care",
-        "entertain_example": "science-club challenge",
-        "inform_example": "laboratory observation guide",
-        "persuade_example": "healthy hydration campaign"
+        "assessment_passage": "saltwater fish tank care"
       },
       "tone_register": "clear-encouraging",
       "length_preset": "standard"

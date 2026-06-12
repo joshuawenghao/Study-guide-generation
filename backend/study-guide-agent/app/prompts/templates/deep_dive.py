@@ -21,21 +21,20 @@ def _build_schema(dimensions: list[str]) -> str:
     example_items = []
     for d in dimensions:
         example_items.append(
-            '        {\n'
+            "        {\n"
             f'            "dimension": "{d}",\n'
             '            "topic_domain": "string",\n'
             '            "explanation": "string",\n'
             '            "key_terms": ["string"]\n'
-            '        }'
+            "        }"
         )
     examples_block = ",\n".join(example_items)
     return (
         "{\n"
         '    "title": "Deep Dive",\n'
         '    "compare_focus": "string",\n'
-        '    "examples": [\n'
-        + examples_block + "\n"
-        '    ],\n'
+        '    "examples": [\n' + examples_block + "\n"
+        "    ],\n"
         '    "takeaway": "string"\n'
         "}"
     )
