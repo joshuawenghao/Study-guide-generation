@@ -754,6 +754,7 @@ Requirements:
 - Make each evidence_hint point students toward a specific clue or phrase in the passage.
 - Keep the questions aligned to the lesson's core concept and author-purpose analysis.
 - Keep the reading demand close to Grade «grade_level».
+- Use short, display-friendly expected_response_type labels such as 'Short answer', 'Extended response', or 'Paragraph response'.
 
 Expected JSON schema:
 {
@@ -903,15 +904,14 @@ Create the answer key section for a K-12 study guide.
 - Assessment passage text:
   «assessment_passage.passage — full text»
 
-- Exact quote bank for assessment answers (use only these exact strings when you quote evidence):
-  - "«quote_1»"
-  - "«quote_2»"
-  [... up to 8 quotes derived from assessment passage sentences and evidence clues]
-
-- Assessment questions:
+- Assessment questions (each with suggested verbatim quotes):
   - Q«n»: «question»
     - Evidence hint: «evidence_hint»
     - Expected response type: «expected_response_type»
+    - Suggested verbatim quotes for evidence_quote (copy one exactly):
+      * "«quote_1»"
+      * "«quote_2»"
+      * "«quote_3»"
   [... one block per assessment question]
 
 - Step-up prompt:
@@ -938,7 +938,7 @@ Requirements:
 - Use the assessment question's evidence_hint and expected_response_type to keep the answer aligned to the student-facing prompt.
 - Do not write generic meta-instructions such as "The correct answer should..." or "Respond directly to the question." Write the actual answer instead.
 - Keep the exact quoted evidence only in evidence_quote. Do not repeat the exact evidence_quote inside possible_answer.
-- For each assessment_answers entry, choose exactly one evidence_quote from the assessment quote bank above and copy it verbatim.
+- For each assessment_answers entry, choose exactly one evidence_quote from the suggested quotes listed with that question and copy it verbatim.
 - Do not place raw double-quoted evidence inside free-text fields such as check-in answers, step_up_answer.challenge_response, or teacher_note.
 - Provide a step_up_answer object that answers the step-up prompt directly and repeats the required_evidence list.
 - Keep answers concise, student-appropriate, and structurally ready for downstream quote validation.
