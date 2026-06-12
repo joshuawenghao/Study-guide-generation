@@ -259,36 +259,6 @@ MARKET_DEFAULT=PH
 
 ---
 
-## Path disambiguation note
-
-This repo's real location contains a Unicode U+2019 RIGHT SINGLE QUOTATION MARK in the folder name (`Documents - Joshua’s MacBook Pro`). An iCloud artifact with the same name but ASCII U+0027 apostrophe exists alongside it.
-
-**The canonical way to open and work in this repo is via its symlink:**
-
-```
-~/dev/study-guide-generation  →  real repo (Unicode path)
-```
-
-**Always open VS Code / Claude Code from `~/dev/study-guide-generation`**, not from the full Documents path. This ensures:
-- The session working directory never contains the apostrophe character
-- Write/Edit tool calls use `~/dev/study-guide-generation/...` paths, which have no apostrophe
-- File writes can never accidentally land in the iCloud artifact directory
-
-**Shell scripts and Python code that cannot use the symlink** should anchor on the git directory, never on `iterdir()` or glob patterns that may hit the wrong directory first:
-
-```bash
-# Bash — use this when you cannot use the symlink path
-GITDIR=$(ls -d ~/Documents/Documents*/Study-guide-generation/.git 2>/dev/null | head -1)
-WORKTREE="${GITDIR%/.git}"
-```
-
-```python
-# Python — pass path as CLI argument or read from env
-# pathlib.Path(os.environ["STUDY_GUIDE_REPO"])  # set in ~/.zshrc → ~/dev/study-guide-generation
-```
-
-The env var `STUDY_GUIDE_REPO` in `~/.zshrc` now points to the symlink path (`$HOME/dev/study-guide-generation`) and can be used as the canonical reference in any shell or script.
-
 ## Running locally
 
 ```bash
