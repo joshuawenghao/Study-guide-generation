@@ -134,7 +134,7 @@ def _warning_tolerance(target_grade_level: int, section_key: str) -> float:
     elif target_grade_level >= 11:
         tolerance = 1.5
     else:
-        tolerance = 1.0
+        tolerance = 1.25
 
     if section_key == "intro" and target_grade_level <= 6:
         tolerance += 0.5

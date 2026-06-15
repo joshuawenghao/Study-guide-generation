@@ -339,6 +339,65 @@ def test_validate_reading_level_still_warns_for_large_grade_12_gap(
     assert any("above the target grade band" in warning for warning in result.warnings)
 
 
+def test_validate_reading_level_no_warn_for_grade_8_within_new_tolerance(
+    monkeypatch,
+) -> None:
+    """Grade 8 target with score 9.2 is within the 1.25 tolerance; must not warn."""
+    monkeypatch.setattr(reading_level_module, "_has_local_cmudict", lambda: True)
+    monkeypatch.setattr(
+        reading_level_module.textstat,
+        "linsear_write_formula",
+        lambda _text, **kwargs: 9.2,
+    )
+
+    result = reading_level_module.validate_reading_level(
+        target_grade_level=8,
+        section_payloads={
+            "core_explainer": {
+                "overview": (
+                    "Democratic governments depend on citizens who understand how laws are "
+                    "created, debated, and revised before they take effect in the legislature. "
+                    "Students should be able to trace a bill through its stages and explain "
+                    "the reasoning behind each procedural requirement before the final vote."
+                )
+            }
+        },
+    )
+
+    assert result.passed is True
+    assert result.warnings == []
+
+
+def test_validate_reading_level_warns_for_grade_8_above_new_tolerance(
+    monkeypatch,
+) -> None:
+    """Grade 8 target with score 9.5 exceeds the 1.25 tolerance; must warn."""
+    monkeypatch.setattr(reading_level_module, "_has_local_cmudict", lambda: True)
+    monkeypatch.setattr(
+        reading_level_module.textstat,
+        "linsear_write_formula",
+        lambda _text, **kwargs: 9.5,
+    )
+
+    result = reading_level_module.validate_reading_level(
+        target_grade_level=8,
+        section_payloads={
+            "core_explainer": {
+                "overview": (
+                    "Democratic governments depend on citizens who understand how laws are "
+                    "created, debated, and revised before they take effect in the legislature. "
+                    "Students should be able to trace a bill through its stages and explain "
+                    "the reasoning behind each procedural requirement before the final vote."
+                )
+            }
+        },
+    )
+
+    assert result.passed is True
+    assert any("core_explainer" in warning for warning in result.warnings)
+    assert any("above the target grade band" in warning for warning in result.warnings)
+
+
 def test_validate_reading_level_warns_for_materially_lower_grade_12_gap(
     monkeypatch,
 ) -> None:

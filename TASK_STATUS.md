@@ -473,7 +473,8 @@ Notes: Replaced Flesch-Kincaid with Linsear Write formula as the primary readabi
 
 ### Task 19.2 — Fix tolerance curve for grades 7–10
 
-Status: `not started`
+Status: `complete`
+Notes: Changed `_warning_tolerance()` else-branch in `backend/study-guide-agent/app/validators/soft/reading_level.py` from `1.0` to `1.25` so the grade 7–10 band matches the adjacent grade bands instead of being the tightest. Added two new unit tests: one verifying grade 8 + score 9.2 (delta 1.2, within 1.25) does not warn, and one verifying grade 8 + score 9.5 (delta 1.5, above 1.25) does warn. 116/116 backend tests pass, 0 Pyright errors.
 
 ### Task 19.3 — Remove model_passage from reading-level checked sections
 
