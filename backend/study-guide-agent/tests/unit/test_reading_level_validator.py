@@ -411,17 +411,22 @@ def test_validate_reading_level_warns_for_materially_lower_grade_12_gap(
     result = reading_level_module.validate_reading_level(
         target_grade_level=12,
         section_payloads={
-            "model_passage": {
-                "passage": [
-                    "Wash your hands before care. Wash after care. Wash when you touch shared tools. "
-                    "Wash again after contact with body fluids. Repeat each step slowly and check "
-                    "the posted reminder so every action stays safe for the patient and the worker."
+            "deep_dive": {
+                "compare_focus": "Hand hygiene and infection control.",
+                "examples": [
+                    {
+                        "explanation": (
+                            "Wash your hands before care. Wash after care. Wash when you touch "
+                            "shared tools. Wash again after contact with body fluids. Repeat each "
+                            "step slowly and check the posted reminder so every action stays safe "
+                            "for the patient and the healthcare worker on duty."
+                        )
+                    }
                 ],
-                "evidence_focus": "The repeated commands show the main safety message.",
             }
         },
     )
 
     assert result.passed is True
-    assert any("model_passage" in warning for warning in result.warnings)
+    assert any("deep_dive" in warning for warning in result.warnings)
     assert any("below the target grade band" in warning for warning in result.warnings)

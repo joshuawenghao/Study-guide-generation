@@ -21,7 +21,6 @@ PROSE_SECTION_KEYS = {
     "core_explainer",
     "subconcept",
     "deep_dive",
-    "model_passage",
     "assessment_passage",
 }
 MIN_RELIABLE_WORD_COUNT = 30

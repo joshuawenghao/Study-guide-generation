@@ -478,7 +478,8 @@ Notes: Changed `_warning_tolerance()` else-branch in `backend/study-guide-agent/
 
 ### Task 19.3 — Remove model_passage from reading-level checked sections
 
-Status: `not started`
+Status: `complete`
+Notes: Removed `"model_passage"` from `PROSE_SECTION_KEYS` in `backend/study-guide-agent/app/validators/soft/reading_level.py`. The model_passage section is from a different topic domain than the assessment (enforced by hard validation rule 4), so reading-level warnings on it produce noise rather than signal. The unit test `test_validate_reading_level_warns_for_materially_lower_grade_12_gap` was repointed from `model_passage` to `deep_dive` to cover the same below-band scenario. 116/116 backend tests pass.
 
 ### Task 19.4 — Expand answer leakage excluded sections
 
