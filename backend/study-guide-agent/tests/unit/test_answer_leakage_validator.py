@@ -86,6 +86,27 @@ def test_validate_answer_leakage_warns_when_body_section_repeats_quote() -> None
     assert any("protect coastlines" in warning for warning in result.warnings)
 
 
+def test_validate_answer_leakage_ignores_newly_excluded_sections() -> None:
+    """model_passage, check_in, learning_targets, strategy_list, self_assessment
+    must not trigger leakage warnings even when they contain a quoted phrase."""
+    answer_key = build_answer_key()
+    leaking_text = "Mangroves protect coastlines from storms."
+
+    result = validate_answer_leakage(
+        answer_key=answer_key,
+        section_payloads={
+            "model_passage": {"passage": [leaking_text], "evidence_focus": "See above."},
+            "check_in": {"questions": [{"question": leaking_text}]},
+            "learning_targets": {"skills": [{"description": leaking_text}]},
+            "strategy_list": {"strategies": [{"title": "Strategy", "steps": [leaking_text]}]},
+            "self_assessment": {"rows": [{"skill": leaking_text, "got_it": "Yes"}]},
+        },
+    )
+
+    assert result.passed is True
+    assert result.warnings == []
+
+
 def test_validate_answer_leakage_ignores_assessment_questions_quotes() -> None:
     result = validate_answer_leakage(
         answer_key=build_answer_key(),

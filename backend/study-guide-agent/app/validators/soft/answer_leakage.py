@@ -14,6 +14,13 @@ EXCLUDED_SECTION_KEYS = {
     "answer_key",
     "assessment_passage",
     "assessment_questions",
+    # Structurally disconnected from assessment content — leakage checks produce
+    # false positives on these sections.
+    "model_passage",
+    "check_in",
+    "learning_targets",
+    "strategy_list",
+    "self_assessment",
 }
 QUOTED_PHRASE_PATTERN = re.compile(r'"([^"\n]+)"|“([^”\n]+)”')
 

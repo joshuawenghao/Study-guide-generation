@@ -483,7 +483,8 @@ Notes: Removed `"model_passage"` from `PROSE_SECTION_KEYS` in `backend/study-gui
 
 ### Task 19.4 — Expand answer leakage excluded sections
 
-Status: `not started`
+Status: `complete`
+Notes: Added `"model_passage"`, `"check_in"`, `"learning_targets"`, `"strategy_list"`, and `"self_assessment"` to `EXCLUDED_SECTION_KEYS` in `backend/study-guide-agent/app/validators/soft/answer_leakage.py`. These sections are structurally disconnected from the assessment questions and routinely triggered false-positive leakage warnings. Added `test_validate_answer_leakage_ignores_newly_excluded_sections` which passes a leaking phrase through all five newly excluded sections and asserts zero warnings. 117/117 backend tests pass.
 
 ### Task 19.5 — Add minimum phrase length filter to answer leakage validator
 
