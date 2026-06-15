@@ -92,6 +92,7 @@ Phase 12 — End-to-end validation and QA
 Phase 13 — Deployment and parity
 Phase 14 — Prompt Lab MVP
 Phase 18 — Subject-agnostic deep dive
+Phase 19 — Soft validator quality improvements
 ```
 
 Deployment checkpoints should be exercised before the end of the roadmap:

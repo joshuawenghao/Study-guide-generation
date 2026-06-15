@@ -1,6 +1,6 @@
 # Codebase State
 
-Last updated: 2026-06-12
+Last updated: 2026-06-15
 
 This document is the live plain-language summary of the shipped codebase.
 It is intended to answer, in words, what currently exists in the repository without requiring a reader to inspect source files directly.
@@ -155,6 +155,11 @@ It is intended to answer, in words, what currently exists in the repository with
 - `app/prompts/templates/blueprint.py` now instructs Gemini to generate `deep_dive_dimensions` as 2–4 subject-appropriate dimension labels and no longer references the three removed ELA-specific `TopicDomains` fields.
 - `app/prompts/templates/deep_dive.py` now reads `blueprint.deep_dive_dimensions` to build the dimension list and JSON schema dynamically; no ELA-specific framing remains in the template.
 - `app/nodes/base.py` now wraps each `generate_content` call with `asyncio.wait_for(timeout=180.0)`, converting silent Gemini API stalls into fast `TimeoutError`s that the existing retry path can handle; Cloud Run's 900-second request timeout can no longer be reached by a single stuck Gemini call.
+- The reading-level soft validator now uses the Linsear Write formula (`textstat.linsear_write_formula(text, strict_upper=False)`) as the primary readability metric instead of Flesch-Kincaid; Linsear only counts words with 3+ syllables as "hard," so two-syllable domain vocabulary common in K–12 subject content no longer inflates the score the way FK's 11.8 syllable coefficient does. Empirically: grade-7 social studies content scores 6.8 vs FK 10.1. The FK/pyphen estimate is kept as a fallback when the project-local cmudict is unavailable. Warning messages now include the metric name.
+- The reading-level validator tolerance for the grade 7–10 band was raised from 1.0 to 1.25 so it matches the adjacent grade bands; the 7–10 trough was the strictest of any band, causing systematic over-warning on middle and high school subject-matter content.
+- `model_passage` was removed from `PROSE_SECTION_KEYS` in the reading-level validator; the hard passage-domain validator already guarantees `model_passage` uses a different topic domain, so reading-level warnings on it produce noise rather than signal.
+- The answer leakage validator's `EXCLUDED_SECTION_KEYS` now includes `model_passage`, `check_in`, `learning_targets`, `strategy_list`, and `self_assessment` in addition to the original three, eliminating false-positive warnings from sections that are structurally disconnected from the assessment questions.
+- The answer leakage validator now filters out quoted evidence phrases shorter than 5 words before the section scan; short phrases (e.g. "protect coastlines") match common domain collocations in instructional text and were generating noise that obscured genuine leakage warnings in `core_explainer`, `subconcept`, and `deep_dive`.
 - All three prompt-lab sample input files (`nursing_grade12_ph.json`, `science_grade8_ph.json`, `social_studies_grade7_ph.json`) have had the three removed `TopicDomains` ELA fields dropped, now containing only `model_passage` and `assessment_passage` in their `optional.topic_domains` objects.
 
 ## Shipped Frontend
@@ -220,12 +225,12 @@ It is intended to answer, in words, what currently exists in the repository with
 
 - - Four backend parsing bugs in the section-generation and retry pipeline are now fixed: `_parse_section_response` now calls `_normalize_payload_value` on the invalid-escape repair path (was previously skipped, leaving HTML tags and display escapes in section content); `_generate_retry_payload` now passes section-specific `max_output_tokens` so `answer_key` retries use 8192 tokens and `strategy_list` retries use 4096 instead of the 2048 default (the root cause of intermittent truncated-JSON errors on nursing guides); and two redundant `normalize_answer_key_payload` calls in `_regenerate_answer_key` and `study_guide_workflow` have been removed since `generate_answer_key` already normalises before returning. The full suite of 101 backend tests passes after these fixes, and the repo done gate `./scripts/validate-task.sh` still passes end to end.
 
-- The full backend test suite now has 114 passing tests after the Phase 15–18 additions, covering parser hardening (mismatched closer recovery, bare fragment stripping, trailing extra brace), evidence quote scoring, check-in label validation, and deep dive field renaming across all fixture files.
+- The full backend test suite now has 118 passing tests after the Phase 15–19 additions, covering parser hardening (mismatched closer recovery, bare fragment stripping, trailing extra brace), evidence quote scoring, check-in label validation, deep dive field renaming, Linsear Write metric, grade 7–10 tolerance curve, and expanded answer leakage exclusions.
 - `backend/study-guide-agent/tests/unit/test_deep_dive_prompt.py` now provides five focused unit tests for the subject-agnostic deep dive prompt, covering nursing and ELA subject cases, schema field names, and the absence of hardcoded ELA strings.
 
 ## Current Product Gaps
 
-- All core generation phases are now complete through Phase 18: Wave 1–3 generation, answer key, validator aggregation, PDF rendering, workflow orchestration, staging deployment, prompt lab, parser hardening, evidence quote quality, check-in UX fixes, and subject-agnostic deep dive.
+- All core generation phases are now complete through Phase 19: Wave 1–3 generation, answer key, validator aggregation, PDF rendering, workflow orchestration, staging deployment, prompt lab, parser hardening, evidence quote quality, check-in UX fixes, subject-agnostic deep dive, and soft validator quality improvements (Linsear Write metric, tolerance curve fix, reduced answer leakage false positives).
 - The staging deployment (Cloud Run backend + Firebase App Hosting frontend) is live and has been validated end to end with the nursing Grade 12 subject as the stress case; the staging revision at the time of the Phase 18 deploy was `study-guide-agent-staging-00035-lz6`.
 - The production deployment path has not yet been formalized: the current staging service uses a literal `GOOGLE_API_KEY` Cloud Run env-var workaround because the runtime service account does not yet have Secret Manager access; production hardening (secret-backed deploy, service account IAM, custom domain) is the primary remaining infrastructure gap.
 - The Gemini 180-second per-call timeout prevents silent hangs but does not guarantee end-to-end success when Gemini is slow; a Cloud Run request near the 900-second limit will still fail after exhausting all retries. This is an acceptable operational risk for the prototype stage.

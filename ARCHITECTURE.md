@@ -513,8 +513,8 @@ Soft validators produce warnings that are surfaced to the user in the web previe
 
 | Validator        | What it checks                                                                                                                                |
 | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `answer_leakage` | Instructional body sections do not contain verbatim phrases that appear in the answer key possible answers; assessment artifacts are excluded |
-| `reading_level`  | Longer prose-heavy sections stay within the configured grade-band tolerance, with warnings when a section is materially above or below target |
+| `answer_leakage` | Quoted evidence phrases (≥ 5 words) from `answer_key.assessment_answers[].evidence_quote` do not appear verbatim in instructional body sections; `answer_key`, `assessment_passage`, `assessment_questions`, `model_passage`, `check_in`, `learning_targets`, `strategy_list`, and `self_assessment` are excluded from the check |
+| `reading_level`  | Prose-heavy sections (`intro`, `core_explainer`, `subconcept`, `deep_dive`, `assessment_passage`) stay within the grade-band tolerance using Linsear Write formula (FK fallback when cmudict is unavailable); tolerance is 1.5 grades for ≤ 4, 1.25 for 5–10, 1.5 for ≥ 11 |
 
 ### Retry logic
 

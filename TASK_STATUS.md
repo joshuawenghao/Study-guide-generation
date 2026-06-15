@@ -202,12 +202,12 @@ Notes: `backend/study-guide-agent/app/validators/hard/passage_domain_diff.py` no
 ### Task 5.6 — Implement soft validator: answer_leakage
 
 Status: `complete`
-Notes: `backend/study-guide-agent/app/validators/soft/answer_leakage.py` now extracts quoted evidence phrases from assessment answer-key `possible_answer` fields, ignores `assessment_passage`, `assessment_questions`, and `answer_key`, and emits non-blocking `ValidationResult.warnings` when instructional sections repeat those phrases; focused coverage exists in `tests/unit/test_answer_leakage_validator.py`, and the repo done gate passed.
+Notes: `backend/study-guide-agent/app/validators/soft/answer_leakage.py` now extracts quoted evidence phrases from assessment answer-key `evidence_quote` fields, ignores `assessment_passage`, `assessment_questions`, and `answer_key`, and emits non-blocking `ValidationResult.warnings` when instructional sections repeat those phrases; focused coverage exists in `tests/unit/test_answer_leakage_validator.py`, and the repo done gate passed. (Exclusion list and minimum phrase length were later expanded in Phase 19.)
 
 ### Task 5.7 — Implement soft validator: reading_level
 
 Status: `complete`
-Notes: `backend/study-guide-agent/app/validators/soft/reading_level.py` now computes section-level Flesch-Kincaid scores with `textstat`, focuses on longer prose-heavy sections, and emits non-blocking `ValidationResult.warnings` when a section is materially above or below the target grade band using the current asymmetric tolerance rules; focused coverage exists in `tests/unit/test_reading_level_validator.py`, `textstat` was added to backend dependencies, and the repo done gate passed.
+Notes: `backend/study-guide-agent/app/validators/soft/reading_level.py` now computes section-level readability scores with `textstat`, focuses on longer prose-heavy sections, and emits non-blocking `ValidationResult.warnings` when a section is materially above or below the target grade band. Initially implemented with Flesch-Kincaid; the metric and tolerance curve were later improved in Phase 19 to use Linsear Write. `textstat` was added to backend dependencies, and the repo done gate passed.
 
 ### Task 5.8 — Implement the validator node
 
@@ -464,9 +464,21 @@ Notes: Gemini occasionally emits a stray `}` after the closing brace of the answ
 Status: `complete`
 Notes: Two targeted improvements addressing user-observed issues after the nursing study guide run. (1) **Check-in response_type labels** (`backend/study-guide-agent/app/prompts/templates/check_in.py`) — added a prompt instruction `"Use short, display-friendly expected_response_type labels such as 'Short answer', 'Extended response', or 'Paragraph response'."` to match the assessment_questions prompt, which already had this instruction. (2) **Evidence quote normalization** (`backend/study-guide-agent/app/nodes/sections/answer_key.py`) — four related changes: (a) new `_is_clean_quote()` helper rejects verbatim Gemini quotes that start mid-sentence (lowercase first word, > 5 words) or are excessively long (> 25 words), short phrases ≤ 5 words are always accepted regardless of case; (b) mid-sentence/long verbatim quotes now fall through to scored candidate selection instead of being used as-is; (c) `_collect_quote_candidates` now adds sentence-level candidates (split on `. ` + uppercase) before full paragraphs, and filters comma-split fragments that start with a lowercase letter, eliminating "and non-intact skin…"-style fragments from the candidate pool; (d) `_best_matching_quote_candidate` weights updated in both normalization paths — `possible_answer` added as a target (weight 1.5) and question text weight reduced from 1.0 to 0.3 to prevent evidence quotes from matching question wording rather than the answer content. Three new unit tests added. 109/109 backend tests pass, Pyright 0 errors, `./scripts/validate-task.sh` passed.
 
+## Phase 18 — Subject-agnostic deep dive
+
+### Task 18.1 — Remove ELA-hardcoded fields and rewrite backend prompts
+
+Status: `complete`
+Notes: `TopicDomains` now has exactly two fields (`model_passage`, `assessment_passage`); `Blueprint` has `deep_dive_dimensions: list[str]`; `DeepDiveExample` fields renamed `mode → dimension` and `signal_words → key_terms`. Blueprint prompt template updated to remove ELA schema fields and instruct Gemini to generate 2–4 subject-appropriate dimension labels as `deep_dive_dimensions`. Deep dive prompt template fully rewritten to read `blueprint.deep_dive_dimensions` dynamically — no hardcoded ELA framing. All test fixtures across 13 files updated to remove the three removed `TopicDomains` fields and add `deep_dive_dimensions` to Blueprint constructions. Five focused unit tests added in `tests/unit/test_deep_dive_prompt.py` covering nursing and ELA subject cases, schema field names, and absence of hardcoded ELA strings. `ARCHITECTURE.md` section 6 Blueprint contract updated. Validation: 103/103 unit tests pass, Pyright 0 errors.
+
+### Task 18.2 — Align renderer and frontend preview to new field names
+
+Status: `complete`
+Notes: Updated `study_guide.html.j2` — replaced `example.mode|title` with `example.dimension|title`, `example.signal_words|join(', ')` with `example.key_terms|join(', ')`, and "Signal words" label with "Key terms". Updated `frontend/components/PreviewSection.tsx` — renamed `getString(example, "mode")` → `getString(example, "dimension")`, `getStringArray(example, "signal_words")` → `getStringArray(example, "key_terms")`, local variables `mode`/`signalWords` → `dimension`/`keyTerms`, and the "Signal words" label → "Key terms". Updated `frontend/components/PreviewSection.test.tsx` fixture — `mode: "Inform"` → `dimension: "Inform"`, `signal_words` → `key_terms`, assertion updated to `"Key terms"`. Also fixed `run_demo.py` which still referenced three removed `TopicDomains` fields and was missing `deep_dive_dimensions` (caught by `ty check`). Validation: 114/114 tests, 0 Pyright errors, frontend build clean.
+
 ## Phase 19 — Soft Validator Quality Improvements
 
-### Task 19.1 — Switch reading-level metric to Dale-Chall for grades ≤ 8
+### Task 19.1 — Switch reading-level metric to Linsear Write for all grades
 
 Status: `complete`
 Notes: Replaced Flesch-Kincaid with Linsear Write formula as the primary readability metric across all grade levels. Linsear only counts words with 3+ syllables as "hard," so two-syllable domain vocabulary (e.g. "treaty," "fraction," "colony") no longer inflates the score. Empirical testing confirmed: grade-7 social studies text scores 6.8 with Linsear vs 10.1 with FK; grade-12 nursing text scores 12.0 with Linsear vs 15.5 with FK. FK is kept as the fallback when cmudict is unavailable. Warning messages now include the metric name ("Linsear Write" or "Flesch-Kincaid"). All 12 reading-level unit tests updated to patch `textstat.linsear_write_formula`. 114/114 backend tests pass, 0 Pyright errors.
@@ -489,7 +501,7 @@ Notes: Added `"model_passage"`, `"check_in"`, `"learning_targets"`, `"strategy_l
 ### Task 19.5 — Add minimum phrase length filter to answer leakage validator
 
 Status: `complete`
-Notes: Added `MIN_PHRASE_WORD_COUNT = 5` constant and a `len(phrase.split()) >= MIN_PHRASE_WORD_COUNT` guard in `_extract_quoted_phrases()` in `backend/study-guide-agent/app/validators/soft/answer_leakage.py`. Short quoted phrases (e.g. "protect coastlines") are too generic to constitute meaningful leakage signal and are now silently dropped before the section scan. Updated existing fixtures in the test file to use a 5-word phrase ("mangroves protect coastlines from storm surges") and added `test_validate_answer_leakage_ignores_short_quoted_phrases` which verifies a 2-word phrase produces zero warnings even when it appears verbatim in a body section. 118/118 backend tests pass.
+Notes: Added `MIN_PHRASE_WORD_COUNT = 5` constant and a `len(phrase.split()) >= MIN_PHRASE_WORD_COUNT` guard in `_extract_quoted_phrases()` in `backend/study-guide-agent/app/validators/soft/answer_leakage.py`. Short quoted phrases (e.g. "protect coastlines") are too generic to constitute meaningful leakage signal and are now silently dropped before the section scan. Updated existing fixtures in the test file to use a 5-word phrase ("mangroves protect coastlines from storm surges") and added `test_validate_answer_leakage_ignores_short_quoted_phrases` which verifies a 2-word phrase produces zero warnings even when it appears verbatim in a body section. `ruff format` applied to `test_answer_leakage_validator.py` (line-length wrapping on a multi-line assertion). 118/118 backend tests pass.
 
 ## Guidance for future chats
 
@@ -497,15 +509,3 @@ Notes: Added `MIN_PHRASE_WORD_COUNT = 5` constant and a `len(phrase.split()) >= 
 - Update the status of the exact matching task after implementation and a focused validation step.
 - Build on `complete` tasks freely.
 - Treat `partial` tasks as existing scaffolds that may need refactoring before extension.
-
-## Phase 18 — Subject-agnostic deep dive
-
-### Task 18.1 — Remove ELA-hardcoded fields and rewrite backend prompts
-
-Status: `complete`
-Notes: `TopicDomains` now has exactly two fields (`model_passage`, `assessment_passage`); `Blueprint` has `deep_dive_dimensions: list[str]`; `DeepDiveExample` fields renamed `mode → dimension` and `signal_words → key_terms`. Blueprint prompt template updated to remove ELA schema fields and instruct Gemini to generate 2–4 subject-appropriate dimension labels as `deep_dive_dimensions`. Deep dive prompt template fully rewritten to read `blueprint.deep_dive_dimensions` dynamically — no hardcoded ELA framing. All test fixtures across 13 files updated to remove the three removed `TopicDomains` fields and add `deep_dive_dimensions` to Blueprint constructions. Five focused unit tests added in `tests/unit/test_deep_dive_prompt.py` covering nursing and ELA subject cases, schema field names, and absence of hardcoded ELA strings. `ARCHITECTURE.md` section 6 Blueprint contract updated. Validation: 103/103 unit tests pass, Pyright 0 errors.
-
-### Task 18.2 — Align renderer and frontend preview to new field names
-
-Status: `complete`
-Notes: Updated `study_guide.html.j2` — replaced `example.mode|title` with `example.dimension|title`, `example.signal_words|join(', ')` with `example.key_terms|join(', ')`, and "Signal words" label with "Key terms". Updated `frontend/components/PreviewSection.tsx` — renamed `getString(example, "mode")` → `getString(example, "dimension")`, `getStringArray(example, "signal_words")` → `getStringArray(example, "key_terms")`, local variables `mode`/`signalWords` → `dimension`/`keyTerms`, and the "Signal words" label → "Key terms". Updated `frontend/components/PreviewSection.test.tsx` fixture — `mode: "Inform"` → `dimension: "Inform"`, `signal_words` → `key_terms`, assertion updated to `"Key terms"`. Also fixed `run_demo.py` which still referenced three removed `TopicDomains` fields and was missing `deep_dive_dimensions` (caught by `ty check`). Validation: 114/114 tests, 0 Pyright errors, frontend build clean.
