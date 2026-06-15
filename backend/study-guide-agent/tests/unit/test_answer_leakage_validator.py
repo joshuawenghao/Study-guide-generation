@@ -28,12 +28,12 @@ def build_answer_key() -> AnswerKeySection:
                 question_number=2,
                 question="What is the author's purpose in this article?",
                 possible_answer="The author wants to inform readers about why mangroves matter.",
-                evidence_quote='"protect coastlines"',
+                evidence_quote='"mangroves protect coastlines from storm surges"',
             )
         ],
         step_up_answer=StepUpAnswer(
             challenge_response="Use details from the article to explain the purpose.",
-            required_evidence=['"protect coastlines"'],
+            required_evidence=['"mangroves protect coastlines from storm surges"'],
         ),
         teacher_note="Accept equivalent answers with direct evidence.",
     )
@@ -72,7 +72,7 @@ def test_validate_answer_leakage_warns_when_body_section_repeats_quote() -> None
                 hook="Think about why authors choose certain details.",
                 essential_question="Why does author purpose matter?",
                 paragraphs=[
-                    "An author may mention how mangroves protect coastlines before students answer the assessment.",
+                    "An author may explain how mangroves protect coastlines from storm surges before students answer the assessment.",
                 ],
                 bridge_to_lesson="You will study how details shape a reader's thinking.",
             )
@@ -83,14 +83,53 @@ def test_validate_answer_leakage_warns_when_body_section_repeats_quote() -> None
     assert result.failed_sections == []
     assert result.failures == {}
     assert any("intro" in warning for warning in result.warnings)
-    assert any("protect coastlines" in warning for warning in result.warnings)
+    assert any("mangroves protect coastlines from storm surges" in warning for warning in result.warnings)
+
+
+def test_validate_answer_leakage_ignores_short_quoted_phrases() -> None:
+    """Phrases under 5 words must not trigger leakage warnings."""
+    short_phrase_key = AnswerKeySection(
+        title="Answer Key",
+        check_in_answers=[],
+        assessment_answers=[
+            AnswerKeyItem(
+                question_number=1,
+                question="What protects the coast?",
+                possible_answer="Mangroves protect coastlines.",
+                evidence_quote='"protect coastlines"',
+            )
+        ],
+        step_up_answer=StepUpAnswer(
+            challenge_response="Explain in your own words.",
+            required_evidence=[],
+        ),
+        teacher_note="",
+    )
+
+    result = validate_answer_leakage(
+        answer_key=short_phrase_key,
+        section_payloads={
+            "intro": IntroSection(
+                title="Introduction",
+                hook="Think about why authors choose certain details.",
+                essential_question="Why does author purpose matter?",
+                paragraphs=[
+                    "Mangroves protect coastlines and support local wildlife in many regions."
+                ],
+                bridge_to_lesson="You will study those choices today.",
+            )
+        },
+    )
+
+    assert result.passed is True
+    assert result.warnings == []
 
 
 def test_validate_answer_leakage_ignores_newly_excluded_sections() -> None:
     """model_passage, check_in, learning_targets, strategy_list, self_assessment
     must not trigger leakage warnings even when they contain a quoted phrase."""
     answer_key = build_answer_key()
-    leaking_text = "Mangroves protect coastlines from storms."
+    leaking_text = "Mangroves protect coastlines from storm surges in coastal areas."
 
     result = validate_answer_leakage(
         answer_key=answer_key,

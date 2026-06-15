@@ -488,7 +488,8 @@ Notes: Added `"model_passage"`, `"check_in"`, `"learning_targets"`, `"strategy_l
 
 ### Task 19.5 — Add minimum phrase length filter to answer leakage validator
 
-Status: `not started`
+Status: `complete`
+Notes: Added `MIN_PHRASE_WORD_COUNT = 5` constant and a `len(phrase.split()) >= MIN_PHRASE_WORD_COUNT` guard in `_extract_quoted_phrases()` in `backend/study-guide-agent/app/validators/soft/answer_leakage.py`. Short quoted phrases (e.g. "protect coastlines") are too generic to constitute meaningful leakage signal and are now silently dropped before the section scan. Updated existing fixtures in the test file to use a 5-word phrase ("mangroves protect coastlines from storm surges") and added `test_validate_answer_leakage_ignores_short_quoted_phrases` which verifies a 2-word phrase produces zero warnings even when it appears verbatim in a body section. 118/118 backend tests pass.
 
 ## Guidance for future chats
 

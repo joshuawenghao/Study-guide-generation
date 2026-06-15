@@ -54,6 +54,9 @@ def _iter_text_fragments(value: Any) -> Iterable[str]:
             yield from _iter_text_fragments(item)
 
 
+MIN_PHRASE_WORD_COUNT = 5
+
+
 def _extract_quoted_phrases(answer_key: AnswerKeySection) -> list[str]:
     phrases: list[str] = []
     for answer in answer_key.assessment_answers:
@@ -61,7 +64,7 @@ def _extract_quoted_phrases(answer_key: AnswerKeySection) -> list[str]:
             answer.evidence_quote
         ):
             phrase = straight_quote or curly_quote
-            if phrase:
+            if phrase and len(phrase.split()) >= MIN_PHRASE_WORD_COUNT:
                 phrases.append(phrase)
     return phrases
 
