@@ -7,7 +7,6 @@ from collections.abc import Iterable, Mapping, Sequence
 from typing import Any
 
 from pydantic import BaseModel
-from textstat import textstat
 from textstat.backend.utils._get_pyphen import get_pyphen
 
 from app.types import ValidationResult
@@ -69,7 +68,7 @@ def _iter_text_fragments(value: Any) -> Iterable[str]:
             yield from _iter_text_fragments(item)
 
 
-def _estimate_flesch_kincaid_grade_without_cmudict(text: str) -> float:
+def _flesch_kincaid_grade(text: str) -> float:
     words = re.findall(r"[A-Za-z]+(?:'[A-Za-z]+)?", text)
     if not words:
         return 0.0
@@ -96,16 +95,6 @@ def _estimate_flesch_kincaid_grade_without_cmudict(text: str) -> float:
 
 def _count_words(text: str) -> int:
     return len(re.findall(r"[A-Za-z]+(?:'[A-Za-z]+)?", text))
-
-
-def _linsear_grade(text: str) -> float:
-    """Grade level via Linsear Write formula, using the full section text.
-
-    Linsear only counts words with 3+ syllables as hard, so two-syllable
-    domain vocabulary (e.g. 'treaty', 'colony', 'fraction') does not inflate
-    the score the way Flesch-Kincaid does.
-    """
-    return float(textstat.linsear_write_formula(text))
 
 
 def _warning_tolerance(target_grade_level: int, section_key: str) -> float:
@@ -161,11 +150,7 @@ def validate_reading_level(
             continue
 
         try:
-            grade_score = _linsear_grade(section_text)
-            metric_name = "Linsear Write"
-        except LookupError:
-            grade_score = _estimate_flesch_kincaid_grade_without_cmudict(section_text)
-            metric_name = "Flesch-Kincaid"
+            grade_score = _flesch_kincaid_grade(section_text)
         except Exception as error:
             warnings.append(
                 "Reading level warning: reading-level analysis was skipped "
@@ -176,13 +161,13 @@ def validate_reading_level(
         score_delta = grade_score - target_grade_level
         if score_delta > _warning_tolerance(target_grade_level, section_key):
             warnings.append(
-                f"Reading level warning for {section_key}: {metric_name} grade {grade_score:.1f} is above the target grade band for Grade {target_grade_level}."
+                f"Reading level warning for {section_key}: Flesch-Kincaid grade {grade_score:.1f} is above the target grade band for Grade {target_grade_level}."
             )
             continue
 
         if score_delta < -_low_warning_tolerance(target_grade_level, section_key):
             warnings.append(
-                f"Reading level warning for {section_key}: {metric_name} grade {grade_score:.1f} is below the target grade band for Grade {target_grade_level}."
+                f"Reading level warning for {section_key}: Flesch-Kincaid grade {grade_score:.1f} is below the target grade band for Grade {target_grade_level}."
             )
 
     return _success_result(warnings)
