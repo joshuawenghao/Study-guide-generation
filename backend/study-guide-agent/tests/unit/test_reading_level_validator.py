@@ -10,8 +10,8 @@ def test_validate_reading_level_ignores_sections_within_target_band(
     monkeypatch.setattr(reading_level_module, "_has_local_cmudict", lambda: True)
     monkeypatch.setattr(
         reading_level_module.textstat,
-        "flesch_kincaid_grade",
-        lambda _text: 6.8,
+        "linsear_write_formula",
+        lambda _text, **kwargs: 6.5,
     )
 
     result = reading_level_module.validate_reading_level(
@@ -41,8 +41,8 @@ def test_validate_reading_level_warns_for_section_outside_target_band(
     monkeypatch.setattr(reading_level_module, "_has_local_cmudict", lambda: True)
     monkeypatch.setattr(
         reading_level_module.textstat,
-        "flesch_kincaid_grade",
-        lambda _text: 9.4,
+        "linsear_write_formula",
+        lambda _text, **kwargs: 9.0,
     )
 
     result = reading_level_module.validate_reading_level(
@@ -64,13 +64,14 @@ def test_validate_reading_level_warns_for_section_outside_target_band(
     assert result.failed_sections == []
     assert result.failures == {}
     assert any("intro" in warning for warning in result.warnings)
-    assert any("9.4" in warning for warning in result.warnings)
+    assert any("9.0" in warning for warning in result.warnings)
     assert any("above the target grade band" in warning for warning in result.warnings)
 
 
 def test_validate_reading_level_warns_when_dependency_data_is_unavailable(
     monkeypatch,
 ) -> None:
+    # FK is used as the fallback when cmudict is not available.
     monkeypatch.setattr(reading_level_module, "_has_local_cmudict", lambda: False)
     monkeypatch.setattr(
         reading_level_module,
@@ -102,13 +103,13 @@ def test_validate_reading_level_warns_when_dependency_data_is_unavailable(
 
 
 def test_validate_reading_level_skips_answer_key_section(monkeypatch) -> None:
-    def fail_if_called(_text: str) -> float:
+    def fail_if_called(_text: str, **kwargs: object) -> float:
         raise AssertionError("answer_key should be skipped")
 
     monkeypatch.setattr(reading_level_module, "_has_local_cmudict", lambda: True)
     monkeypatch.setattr(
         reading_level_module.textstat,
-        "flesch_kincaid_grade",
+        "linsear_write_formula",
         fail_if_called,
     )
 
@@ -132,14 +133,14 @@ def test_validate_reading_level_excludes_metadata_fields_from_scoring(
 ) -> None:
     captured_texts: list[str] = []
 
-    def capture_text(text: str) -> float:
+    def capture_text(text: str, **kwargs: object) -> float:
         captured_texts.append(text)
         return 6.0
 
     monkeypatch.setattr(reading_level_module, "_has_local_cmudict", lambda: True)
     monkeypatch.setattr(
         reading_level_module.textstat,
-        "flesch_kincaid_grade",
+        "linsear_write_formula",
         capture_text,
     )
 
@@ -163,13 +164,13 @@ def test_validate_reading_level_excludes_metadata_fields_from_scoring(
 
 
 def test_validate_reading_level_skips_short_sections(monkeypatch) -> None:
-    def fail_if_called(_text: str) -> float:
+    def fail_if_called(_text: str, **kwargs: object) -> float:
         raise AssertionError("short sections should be skipped")
 
     monkeypatch.setattr(reading_level_module, "_has_local_cmudict", lambda: True)
     monkeypatch.setattr(
         reading_level_module.textstat,
-        "flesch_kincaid_grade",
+        "linsear_write_formula",
         fail_if_called,
     )
 
@@ -196,8 +197,8 @@ def test_validate_reading_level_uses_wider_band_for_lower_grades(
     monkeypatch.setattr(reading_level_module, "_has_local_cmudict", lambda: True)
     monkeypatch.setattr(
         reading_level_module.textstat,
-        "flesch_kincaid_grade",
-        lambda _text: 5.4,
+        "linsear_write_formula",
+        lambda _text, **kwargs: 5.0,
     )
 
     result = reading_level_module.validate_reading_level(
@@ -223,8 +224,8 @@ def test_validate_reading_level_still_warns_for_large_lower_grade_gap(
     monkeypatch.setattr(reading_level_module, "_has_local_cmudict", lambda: True)
     monkeypatch.setattr(
         reading_level_module.textstat,
-        "flesch_kincaid_grade",
-        lambda _text: 6.7,
+        "linsear_write_formula",
+        lambda _text, **kwargs: 6.0,
     )
 
     result = reading_level_module.validate_reading_level(
@@ -260,8 +261,8 @@ def test_validate_reading_level_uses_wider_band_for_grade_12_technical_content(
     monkeypatch.setattr(reading_level_module, "_has_local_cmudict", lambda: True)
     monkeypatch.setattr(
         reading_level_module.textstat,
-        "flesch_kincaid_grade",
-        lambda _text: 13.4,
+        "linsear_write_formula",
+        lambda _text, **kwargs: 13.0,
     )
 
     result = reading_level_module.validate_reading_level(
@@ -287,8 +288,8 @@ def test_validate_reading_level_allows_slightly_lower_grade_12_content(
     monkeypatch.setattr(reading_level_module, "_has_local_cmudict", lambda: True)
     monkeypatch.setattr(
         reading_level_module.textstat,
-        "flesch_kincaid_grade",
-        lambda _text: 10.1,
+        "linsear_write_formula",
+        lambda _text, **kwargs: 10.1,
     )
 
     result = reading_level_module.validate_reading_level(
@@ -314,8 +315,8 @@ def test_validate_reading_level_still_warns_for_large_grade_12_gap(
     monkeypatch.setattr(reading_level_module, "_has_local_cmudict", lambda: True)
     monkeypatch.setattr(
         reading_level_module.textstat,
-        "flesch_kincaid_grade",
-        lambda _text: 14.0,
+        "linsear_write_formula",
+        lambda _text, **kwargs: 14.2,
     )
 
     result = reading_level_module.validate_reading_level(
@@ -344,8 +345,8 @@ def test_validate_reading_level_warns_for_materially_lower_grade_12_gap(
     monkeypatch.setattr(reading_level_module, "_has_local_cmudict", lambda: True)
     monkeypatch.setattr(
         reading_level_module.textstat,
-        "flesch_kincaid_grade",
-        lambda _text: 8.2,
+        "linsear_write_formula",
+        lambda _text, **kwargs: 7.5,
     )
 
     result = reading_level_module.validate_reading_level(

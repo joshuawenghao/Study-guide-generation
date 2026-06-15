@@ -464,6 +464,29 @@ Notes: Gemini occasionally emits a stray `}` after the closing brace of the answ
 Status: `complete`
 Notes: Two targeted improvements addressing user-observed issues after the nursing study guide run. (1) **Check-in response_type labels** (`backend/study-guide-agent/app/prompts/templates/check_in.py`) — added a prompt instruction `"Use short, display-friendly expected_response_type labels such as 'Short answer', 'Extended response', or 'Paragraph response'."` to match the assessment_questions prompt, which already had this instruction. (2) **Evidence quote normalization** (`backend/study-guide-agent/app/nodes/sections/answer_key.py`) — four related changes: (a) new `_is_clean_quote()` helper rejects verbatim Gemini quotes that start mid-sentence (lowercase first word, > 5 words) or are excessively long (> 25 words), short phrases ≤ 5 words are always accepted regardless of case; (b) mid-sentence/long verbatim quotes now fall through to scored candidate selection instead of being used as-is; (c) `_collect_quote_candidates` now adds sentence-level candidates (split on `. ` + uppercase) before full paragraphs, and filters comma-split fragments that start with a lowercase letter, eliminating "and non-intact skin…"-style fragments from the candidate pool; (d) `_best_matching_quote_candidate` weights updated in both normalization paths — `possible_answer` added as a target (weight 1.5) and question text weight reduced from 1.0 to 0.3 to prevent evidence quotes from matching question wording rather than the answer content. Three new unit tests added. 109/109 backend tests pass, Pyright 0 errors, `./scripts/validate-task.sh` passed.
 
+## Phase 19 — Soft Validator Quality Improvements
+
+### Task 19.1 — Switch reading-level metric to Dale-Chall for grades ≤ 8
+
+Status: `complete`
+Notes: Replaced Flesch-Kincaid with Linsear Write formula as the primary readability metric across all grade levels. Linsear only counts words with 3+ syllables as "hard," so two-syllable domain vocabulary (e.g. "treaty," "fraction," "colony") no longer inflates the score. Empirical testing confirmed: grade-7 social studies text scores 6.8 with Linsear vs 10.1 with FK; grade-12 nursing text scores 12.0 with Linsear vs 15.5 with FK. FK is kept as the fallback when cmudict is unavailable. Warning messages now include the metric name ("Linsear Write" or "Flesch-Kincaid"). All 12 reading-level unit tests updated to patch `textstat.linsear_write_formula`. 114/114 backend tests pass, 0 Pyright errors.
+
+### Task 19.2 — Fix tolerance curve for grades 7–10
+
+Status: `not started`
+
+### Task 19.3 — Remove model_passage from reading-level checked sections
+
+Status: `not started`
+
+### Task 19.4 — Expand answer leakage excluded sections
+
+Status: `not started`
+
+### Task 19.5 — Add minimum phrase length filter to answer leakage validator
+
+Status: `not started`
+
 ## Guidance for future chats
 
 - Read this file and `TASKS.md` together before starting new implementation work.

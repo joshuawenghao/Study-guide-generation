@@ -2149,3 +2149,70 @@ At minimum:
 - `./scripts/validate-task.sh` passes from the repo root
 - The PDF renderer and React web preview both render deep dive examples using the `dimension` heading and a "Key terms" label
 - No references to `signal_words`, `mode` (as a deep dive field), `entertain_example`, `inform_example`, or `persuade_example` remain in active code paths
+
+---
+
+## Phase 19 — Soft Validator Quality Improvements
+
+> Goal: reduce noisy false-positive warnings and improve the accuracy of the reading-level soft validator so generated warnings are more actionable.
+
+---
+
+### Task 19.1 — Switch reading-level metric to Dale-Chall for grades ≤ 8
+
+Change the primary readability metric in `backend/study-guide-agent/app/validators/soft/reading_level.py` from Flesch-Kincaid to Dale-Chall for grade targets ≤ 8. FK penalises multi-syllabic subject vocabulary with a coefficient of 11.8, causing systematic false positives on social studies, science, and nursing content. Dale-Chall measures vocabulary familiarity against a 3,000-word list, which is better calibrated for subject-matter content at lower grades. For grade targets ≥ 9, retain FK since sentence complexity is the binding constraint at upper secondary. `textstat` already provides `dale_chall_readability_score()` and `dale_chall_to_grade()`.
+
+**Done looks like:**
+
+- `validate_reading_level` uses `textstat.dale_chall_to_grade(textstat.dale_chall_readability_score(...))` for `target_grade_level <= 8`
+- `validate_reading_level` uses `textstat.flesch_kincaid_grade(...)` for `target_grade_level >= 9`
+- Unit tests in `tests/unit/test_reading_level_validator.py` are updated and pass
+- `./scripts/validate-task.sh` passes
+
+---
+
+### Task 19.2 — Fix tolerance curve for grades 7–10
+
+In `_warning_tolerance()` in `backend/study-guide-agent/app/validators/soft/reading_level.py`, raise the tolerance for the grade 7–10 band from 1.0 to 1.25 so it matches the adjacent grade bands. The current trough at 1.0 is the strictest of any band, making grade 7–10 the most likely to warn even though middle and high school content has inherently broader vocabulary range than the tolerance implies.
+
+**Done looks like:**
+
+- The `else` branch in `_warning_tolerance()` returns `1.25` instead of `1.0`
+- Existing unit tests updated where tolerance values are asserted
+- `./scripts/validate-task.sh` passes
+
+---
+
+### Task 19.3 — Remove model_passage from reading-level checked sections
+
+Remove `"model_passage"` from `PROSE_SECTION_KEYS` in `backend/study-guide-agent/app/validators/soft/reading_level.py`. The hard validator already guarantees that `model_passage` has a different topic domain from the lesson; its reading level does not need to track the lesson grade target and checking it produces domain-mismatch noise.
+
+**Done looks like:**
+
+- `PROSE_SECTION_KEYS` no longer contains `"model_passage"`
+- Any unit test that references `model_passage` in the reading-level validator is updated
+- `./scripts/validate-task.sh` passes
+
+---
+
+### Task 19.4 — Expand answer leakage excluded sections
+
+Add `"model_passage"`, `"check_in"`, `"learning_targets"`, `"strategy_list"`, and `"self_assessment"` to `EXCLUDED_SECTION_KEYS` in `backend/study-guide-agent/app/validators/soft/answer_leakage.py`. These sections are structurally disconnected from the assessment passage by design and currently produce false-positive warnings that bury genuine leakage in `core_explainer`, `subconcept`, and `deep_dive`.
+
+**Done looks like:**
+
+- `EXCLUDED_SECTION_KEYS` contains all 8 sections: the original 3 plus the 5 new ones
+- At least one new unit test in `tests/unit/test_answer_leakage_validator.py` verifies that a leaked phrase in one of the 5 newly excluded sections does not trigger a warning
+- `./scripts/validate-task.sh` passes
+
+---
+
+### Task 19.5 — Add minimum phrase length filter to answer leakage validator
+
+In `_extract_quoted_phrases()` in `backend/study-guide-agent/app/validators/soft/answer_leakage.py`, filter out extracted phrases shorter than 5 words before returning them. Short quoted phrases (2–3 words) can match common collocations in instructional body text that are unrelated to actual answer leakage, generating noise that obscures real warnings.
+
+**Done looks like:**
+
+- `_extract_quoted_phrases` only returns phrases where `len(phrase.split()) >= 5`
+- A new unit test verifies that a phrase with fewer than 5 words does not trigger a leakage warning even when it appears in a checked section
+- `./scripts/validate-task.sh` passes

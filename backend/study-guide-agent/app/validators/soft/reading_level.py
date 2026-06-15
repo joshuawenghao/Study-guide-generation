@@ -116,6 +116,16 @@ def _has_local_cmudict() -> bool:
     return True
 
 
+def _linsear_grade(text: str) -> float:
+    """Grade level via Linsear Write formula, using the full section text.
+
+    Linsear only counts words with 3+ syllables as hard, so two-syllable
+    domain vocabulary (e.g. 'treaty', 'colony', 'fraction') does not inflate
+    the score the way Flesch-Kincaid does.
+    """
+    return float(textstat.linsear_write_formula(text, strict_upper=False))
+
+
 def _warning_tolerance(target_grade_level: int, section_key: str) -> float:
     if target_grade_level <= 4:
         tolerance = 1.5
@@ -170,13 +180,16 @@ def validate_reading_level(
 
         if not _has_local_cmudict():
             grade_score = _estimate_flesch_kincaid_grade_without_cmudict(section_text)
+            metric_name = "Flesch-Kincaid"
         else:
             try:
-                grade_score = float(textstat.flesch_kincaid_grade(section_text))
+                grade_score = _linsear_grade(section_text)
+                metric_name = "Linsear Write"
             except LookupError:
                 grade_score = _estimate_flesch_kincaid_grade_without_cmudict(
                     section_text
                 )
+                metric_name = "Flesch-Kincaid"
             except Exception as error:
                 warnings.append(
                     "Reading level warning: reading-level analysis was skipped "
@@ -187,13 +200,13 @@ def validate_reading_level(
         score_delta = grade_score - target_grade_level
         if score_delta > _warning_tolerance(target_grade_level, section_key):
             warnings.append(
-                f"Reading level warning for {section_key}: Flesch-Kincaid grade {grade_score:.1f} is above the target grade band for Grade {target_grade_level}."
+                f"Reading level warning for {section_key}: {metric_name} grade {grade_score:.1f} is above the target grade band for Grade {target_grade_level}."
             )
             continue
 
         if score_delta < -_low_warning_tolerance(target_grade_level, section_key):
             warnings.append(
-                f"Reading level warning for {section_key}: Flesch-Kincaid grade {grade_score:.1f} is below the target grade band for Grade {target_grade_level}."
+                f"Reading level warning for {section_key}: {metric_name} grade {grade_score:.1f} is below the target grade band for Grade {target_grade_level}."
             )
 
     return _success_result(warnings)
