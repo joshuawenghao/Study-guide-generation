@@ -514,7 +514,7 @@ Soft validators produce warnings that are surfaced to the user in the web previe
 | Validator        | What it checks                                                                                                                                |
 | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | `answer_leakage` | Quoted evidence phrases (≥ 5 words) from `answer_key.assessment_answers[].evidence_quote` do not appear verbatim in instructional body sections; `answer_key`, `assessment_passage`, `assessment_questions`, `model_passage`, `check_in`, `learning_targets`, `strategy_list`, and `self_assessment` are excluded from the check |
-| `reading_level`  | Prose-heavy sections (`intro`, `core_explainer`, `subconcept`, `deep_dive`, `assessment_passage`) stay within the grade-band tolerance using Linsear Write formula (FK fallback when cmudict is unavailable); tolerance is 1.5 grades for ≤ 4, 1.25 for 5–10, 1.5 for ≥ 11 |
+| `reading_level`  | Prose-heavy sections (`intro`, `core_explainer`, `subconcept`, `deep_dive`, `assessment_passage`) stay within the grade-band tolerance using Flesch-Kincaid grade (pyphen-based syllable counting, no external data files); base tolerance is 1.5 grade levels for grades ≤ 4 and 2.0 for grades 5+; section bonuses: `deep_dive` +0.5, `assessment_passage` +0.5, `intro` (grade ≤ 6) +0.5 |
 
 ### Retry logic
 
@@ -523,6 +523,15 @@ When the validator node returns `passed=False`, the `study_guide_workflow` orche
 After all failed sections are retried, the validator runs a second time. The `while` loop condition limits retries to one pass — on a second failure the section is included as `best_effort` in the final `ValidationResult` and the warning is surfaced to the user in the web preview.
 
 Because ADK dynamic workflows checkpoint each node execution by deterministic execution ID, a mid-run timeout or infrastructure failure resumes from the last successful node — not from the start of the workflow.
+
+### Execution timeouts
+
+Two additional outer timeouts guard long-running generation paths against silent hangs:
+
+- **`answer_key` node**: `asyncio.wait_for(call_gemini_and_parse_json(...), timeout=180.0)` wraps the entire answer-key generation call (including inner retries and JSON repair). If it exceeds 180 seconds, a `RuntimeError` is raised and the node is retried by the orchestrator.
+- **Subconcept retry**: each `call_gemini_and_parse_json` call inside the subconcept retry gather is wrapped with `asyncio.wait_for(timeout=120.0)`. This prevents a single slow sub-competency retry from hanging the entire retry gather indefinitely.
+
+These are in addition to the per-call 180-second timeout on every individual `generate_content` call in `app/nodes/base.py`.
 
 ### Presentation-only visual affordances
 

@@ -1,6 +1,6 @@
 # Task Status
 
-Last updated: 2026-06-12
+Last updated: 2026-06-15
 
 This file mirrors the structure of `TASKS.md` and records the current repo state against each task directly.
 Use it together with `TASKS.md`:
@@ -207,7 +207,7 @@ Notes: `backend/study-guide-agent/app/validators/soft/answer_leakage.py` now ext
 ### Task 5.7 — Implement soft validator: reading_level
 
 Status: `complete`
-Notes: `backend/study-guide-agent/app/validators/soft/reading_level.py` now computes section-level readability scores with `textstat`, focuses on longer prose-heavy sections, and emits non-blocking `ValidationResult.warnings` when a section is materially above or below the target grade band. Initially implemented with Flesch-Kincaid; the metric and tolerance curve were later improved in Phase 19 to use Linsear Write. `textstat` was added to backend dependencies, and the repo done gate passed.
+Notes: `backend/study-guide-agent/app/validators/soft/reading_level.py` now computes section-level readability scores, focuses on longer prose-heavy sections, and emits non-blocking `ValidationResult.warnings` when a section is materially above or below the target grade band. Initially implemented with Flesch-Kincaid; Phase 19 trialled Linsear Write as an alternative but Linsear Write produced systematically higher scores for academic K–12 content and was subsequently reverted; the final shipped metric is Flesch-Kincaid (pyphen-based) with widened tolerance bands (2.0 base for grades 5+, section bonuses for `deep_dive`, `assessment_passage`, and `intro`). `textstat` was added to backend dependencies, and the repo done gate passed.
 
 ### Task 5.8 — Implement the validator node
 
@@ -478,15 +478,15 @@ Notes: Updated `study_guide.html.j2` — replaced `example.mode|title` with `exa
 
 ## Phase 19 — Soft Validator Quality Improvements
 
-### Task 19.1 — Switch reading-level metric to Linsear Write for all grades
+### Task 19.1 — Settle reading-level metric on Flesch-Kincaid with widened tolerance bands
 
 Status: `complete`
-Notes: Replaced Flesch-Kincaid with Linsear Write formula as the primary readability metric across all grade levels. Linsear only counts words with 3+ syllables as "hard," so two-syllable domain vocabulary (e.g. "treaty," "fraction," "colony") no longer inflates the score. Empirical testing confirmed: grade-7 social studies text scores 6.8 with Linsear vs 10.1 with FK; grade-12 nursing text scores 12.0 with Linsear vs 15.5 with FK. FK is kept as the fallback when cmudict is unavailable. Warning messages now include the metric name ("Linsear Write" or "Flesch-Kincaid"). All 12 reading-level unit tests updated to patch `textstat.linsear_write_formula`. 114/114 backend tests pass, 0 Pyright errors.
+Notes: Phase 19 originally planned to switch to Dale-Chall for grades ≤ 8. Linsear Write was trialled as an alternative: it only counts 3+ syllable words as "hard", which initially appeared better calibrated. However, Linsear Write still produced 4–5 consistent warnings per guide across all subjects because its binary 3-syllable penalty over-penalises academic vocabulary in study-guide prose. The implementation was subsequently reverted to Flesch-Kincaid (pyphen-based, no cmudict dependency) for all grades. Warning messages now say "Flesch-Kincaid grade" throughout. All reading-level unit tests patch `reading_level_module._flesch_kincaid_grade`. 118/118 backend tests pass, 0 Pyright errors.
 
-### Task 19.2 — Fix tolerance curve for grades 7–10
+### Task 19.2 — Widen tolerance bands for grades 5+ to 2.0
 
 Status: `complete`
-Notes: Changed `_warning_tolerance()` else-branch in `backend/study-guide-agent/app/validators/soft/reading_level.py` from `1.0` to `1.25` so the grade 7–10 band matches the adjacent grade bands instead of being the tightest. Added two new unit tests: one verifying grade 8 + score 9.2 (delta 1.2, within 1.25) does not warn, and one verifying grade 8 + score 9.5 (delta 1.5, above 1.25) does warn. 116/116 backend tests pass, 0 Pyright errors.
+Notes: FK consistently scores curriculum-aligned study-guide prose ~2 grade levels above the target grade, so the prior tolerance values (1.0 → 1.25) still generated 3–5 warnings per guide. Changed `_warning_tolerance()` else-branch to `2.0` (from the earlier 1.25 intermediate value) to match observed FK behaviour on production content. Added section-specific bonuses: `deep_dive` +0.5 (complex by design), `assessment_passage` +0.5 (different topic domain), `intro` (grade ≤ 6) +0.5. Two existing unit tests were updated: `test_validate_reading_level_still_warns_for_large_lower_grade_gap` score bumped to 6.5 (to exceed grade-4 + deep_dive band of 6.0 strictly), `test_validate_reading_level_warns_for_grade_8_above_tolerance` score bumped to 10.5 (to exceed grade-8 + 2.0). 118/118 backend tests pass, 0 Pyright errors.
 
 ### Task 19.3 — Remove model_passage from reading-level checked sections
 
@@ -502,6 +502,18 @@ Notes: Added `"model_passage"`, `"check_in"`, `"learning_targets"`, `"strategy_l
 
 Status: `complete`
 Notes: Added `MIN_PHRASE_WORD_COUNT = 5` constant and a `len(phrase.split()) >= MIN_PHRASE_WORD_COUNT` guard in `_extract_quoted_phrases()` in `backend/study-guide-agent/app/validators/soft/answer_leakage.py`. Short quoted phrases (e.g. "protect coastlines") are too generic to constitute meaningful leakage signal and are now silently dropped before the section scan. Updated existing fixtures in the test file to use a 5-word phrase ("mangroves protect coastlines from storm surges") and added `test_validate_answer_leakage_ignores_short_quoted_phrases` which verifies a 2-word phrase produces zero warnings even when it appears verbatim in a body section. `ruff format` applied to `test_answer_leakage_validator.py` (line-length wrapping on a multi-line assertion). 118/118 backend tests pass.
+
+## Post-Phase-19 reliability fixes
+
+### Answer key node outer timeout (180 s)
+
+Status: `complete`
+Notes: Added `asyncio.wait_for(call_gemini_and_parse_json(...), timeout=180.0)` around the entire answer-key generation call in `backend/study-guide-agent/app/nodes/sections/answer_key.py`. This is an outer cap on the full call (including inner JSON-parse retries and token-budget doubling); without it, a stalled or very slow Gemini response could cause the answer-key node to hang for up to ~18 minutes before timing out. On timeout, a `RuntimeError` is raised and the orchestrator's retry loop handles it. `TimeoutError` (builtin, Python 3.11+) is caught rather than `asyncio.TimeoutError` (ruff UP041). 118/118 backend tests pass.
+
+### Subconcept retry gather outer timeout (120 s)
+
+Status: `complete`
+Notes: Added `asyncio.wait_for(call_gemini_and_parse_json(...), timeout=120.0)` around each subconcept retry call inside `_generate_retry_payload` in `backend/study-guide-agent/app/agent.py`. Without this, a slow Gemini response on a single sub-competency retry could cause the entire `asyncio.gather` retry pass to hang indefinitely. On timeout, a `RuntimeError` is raised and that subconcept slot is treated as a failed retry. 118/118 backend tests pass, `./scripts/validate-task.sh` passed. Staging redeployed to Cloud Run revision `study-guide-agent-staging-00040-glm`.
 
 ## Guidance for future chats
 

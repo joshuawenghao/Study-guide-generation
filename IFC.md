@@ -79,7 +79,7 @@ Teachers in K–12 markets (initially PH, JP, VN) spend disproportionate time ma
 
 ### Nice-to-haves
 
-- **Soft reading-level validation.** A Linsear Write scorer (Flesch-Kincaid fallback when syllable dictionary is unavailable) that warns if a prose section falls outside the target grade band, without blocking download.
+- **Soft reading-level validation.** A Flesch-Kincaid scorer (pyphen-based syllable counting, no external data files required) that warns if a prose section falls outside the target grade band without blocking download; base tolerance is 1.5 grade levels for grades ≤ 4 and 2.0 for grades 5+, with additional +0.5 bonuses for `deep_dive`, `assessment_passage`, and `intro` (grades ≤ 6).
 - **Per-section manual regeneration UI.** Beyond the automated retry during validation, a content lead can additionally flag a specific section from the web preview and trigger a manual retry without resubmitting the whole form.
 - **Generation progress visibility.** The UI shows which sections have completed so the teacher knows the guide is being built, not just waiting on a spinner.
 - **Multi-market localisation beyond PH/JP/VN.** The market field is a free-text input so new markets can be added without code changes.
