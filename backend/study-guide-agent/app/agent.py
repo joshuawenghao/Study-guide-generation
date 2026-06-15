@@ -233,26 +233,34 @@ async def _generate_retry_payload(node_input: RetryNodeInput) -> Any:
     if node_input.section_key == "subconcept":
 
         async def retry_subconcept(sub_competency: SubCompetency) -> dict[str, Any]:
-            return await call_gemini_and_parse_json(
-                system_prompt=system_prompt,
-                user_prompt=_with_retry_guidance(
-                    build_runtime_section_prompt(
-                        request=node_input.request,
-                        blueprint=node_input.blueprint,
-                        prompt_builder=build_subconcept_prompt,
-                        context_label="subconcept",
-                        spec=sub_competency,
+            try:
+                return await asyncio.wait_for(
+                    call_gemini_and_parse_json(
+                        system_prompt=system_prompt,
+                        user_prompt=_with_retry_guidance(
+                            build_runtime_section_prompt(
+                                request=node_input.request,
+                                blueprint=node_input.blueprint,
+                                prompt_builder=build_subconcept_prompt,
+                                context_label="subconcept",
+                                spec=sub_competency,
+                            ),
+                            node_input.failure_messages,
+                        ),
+                        temperature=TEMP_RETRY,
+                        parse_response=lambda response_text: _parse_section_response(
+                            response_text,
+                            "subconcept",
+                        ),
+                        call_model=call_gemini,
+                        context_label="subconcept_retry",
                     ),
-                    node_input.failure_messages,
-                ),
-                temperature=TEMP_RETRY,
-                parse_response=lambda response_text: _parse_section_response(
-                    response_text,
-                    "subconcept",
-                ),
-                call_model=call_gemini,
-                context_label="subconcept_retry",
-            )
+                    timeout=120.0,
+                )
+            except TimeoutError as exc:
+                raise RuntimeError(
+                    "[subconcept_retry] Generation timed out after 120 s; the node will be retried."
+                ) from exc
 
         return await asyncio.gather(
             *[

@@ -215,7 +215,7 @@ def test_validate_reading_level_still_warns_for_large_lower_grade_gap(
     monkeypatch.setattr(
         reading_level_module,
         "_flesch_kincaid_grade",
-        lambda _text: 6.0,
+        lambda _text: 6.5,
     )
 
     result = reading_level_module.validate_reading_level(
@@ -357,11 +357,11 @@ def test_validate_reading_level_no_warn_for_grade_8_within_tolerance(
 def test_validate_reading_level_warns_for_grade_8_above_tolerance(
     monkeypatch,
 ) -> None:
-    """Grade 8 target with score 9.5 exceeds the 1.25 tolerance; must warn."""
+    """Grade 8 target with score 10.5 exceeds the 2.0 tolerance; must warn."""
     monkeypatch.setattr(
         reading_level_module,
         "_flesch_kincaid_grade",
-        lambda _text: 9.5,
+        lambda _text: 10.5,
     )
 
     result = reading_level_module.validate_reading_level(

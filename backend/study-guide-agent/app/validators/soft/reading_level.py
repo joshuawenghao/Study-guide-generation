@@ -100,21 +100,17 @@ def _count_words(text: str) -> int:
 def _warning_tolerance(target_grade_level: int, section_key: str) -> float:
     if target_grade_level <= 4:
         tolerance = 1.5
-    elif target_grade_level <= 6:
-        tolerance = 1.25
-    elif target_grade_level >= 11:
-        tolerance = 1.5
     else:
-        tolerance = 1.25
+        tolerance = 2.0
 
     if section_key == "intro" and target_grade_level <= 6:
         tolerance += 0.5
 
-    if (
-        section_key in {"model_passage", "assessment_passage"}
-        and target_grade_level >= 9
-    ):
-        tolerance += 0.25
+    if section_key == "deep_dive":
+        tolerance += 0.5
+
+    if section_key in {"model_passage", "assessment_passage"}:
+        tolerance += 0.5
 
     return tolerance
 
