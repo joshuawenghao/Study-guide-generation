@@ -4,17 +4,13 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterable, Mapping, Sequence
-from pathlib import Path
 from typing import Any
 
-import nltk
 from pydantic import BaseModel
 from textstat import textstat
 from textstat.backend.utils._get_pyphen import get_pyphen
 
 from app.types import ValidationResult
-
-PROJECT_NLTK_DATA_DIR = Path(__file__).resolve().parents[3] / ".nltk_data"
 
 PROSE_SECTION_KEYS = {
     "intro",
@@ -40,11 +36,6 @@ FIELD_EXCLUSIONS = {
     "estimated_minutes",
     "activity_type",
 }
-
-if PROJECT_NLTK_DATA_DIR.exists():
-    project_nltk_path = str(PROJECT_NLTK_DATA_DIR)
-    if project_nltk_path not in nltk.data.path:
-        nltk.data.path.insert(0, project_nltk_path)
 
 
 def _success_result(warnings: list[str]) -> ValidationResult:
@@ -105,14 +96,6 @@ def _estimate_flesch_kincaid_grade_without_cmudict(text: str) -> float:
 
 def _count_words(text: str) -> int:
     return len(re.findall(r"[A-Za-z]+(?:'[A-Za-z]+)?", text))
-
-
-def _has_local_cmudict() -> bool:
-    try:
-        nltk.data.find("corpora/cmudict")
-    except LookupError:
-        return False
-    return True
 
 
 def _linsear_grade(text: str) -> float:
@@ -177,24 +160,18 @@ def validate_reading_level(
         if _count_words(section_text) < MIN_RELIABLE_WORD_COUNT:
             continue
 
-        if not _has_local_cmudict():
+        try:
+            grade_score = _linsear_grade(section_text)
+            metric_name = "Linsear Write"
+        except LookupError:
             grade_score = _estimate_flesch_kincaid_grade_without_cmudict(section_text)
             metric_name = "Flesch-Kincaid"
-        else:
-            try:
-                grade_score = _linsear_grade(section_text)
-                metric_name = "Linsear Write"
-            except LookupError:
-                grade_score = _estimate_flesch_kincaid_grade_without_cmudict(
-                    section_text
-                )
-                metric_name = "Flesch-Kincaid"
-            except Exception as error:
-                warnings.append(
-                    "Reading level warning: reading-level analysis was skipped "
-                    f"because the dependency data is unavailable ({error.__class__.__name__})."
-                )
-                break
+        except Exception as error:
+            warnings.append(
+                "Reading level warning: reading-level analysis was skipped "
+                f"because the dependency data is unavailable ({error.__class__.__name__})."
+            )
+            break
 
         score_delta = grade_score - target_grade_level
         if score_delta > _warning_tolerance(target_grade_level, section_key):
