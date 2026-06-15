@@ -105,7 +105,7 @@ def _linsear_grade(text: str) -> float:
     domain vocabulary (e.g. 'treaty', 'colony', 'fraction') does not inflate
     the score the way Flesch-Kincaid does.
     """
-    return float(textstat.linsear_write_formula(text, strict_upper=False))
+    return float(textstat.linsear_write_formula(text))
 
 
 def _warning_tolerance(target_grade_level: int, section_key: str) -> float:

@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import re
 from collections.abc import Callable
 from difflib import SequenceMatcher
@@ -797,18 +798,26 @@ async def generate_answer_key(
         context_label="answer_key",
         spec=answer_key_spec,
     )
-    parsed_response = await call_gemini_and_parse_json(
-        system_prompt=system_prompt,
-        user_prompt=user_prompt,
-        temperature=TEMP_ANSWER_KEY,
-        parse_response=lambda response_text: _parse_section_response(
-            response_text,
-            "answer_key",
-        ),
-        call_model=call_gemini,
-        max_output_tokens=MAX_ANSWER_KEY_OUTPUT_TOKENS,
-        context_label="answer_key",
-    )
+    try:
+        parsed_response = await asyncio.wait_for(
+            call_gemini_and_parse_json(
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                temperature=TEMP_ANSWER_KEY,
+                parse_response=lambda response_text: _parse_section_response(
+                    response_text,
+                    "answer_key",
+                ),
+                call_model=call_gemini,
+                max_output_tokens=MAX_ANSWER_KEY_OUTPUT_TOKENS,
+                context_label="answer_key",
+            ),
+            timeout=180.0,
+        )
+    except TimeoutError as exc:
+        raise RuntimeError(
+            "[answer_key] Generation timed out after 180 s; the node will be retried."
+        ) from exc
     return _normalize_assessment_answer_quotes(
         parsed_response,
         check_in,
