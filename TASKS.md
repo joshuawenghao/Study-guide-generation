@@ -2075,6 +2075,84 @@ Keep validation scoped to the prompt-lab slice rather than rerunning the entire 
 
 ---
 
+## Phase 20 — Resilience hardening (P0 + P1)
+
+> Goal: close the most impactful fault-tolerance gaps identified in the resilience audit — silent frontend hangs, Gemini quota failures under retries, concurrent-user overload, and insufficient section-retry passes.
+
+---
+
+### Task 20.1 — P0: Frontend idle timeout and Gemini exponential backoff
+
+Two single-file fixes that address the two highest-priority unhandled failure modes.
+
+**Frontend idle timeout (`frontend/app/page.tsx`)**
+
+- Add an idle timeout ref (e.g. `idleTimerRef`) that is set to a `setTimeout` firing after 90 seconds on each SSE event and cleared on each new event.
+- On expiry, call `abortController.abort()`, set stage to `"error"`, and set a user-facing error message such as `"Generation stalled — no progress for 90 seconds. Please try again."`.
+- Clear the timer in the same cleanup function that already calls `abortController.abort()`.
+- Do not add any new dependencies or libraries.
+
+**Gemini exponential backoff (`backend/study-guide-agent/app/nodes/base.py`)**
+
+- Replace the flat `asyncio.sleep(1)` in the `call_gemini` retry loop with exponential backoff: `asyncio.sleep(2 ** attempt)` (1 s, 2 s, 4 s for attempts 0, 1, 2).
+- Detect HTTP 429 responses specifically (check `error` string or exception type for `"429"` or `"RESOURCE_EXHAUSTED"`) and use a longer base: `asyncio.sleep(min(60, 4 ** attempt))` for rate-limit errors (4 s, 16 s, 60 s).
+- All other errors keep the standard `2 ** attempt` schedule.
+- Keep `max_retries=2` (3 total attempts) unchanged.
+- Log the error type and backoff duration at `WARNING` level before each sleep.
+
+**Validation:**
+
+```bash
+cd backend/study-guide-agent && uv run pytest tests/unit/test_base_gemini_wrapper.py -q
+./scripts/validate-task.sh
+```
+
+**Done looks like:**
+
+- The frontend never hangs silently for more than 90 seconds — it shows an error and lets the user retry.
+- `call_gemini` sleeps for 2^attempt seconds on generic errors and 4^attempt (capped at 60 s) on 429/RESOURCE_EXHAUSTED errors.
+- Existing backend tests still pass.
+
+---
+
+### Task 20.2 — P1: Concurrency limiter and increased section retry passes
+
+Two backend changes that protect against concurrent-user overload and improve generation quality under failures.
+
+**Concurrency limiter (`backend/study-guide-agent/app/fast_api_app.py`)**
+
+- Add a module-level `asyncio.Semaphore` with a cap of 5 concurrent workflows (constant `MAX_CONCURRENT_WORKFLOWS = 5`).
+- In the `/generate` (and `/prompt-lab/generate`) SSE endpoint handler, acquire the semaphore before creating the workflow task and release it in the `finally` block.
+- If the semaphore cannot be acquired immediately (i.e. all slots are taken), return HTTP 503 with a JSON body `{"error": "Server busy — too many concurrent generations. Please retry in a moment."}` before entering the SSE stream.
+- Use `asyncio.Semaphore.locked()` or a non-blocking `acquire` with `timeout=0` to detect full capacity without blocking the request handler.
+- Do not add any queue — reject at capacity.
+
+**Increased section retry passes (`backend/study-guide-agent/app/agent.py`)**
+
+- Change the retry loop guard from `retry_count < 1` to `retry_count < 3` so failed sections get up to 3 retry passes instead of 1.
+- After each retry pass that produces newly passing sections, log `f"Retry pass {retry_count}: {len(newly_passed)} sections recovered"` at `INFO` level.
+- After subconcept retries inside `_generate_retry_payload`, re-validate the subconcept outputs individually using the existing `json_schema` hard validator so a still-broken subconcept is not silently promoted to `best_effort`.
+
+**Validation:**
+
+```bash
+cd backend/study-guide-agent && uv run pytest tests/unit tests/integration -q
+./scripts/validate-task.sh
+```
+
+**Done looks like:**
+
+- A sixth simultaneous `/generate` request receives HTTP 503 while 5 are active.
+- Failed sections are retried up to 3 times before being demoted to `best_effort`.
+- Subconcept outputs are individually re-validated after retries.
+- All existing backend tests still pass.
+
+---
+
+**✅ Phase 20 done.** The app no longer hangs silently on backend stalls, handles Gemini quota errors more gracefully, rejects excess concurrent load cleanly, and makes more retry attempts before giving up on failed sections.
+
+---
+
 ## Recommended operating pattern for future chats
 
 When starting a new Copilot chat for implementation:

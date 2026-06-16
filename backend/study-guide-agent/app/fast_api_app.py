@@ -52,6 +52,9 @@ setup_telemetry()
 
 AGENT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+MAX_CONCURRENT_WORKFLOWS = 5
+_workflow_semaphore = asyncio.Semaphore(MAX_CONCURRENT_WORKFLOWS)
+
 
 def _get_optional_env(name: str) -> str | None:
     value = os.getenv(name, "").strip()
@@ -153,6 +156,13 @@ class _StreamingWorkflowContext:
 
 
 async def _stream_workflow(request: StudyGuideRequest) -> StreamingResponse:
+    if _workflow_semaphore.locked():
+        raise HTTPException(
+            status_code=503,
+            detail="Server busy — too many concurrent generations. Please retry in a moment.",
+        )
+    await _workflow_semaphore.acquire()
+
     event_queue: asyncio.Queue[tuple[str, dict[str, Any]] | None] = asyncio.Queue()
 
     async def emit_event(event_name: str, payload: dict[str, Any]) -> None:
@@ -198,6 +208,7 @@ async def _stream_workflow(request: StudyGuideRequest) -> StreamingResponse:
                 event_name, payload = event
                 yield f"event: {event_name}\ndata: {json.dumps(payload)}\n\n"
         finally:
+            _workflow_semaphore.release()
             if not workflow_task.done():
                 workflow_task.cancel()
                 with suppress(asyncio.CancelledError):

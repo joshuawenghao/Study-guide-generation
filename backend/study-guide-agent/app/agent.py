@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections.abc import Callable
 from typing import Any, cast
+
+logger = logging.getLogger(__name__)
 
 from pydantic import BaseModel, Field
 
@@ -90,6 +93,7 @@ from app.types import (
     SubCompetency,
     ValidationResult,
 )
+from app.validators.hard.json_schema import validate_json_schema
 
 
 class SectionNodeInput(BaseModel):
@@ -262,12 +266,23 @@ async def _generate_retry_payload(node_input: RetryNodeInput) -> Any:
                     "[subconcept_retry] Generation timed out after 120 s; the node will be retried."
                 ) from exc
 
-        return await asyncio.gather(
-            *[
-                retry_subconcept(sub_competency)
-                for sub_competency in node_input.blueprint.sub_competencies
-            ]
+        results: list[Any] = list(
+            await asyncio.gather(
+                *[
+                    retry_subconcept(sub_competency)
+                    for sub_competency in node_input.blueprint.sub_competencies
+                ]
+            )
         )
+        for i, item in enumerate(results):
+            schema_result = validate_json_schema(section_key="subconcept", payload=item)
+            if not schema_result.passed:
+                logger.warning(
+                    "[subconcept_retry] Sub-competency %d still fails schema validation: %s",
+                    i,
+                    "; ".join(schema_result.failures.get("subconcept", [])),
+                )
+        return results
 
     prompt_builder, spec = _retry_prompt_builder(
         node_input.section_key,
@@ -774,7 +789,7 @@ async def study_guide_workflow(
     )
 
     retry_count = 0
-    while not validation.passed and retry_count < 1:
+    while not validation.passed and retry_count < 3:
         handled_sections: set[str] = set()
         for section_key in validation.failed_sections:
             if section_key in handled_sections:
@@ -798,6 +813,7 @@ async def study_guide_workflow(
                 section_key,
             )
             handled_sections.update(_refreshed_sections_for_retry(section_key))
+        prev_failed = set(validation.failed_sections)
         validation = await ctx.run_node(
             validation_workflow_node,
             ValidationNodeInput(
@@ -805,6 +821,13 @@ async def study_guide_workflow(
                 blueprint=blueprint,
                 sections=sections,
             ),
+        )
+        newly_passed = prev_failed - set(validation.failed_sections)
+        logger.info(
+            "Retry pass %d: %d section(s) recovered, %d still failing",
+            retry_count + 1,
+            len(newly_passed),
+            len(validation.failed_sections),
         )
         retry_count += 1
 

@@ -515,6 +515,18 @@ Notes: Added `asyncio.wait_for(call_gemini_and_parse_json(...), timeout=180.0)` 
 Status: `complete`
 Notes: Added `asyncio.wait_for(call_gemini_and_parse_json(...), timeout=120.0)` around each subconcept retry call inside `_generate_retry_payload` in `backend/study-guide-agent/app/agent.py`. Without this, a slow Gemini response on a single sub-competency retry could cause the entire `asyncio.gather` retry pass to hang indefinitely. On timeout, a `RuntimeError` is raised and that subconcept slot is treated as a failed retry. 118/118 backend tests pass, `./scripts/validate-task.sh` passed. Staging redeployed to Cloud Run revision `study-guide-agent-staging-00040-glm`.
 
+## Phase 20 — Resilience hardening (P0 + P1)
+
+### Task 20.1 — P0: Frontend idle timeout and Gemini exponential backoff
+
+Status: `complete`
+Notes: `frontend/app/page.tsx` now starts a 90-second idle timer when the SSE stream begins, resets it on every received block, and fires `abortController.abort()` + sets stage to `"error"` if no progress arrives within 90 s; the timer is also cleared in both the `finally` block and the effect cleanup. `backend/study-guide-agent/app/nodes/base.py` now uses exponential backoff instead of a flat 1 s sleep: generic errors sleep `2^(attempt-1)` seconds (1 s, 2 s for the default 2-retry case), and 429/RESOURCE_EXHAUSTED errors sleep `min(60, 4^attempt)` seconds (4 s, 16 s, capped to 60 s). A new `_is_rate_limit_error()` helper detects quota errors by message. `tests/unit/test_base_gemini_wrapper.py` was added with 10 tests covering error detection and all three backoff scenarios. Validated with `uv run pytest tests/unit/test_base_gemini_wrapper.py -q` (10 passed) and `./scripts/validate-task.sh` (128 passed, frontend build clean).
+
+### Task 20.2 — P1: Concurrency limiter and increased section retry passes
+
+Status: `complete`
+Notes: `backend/study-guide-agent/app/fast_api_app.py` now has a module-level `asyncio.Semaphore(5)` (`MAX_CONCURRENT_WORKFLOWS = 5`). Both `/generate` and `/prompt-lab/generate` acquire the semaphore before streaming begins and release it in the `event_generator` `finally` block; if all slots are taken, the handler raises HTTP 503 before entering the stream. `backend/study-guide-agent/app/agent.py` now retries failed sections up to 3 passes (`retry_count < 3`, up from 1); each pass logs how many sections recovered and how many still fail. After subconcept retries, each returned payload is individually validated against `validate_json_schema` and schema failures are logged at WARNING level so they surface in the next full validation pass rather than being silently promoted. Validated with `./scripts/validate-task.sh` (128 passed, frontend build clean, 0 Pyright errors).
+
 ## Guidance for future chats
 
 - Read this file and `TASKS.md` together before starting new implementation work.
