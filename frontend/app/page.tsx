@@ -85,6 +85,7 @@ export default function Home() {
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const generationStartedAtRef = useRef<number | null>(null);
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const isActiveStage =
@@ -125,6 +126,24 @@ export default function Home() {
     abortControllerRef.current = abortController;
     let streamCompleted = false;
 
+    function clearIdleTimer() {
+      if (idleTimerRef.current !== null) {
+        clearTimeout(idleTimerRef.current);
+        idleTimerRef.current = null;
+      }
+    }
+
+    function resetIdleTimer() {
+      clearIdleTimer();
+      idleTimerRef.current = setTimeout(() => {
+        abortController.abort();
+        setPageError(
+          "Generation stalled — no progress for 90 seconds. Please try again.",
+        );
+        setStage("error");
+      }, 90_000);
+    }
+
     async function runGeneration() {
       setStage("generating");
 
@@ -146,6 +165,8 @@ export default function Home() {
         const decoder = new TextDecoder();
         let buffer = "";
 
+        resetIdleTimer();
+
         while (true) {
           const { done, value } = await reader.read();
 
@@ -163,6 +184,8 @@ export default function Home() {
             if (!parsedBlock) {
               continue;
             }
+
+            resetIdleTimer();
 
             const { eventName, data } = parsedBlock;
             const payload = JSON.parse(data) as
@@ -231,6 +254,7 @@ export default function Home() {
         );
         setStage("error");
       } finally {
+        clearIdleTimer();
         if (abortControllerRef.current === abortController) {
           abortControllerRef.current = null;
         }
@@ -241,6 +265,7 @@ export default function Home() {
 
     return () => {
       abortController.abort();
+      clearIdleTimer();
       if (abortControllerRef.current === abortController) {
         abortControllerRef.current = null;
       }

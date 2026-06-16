@@ -92,6 +92,12 @@ def _get_client() -> genai.Client:
     return _client
 
 
+def _is_rate_limit_error(error: Exception) -> bool:
+    """Return True when the error looks like a Gemini quota or rate-limit failure."""
+    msg = str(error).lower()
+    return "429" in msg or "resource_exhausted" in msg or "ratelimitexceeded" in msg
+
+
 async def call_gemini(
     system_prompt: str,
     user_prompt: str,
@@ -148,15 +154,29 @@ async def call_gemini(
             )
         except Exception as error:
             last_error = error
-            logger.warning(
-                "[%s] Gemini call failed on attempt %d/%d: %s",
-                context_label,
-                attempt,
-                total_attempts,
-                str(error),
-            )
+            is_rate_limit = _is_rate_limit_error(error)
             if attempt < total_attempts:
-                await asyncio.sleep(1.0)
+                backoff = (
+                    min(60.0, 4.0**attempt) if is_rate_limit else 2.0 ** (attempt - 1)
+                )
+                logger.warning(
+                    "[%s] Gemini call failed on attempt %d/%d (%s); retrying in %.0fs: %s",
+                    context_label,
+                    attempt,
+                    total_attempts,
+                    "rate-limit" if is_rate_limit else "error",
+                    backoff,
+                    str(error),
+                )
+                await asyncio.sleep(backoff)
+            else:
+                logger.warning(
+                    "[%s] Gemini call failed on attempt %d/%d: %s",
+                    context_label,
+                    attempt,
+                    total_attempts,
+                    str(error),
+                )
 
     raise RuntimeError(
         f"[{context_label}] Gemini call failed after {total_attempts} attempts. "
