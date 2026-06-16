@@ -527,6 +527,18 @@ Notes: `frontend/app/page.tsx` now starts a 90-second idle timer when the SSE st
 Status: `complete`
 Notes: `backend/study-guide-agent/app/fast_api_app.py` now has a module-level `asyncio.Semaphore(5)` (`MAX_CONCURRENT_WORKFLOWS = 5`). Both `/generate` and `/prompt-lab/generate` acquire the semaphore before streaming begins and release it in the `event_generator` `finally` block; if all slots are taken, the handler raises HTTP 503 before entering the stream. `backend/study-guide-agent/app/agent.py` now retries failed sections up to 3 passes (`retry_count < 3`, up from 1); each pass logs how many sections recovered and how many still fail. After subconcept retries, each returned payload is individually validated against `validate_json_schema` and schema failures are logged at WARNING level so they surface in the next full validation pass rather than being silently promoted. Validated with `./scripts/validate-task.sh` (128 passed, frontend build clean, 0 Pyright errors).
 
+## Phase 21 — Frontend error UX (P0)
+
+### Task 21.1 — 503 "Server busy" UX
+
+Status: `complete`
+Notes: `frontend/app/page.tsx` now checks `response.status === 503` immediately after the fetch, before reading the SSE stream; a 503 sets `pageError` to "The server is busy processing other requests. Please wait a moment and try again." and stage to `"error"` without touching `pendingRequest`. A **Retry** button is shown inside the error banner whenever `stage === "error" && pendingRequest !== null`; it calls `handleRetry()`, which spreads `pendingRequest` into a new object reference to re-trigger the `useEffect` and resets progress state. `frontend/app/prompt-lab/page.tsx` has the same 503 check with an equivalent `runError` message (the existing Generate button already acts as a retry for the prompt-lab flow). Validated with `./scripts/validate-task.sh` (128 backend tests, 0 typecheck errors, frontend build clean).
+
+### Task 21.2 — Quota vs. generic error distinction in the UI
+
+Status: `complete`
+Notes: `frontend/lib/errors.ts` now exports `classifyError(message): "quota" | "generic"` (matches "429", "resource_exhausted", "ratelimitexceeded" case-insensitively), `QUOTA_ERROR_MESSAGE`, and `resolveErrorMessage(raw, fallback)` which returns the quota message or the fallback. `frontend/app/page.tsx` and `frontend/app/prompt-lab/page.tsx` now route all three error call-sites (SSE `progress` error event, SSE `error` event, catch block) through `resolveErrorMessage`, so quota-exhaustion errors surface "Gemini quota reached — the AI service is temporarily unavailable. Please wait a few minutes and try again." while all other errors retain their existing fallback text. `frontend/lib/errors.test.ts` covers 11 cases: 429 detection, RESOURCE_EXHAUSTED case-insensitive, RateLimitExceeded, realistic backend message, generic and empty string fallbacks, and `resolveErrorMessage` with/without explicit fallback. Validated with `./scripts/validate-task.sh` (128 backend tests, 27 frontend tests, 0 typecheck errors, build clean).
+
 ## Guidance for future chats
 
 - Read this file and `TASKS.md` together before starting new implementation work.

@@ -2297,3 +2297,49 @@ In `_extract_quoted_phrases()` in `backend/study-guide-agent/app/validators/soft
 - `_extract_quoted_phrases` only returns phrases where `len(phrase.split()) >= 5`
 - A new unit test verifies that a phrase with fewer than 5 words does not trigger a leakage warning even when it appears in a checked section
 - `./scripts/validate-task.sh` passes
+
+---
+
+## Phase 21 — Frontend error UX (P0)
+
+### Task 21.1 — 503 "Server busy" UX
+
+When all 5 concurrency slots are taken, `POST /generate` and `POST /prompt-lab/generate` return HTTP 503 before the SSE stream opens. Currently, the frontend treats a 503 the same as any other fetch failure — it surfaces as a generic error with no guidance.
+
+**Target behaviour:** detect the 503 response before the stream is opened, set a user-facing message like "The server is busy processing other requests. Please wait a moment and try again." with a **Retry** button that re-submits the same request without the user having to refill the form.
+
+**Files to change:**
+
+- `frontend/app/page.tsx` — detect HTTP 503 from `/api/generate` before reading the SSE stream; set a distinct `pageError` message and keep the last `pendingRequest` so the Retry button can re-trigger `runGeneration`
+- `frontend/app/prompt-lab/page.tsx` — same 503 detection before the prompt-lab SSE stream
+- No backend changes needed
+
+**Done looks like:**
+
+- When the backend returns 503, the teacher page shows the "server busy" message instead of a generic error
+- A **Retry** button is visible and re-submits the same request without the user refilling the form
+- The prompt-lab page has the same behaviour
+- `cd frontend && npm run typecheck && npm run lint && npm run build` passes
+- `./scripts/validate-task.sh` passes
+
+---
+
+### Task 21.2 — Quota vs. generic error distinction in the UI
+
+When all Gemini retries are exhausted the backend raises `RuntimeError("[context] Gemini call failed after N attempts. Last error: ...")`. If the last error was a 429/RESOURCE_EXHAUSTED the message contains that signal. The frontend currently shows the same generic error regardless of cause.
+
+**Target behaviour:** inspect the error message text received in the SSE `error` event. If it contains `"429"`, `"RESOURCE_EXHAUSTED"`, or `"RateLimitExceeded"` (case-insensitive), show a specific message: "Gemini quota reached — the AI service is temporarily unavailable. Please wait a few minutes and try again." Otherwise show the existing generic error message.
+
+**Files to change:**
+
+- `frontend/app/page.tsx` — add a `classifyError(message: string): "quota" | "generic"` helper and use it to pick the displayed error string when the SSE `error` event arrives
+- `frontend/app/prompt-lab/page.tsx` — same helper and display logic
+- No backend changes needed
+
+**Done looks like:**
+
+- A quota-exhaustion error string surfaces a specific quota message with wait guidance
+- Any other error surfaces the existing generic error message
+- The helper is unit-tested in `frontend/lib/errors.test.ts` (or similar) with at least: 429 string → quota, RESOURCE_EXHAUSTED → quota, generic string → generic
+- `cd frontend && npm run typecheck && npm run lint && npm run build` passes
+- `./scripts/validate-task.sh` passes

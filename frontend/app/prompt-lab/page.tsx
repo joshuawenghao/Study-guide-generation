@@ -7,6 +7,7 @@ import ProgressTracker from "@/components/ProgressTracker";
 import PromptLabEditor from "@/components/PromptLabEditor";
 import PromptLabSamplePicker from "@/components/PromptLabSamplePicker";
 import WebPreview from "@/components/WebPreview";
+import { resolveErrorMessage } from "@/lib/errors";
 import {
   buildPdfFilename,
   buildPromptLabRequestPayload,
@@ -195,6 +196,14 @@ export default function PromptLabPage() {
         signal: abortController.signal,
       });
 
+      if (response.status === 503) {
+        setRunError(
+          "The server is busy processing other requests. Please wait a moment and try again.",
+        );
+        setStage("error");
+        return;
+      }
+
       if (!response.body) {
         throw new Error("The prompt-lab response did not include a stream.");
       }
@@ -237,9 +246,14 @@ export default function PromptLabPage() {
             });
 
             if (progressEvent.type === "error") {
-              setRunError(
+              const raw =
                 progressEvent.message ??
+                "Generation stopped before the response completed.";
+              setRunError(
+                resolveErrorMessage(
+                  raw,
                   "Generation stopped before the response completed.",
+                ),
               );
             }
 
@@ -254,10 +268,12 @@ export default function PromptLabPage() {
           }
 
           if (eventName === "error") {
-            const errorMessage =
+            const raw =
               (parsedPayload as { error?: string }).error ??
               "The prompt-lab request failed.";
-            setRunError(errorMessage);
+            setRunError(
+              resolveErrorMessage(raw, "The prompt-lab request failed."),
+            );
             setStage("error");
           }
         }
@@ -267,11 +283,11 @@ export default function PromptLabPage() {
         return;
       }
 
-      setRunError(
+      const raw =
         error instanceof Error
           ? error.message
-          : "The prompt-lab request failed.",
-      );
+          : "The prompt-lab request failed.";
+      setRunError(resolveErrorMessage(raw, "The prompt-lab request failed."));
       setStage("error");
     } finally {
       if (abortControllerRef.current === abortController) {

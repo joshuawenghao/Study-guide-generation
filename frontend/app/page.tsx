@@ -6,6 +6,7 @@ import DownloadButton from "@/components/DownloadButton";
 import InputForm from "@/components/InputForm";
 import ProgressTracker from "@/components/ProgressTracker";
 import WebPreview from "@/components/WebPreview";
+import { resolveErrorMessage } from "@/lib/errors";
 import { parseEventStage } from "@/lib/progress";
 import type {
   GenerateRequest,
@@ -157,6 +158,14 @@ export default function Home() {
           signal: abortController.signal,
         });
 
+        if (response.status === 503) {
+          setPageError(
+            "The server is busy processing other requests. Please wait a moment and try again.",
+          );
+          setStage("error");
+          return;
+        }
+
         if (!response.body) {
           throw new Error("The generate response did not include a stream.");
         }
@@ -204,9 +213,14 @@ export default function Home() {
               });
 
               if (progressEvent.type === "error") {
-                setPageError(
+                const raw =
                   progressEvent.message ??
+                  "Generation stopped before the response completed.";
+                setPageError(
+                  resolveErrorMessage(
+                    raw,
                     "Generation stopped before the response completed.",
+                  ),
                 );
               }
 
@@ -221,10 +235,12 @@ export default function Home() {
             }
 
             if (eventName === "error") {
-              const errorMessage =
+              const raw =
                 (payload as { error?: string }).error ??
                 "The generate request failed.";
-              setPageError(errorMessage);
+              setPageError(
+                resolveErrorMessage(raw, "The generate request failed."),
+              );
               setStage("error");
             }
           }
@@ -247,11 +263,11 @@ export default function Home() {
           return;
         }
 
-        setPageError(
+        const raw =
           error instanceof Error
             ? error.message
-            : "The generate request failed.",
-        );
+            : "The generate request failed.";
+        setPageError(resolveErrorMessage(raw, "The generate request failed."));
         setStage("error");
       } finally {
         clearIdleTimer();
@@ -297,6 +313,19 @@ export default function Home() {
     setResultsView("preview");
     setPageError(null);
     setStage("idle");
+  }
+
+  function handleRetry() {
+    if (!pendingRequest) {
+      return;
+    }
+    setProgressEvents([]);
+    setElapsedSeconds(0);
+    setResult(null);
+    setPageError(null);
+    setStage("planning");
+    // Spread into a new object so the useEffect dependency fires again.
+    setPendingRequest({ ...pendingRequest });
   }
 
   const isGenerating =
@@ -348,8 +377,17 @@ export default function Home() {
             </div>
 
             {pageError ? (
-              <div className="rounded-3xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700 shadow-sm">
-                {pageError}
+              <div className="rounded-3xl border border-rose-200 bg-rose-50 px-5 py-4 shadow-sm">
+                <p className="text-sm text-rose-700">{pageError}</p>
+                {stage === "error" && pendingRequest !== null ? (
+                  <button
+                    type="button"
+                    onClick={handleRetry}
+                    className="mt-3 inline-flex items-center rounded-full border border-rose-300 bg-white px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-400 hover:bg-rose-50"
+                  >
+                    Retry
+                  </button>
+                ) : null}
               </div>
             ) : null}
 
