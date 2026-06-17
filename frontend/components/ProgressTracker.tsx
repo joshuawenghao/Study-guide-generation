@@ -76,6 +76,13 @@ function normalizeNode(node: string): string {
   return node.trim();
 }
 
+function formatNodeLabel(node: string): string {
+  return node
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
 function isGenerationEvent(event: ProgressEvent): boolean {
   return GENERATION_NODES.has(normalizeNode(event.node));
 }
@@ -270,7 +277,7 @@ export function buildSteps(
       key: "retry",
       title: "Section Retry",
       detail: latestRetry
-        ? `Regenerating ${latestRetry.node} after a quality check failed.`
+        ? `Regenerating ${formatNodeLabel(latestRetry.node)} after a quality check failed.`
         : "Only runs if a section needs to be regenerated.",
       status: statuses.retry,
     },
@@ -410,7 +417,9 @@ export default function ProgressTracker({
           {latestEvent
             ? latestEvent.message
               ? latestEvent.message
-              : `Processing: ${latestEvent.node.replace(/_/g, " ")}`
+              : stage === "done"
+                ? "Workflow complete."
+                : `Processing: ${formatNodeLabel(latestEvent.node)}`
             : "Waiting for the first progress event."}
         </p>
       </div>

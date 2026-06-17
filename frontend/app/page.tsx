@@ -481,76 +481,20 @@ export default function Home() {
 
                 {result ? (
                   <div className="space-y-6">
-                    <section className="grid gap-6 rounded-3xl border border-emerald-200 bg-emerald-50/70 p-8 shadow-sm lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)]">
-                      <div className="space-y-3">
-                        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-700">
-                          Results ready
-                        </p>
-                        <h2 className="text-2xl font-semibold tracking-tight text-slate-950">
-                          Review the generated guide and download the finished
-                          PDF.
-                        </h2>
-                        <p className="max-w-2xl text-sm leading-6 text-slate-700">
-                          The completed response now stays attached to this run,
-                          so teachers can inspect the web preview, review any
-                          validation warnings, and save the PDF without losing
-                          the streamed progress history above.
-                        </p>
-                      </div>
-
-                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-                        <div className="rounded-2xl border border-emerald-200 bg-white px-4 py-4">
-                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                            Preview sections
-                          </p>
-                          <p className="mt-2 text-2xl font-semibold text-slate-950">
-                            {responseSummary?.previewSections}
-                          </p>
-                        </div>
-                        <div className="rounded-2xl border border-emerald-200 bg-white px-4 py-4">
-                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                            Warnings
-                          </p>
-                          <p className="mt-2 text-2xl font-semibold text-slate-950">
-                            {responseSummary?.warningCount}
-                          </p>
-                        </div>
-                        <div className="rounded-2xl border border-emerald-200 bg-white px-4 py-4">
-                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                            Failed sections
-                          </p>
-                          <p className="mt-2 text-2xl font-semibold text-slate-950">
-                            {responseSummary?.failedSectionCount}
-                          </p>
-                        </div>
-                        <div className="rounded-2xl border border-emerald-200 bg-white px-4 py-4">
-                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                            Best-effort sections
-                          </p>
-                          <p className="mt-2 text-2xl font-semibold text-slate-950">
-                            {responseSummary?.bestEffortCount}
-                          </p>
-                        </div>
-                      </div>
+                    <section className="rounded-3xl border border-emerald-200 bg-emerald-50/70 px-8 py-6 shadow-sm">
+                      <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-700">
+                        Results ready
+                      </p>
+                      <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
+                        Review the generated guide and download the finished
+                        PDF.
+                      </h2>
+                      <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-700">
+                        Use the Web Preview tab to inspect sections and
+                        validation warnings, or switch to Download PDF to save
+                        the file.
+                      </p>
                     </section>
-
-                    {result.validation.warnings.length > 0 ? (
-                      <section className="rounded-3xl border border-amber-200 bg-amber-50 px-5 py-5 shadow-sm">
-                        <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-amber-900">
-                          Validation warnings
-                        </h3>
-                        <ul className="mt-4 grid gap-3 text-sm leading-6 text-amber-950">
-                          {result.validation.warnings.map((warning) => (
-                            <li
-                              key={warning}
-                              className="rounded-2xl border border-amber-200 bg-white/70 px-4 py-3"
-                            >
-                              {warning}
-                            </li>
-                          ))}
-                        </ul>
-                      </section>
-                    ) : null}
 
                     <section className="space-y-6 rounded-3xl border border-slate-200 bg-surface-strong p-6 shadow-sm sm:p-8">
                       <div className="flex flex-col gap-4 border-b border-slate-200 pb-6 lg:flex-row lg:items-end lg:justify-between">

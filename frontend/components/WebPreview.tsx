@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
 import PreviewSection, { formatLabel } from "@/components/PreviewSection";
 import PreviewIcon, {
   PREVIEW_CALLOUT_ICON_KEYS,
@@ -9,6 +13,16 @@ function pluralize(count: number, singular: string, plural: string): string {
 }
 
 export default function WebPreview({ preview, validation }: WebPreviewProps) {
+  const [showBackToTop, setShowBackToTop] = useState(false);
+
+  useEffect(() => {
+    function handleScroll() {
+      setShowBackToTop(window.scrollY > 400);
+    }
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   const sectionCount = preview.sections.length;
   const warningCount = validation.warnings.length;
   const failedSectionCount = validation.failed_sections.length;
@@ -156,6 +170,15 @@ export default function WebPreview({ preview, validation }: WebPreviewProps) {
                 {formatLabel(section.section_type)}
               </a>
             ))}
+            {showBackToTop ? (
+              <button
+                type="button"
+                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                className="whitespace-nowrap rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-500 shadow-sm transition hover:border-cyan-700 hover:text-cyan-800"
+              >
+                ↑ Back to top
+              </button>
+            ) : null}
           </div>
         </nav>
       ) : null}

@@ -609,3 +609,29 @@ Notes: Moved the sample description block from below the button row to inside th
 Status: `complete`
 
 Notes: Added `downloaded` boolean state and a `timerRef` to `DownloadButton.tsx`. After a successful synthetic anchor click, `downloaded` is set to `true` and auto-clears after 3 seconds via `setTimeout`. The status area now shows "✓ File saved — check your downloads folder." in emerald when `downloaded` is true, falls back to the error message or the normal description otherwise. A new click resets the timer cleanly.
+
+---
+
+## Post-Phase-22 UI fixes (2026-06-17)
+
+These are targeted fixes applied after Phase 22 based on live staging feedback.
+
+**Fix 1 — Progress tracker: final event label**
+File: `frontend/components/ProgressTracker.tsx`
+The "Latest event" box at the bottom of the tracker now shows "Workflow complete." when `stage === "done"` and the latest event has no message. Previously it fell through to "Processing: workflow".
+
+**Fix 2 — Section retry: node name formatting**
+File: `frontend/components/ProgressTracker.tsx`
+Added `formatNodeLabel` helper. The Section Retry detail now reads "Regenerating Self Assessment after a quality check failed." instead of "Regenerating self_assessment after a quality check failed." The same helper also powers the latest-event fallback label.
+
+**Fix 3 — Prompt lab aside: prevents height stretch**
+File: `frontend/app/prompt-lab/page.tsx`
+Added `lg:self-start` to the "Run state / Live reviewer run details" aside, preventing it from stretching to match the taller left-column content.
+
+**Fix 4 — Normal generation page: removed duplicate sections**
+File: `frontend/app/page.tsx`
+Removed the duplicate four-stat grid and standalone validation-warnings panel that appeared between the ProgressTracker and the Result Workspace. Both are already shown inside WebPreview. Kept the "Results ready" green banner as a lean success indicator with updated copy.
+
+**Fix 5 — WebPreview: back-to-top button**
+File: `frontend/components/WebPreview.tsx`
+Added `"use client"` directive, a `showBackToTop` state driven by a passive `scroll` event listener (threshold: 400 px), and a "↑ Back to top" chip in the sticky jump-nav that calls `window.scrollTo({ top: 0, behavior: "smooth" })`. The button only appears once the user has scrolled past the threshold.

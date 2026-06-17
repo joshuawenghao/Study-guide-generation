@@ -435,7 +435,7 @@ export default function PromptLabPage() {
             ) : null}
           </div>
 
-          <aside className="space-y-5 rounded-3xl border border-slate-200 bg-surface-strong p-6 shadow-sm">
+          <aside className="space-y-5 rounded-3xl border border-slate-200 bg-surface-strong p-6 shadow-sm lg:self-start">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
                 Run state
