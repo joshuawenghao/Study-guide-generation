@@ -1,4 +1,4 @@
-import PreviewSection from "@/components/PreviewSection";
+import PreviewSection, { formatLabel } from "@/components/PreviewSection";
 import PreviewIcon, {
   PREVIEW_CALLOUT_ICON_KEYS,
 } from "@/components/PreviewIcon";
@@ -137,6 +137,28 @@ export default function WebPreview({ preview, validation }: WebPreviewProps) {
           </div>
         </section>
       )}
+
+      {sectionCount > 0 ? (
+        <nav
+          className="sticky top-0 z-10 -mx-6 bg-surface-strong px-6 py-3 shadow-sm sm:-mx-8 sm:px-8"
+          aria-label="Jump to section"
+        >
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+            Jump to
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {preview.sections.map((section) => (
+              <a
+                key={section.section_id}
+                href={`#section-${section.section_type}`}
+                className="whitespace-nowrap rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold capitalize text-slate-700 shadow-sm transition hover:border-cyan-700 hover:text-cyan-800"
+              >
+                {formatLabel(section.section_type)}
+              </a>
+            ))}
+          </div>
+        </nav>
+      ) : null}
 
       {sectionCount > 0 ? (
         <div className="grid gap-6">

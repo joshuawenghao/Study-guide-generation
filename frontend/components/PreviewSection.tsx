@@ -76,7 +76,7 @@ function toSectionKey(sectionId: string): string {
   return sectionId.replace(/-\d+$/, "");
 }
 
-function formatLabel(value: string): string {
+export function formatLabel(value: string): string {
   return value.replace(/_/g, " ");
 }
 
@@ -1323,7 +1323,10 @@ export default function PreviewSection({
   const showSectionIcon = hasPreviewIcon(section.icon_key);
 
   return (
-    <article className="space-y-5 rounded-[2rem] border border-slate-200 bg-surface-strong p-6 shadow-sm sm:p-8">
+    <article
+      id={`section-${section.section_type}`}
+      className="scroll-mt-20 space-y-5 rounded-[2rem] border border-slate-200 bg-surface-strong p-6 shadow-sm sm:p-8"
+    >
       <header className="flex flex-col gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-4">
           {showSectionIcon ? (

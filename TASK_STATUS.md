@@ -565,7 +565,8 @@ Notes: `frontend/components/InputForm.tsx` — added `formRef` on the form, `fir
 
 ### Task 22.4 — Add section navigation to the web preview
 
-Status: `not started`
+Status: `complete`
+Notes: `frontend/components/PreviewSection.tsx` — exported `formatLabel` and added `id={`section-${section.section_type}`}` plus `scroll-mt-20` to the root `<article>` for anchor targeting. `frontend/components/WebPreview.tsx` — added a sticky `<nav>` above the sections grid with a "Jump to" label and a flex-wrap row of anchor chips, each linking to `#section-{type}`; imports `formatLabel` from `PreviewSection`. `npm run typecheck`, `npm run lint`, Prettier, and `./scripts/validate-task.sh` all passed.
 
 ### Task 22.5 — Add field-level inline validation to the input form
 
