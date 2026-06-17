@@ -570,7 +570,9 @@ Notes: `frontend/components/PreviewSection.tsx` — exported `formatLabel` and a
 
 ### Task 22.5 — Add field-level inline validation to the input form
 
-Status: `not started`
+Status: `complete`
+
+Notes: Added `touched` and `fieldErrors` state to `InputForm.tsx`. `validateField(key, value)` handles all required text fields plus numeric range checks. `handleChange` re-validates on change when already touched; `handleBlur` marks touched and validates. `handleSubCompetencyContainerBlur` uses `relatedTarget` to avoid mid-container blur noise. Inline `<p className="text-xs text-rose-600">` messages appear per field; `fieldRingClass` now checks both submit-time and blur-time errors.
 
 ### Task 22.6 — Add loading spinner to form submit button
 
