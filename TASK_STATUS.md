@@ -600,7 +600,9 @@ Notes: Added `"use client"`, `useState<string | null>`, and a debounced (500 ms)
 
 ### Task 22.10 — Prompt lab: show sample description before loading
 
-Status: `not started`
+Status: `complete`
+
+Notes: Moved the sample description block from below the button row to inside the `<label>` element, directly beneath the `<select>`. Description now appears immediately upon dropdown selection before clicking "Load sample". Grid alignment changed from `sm:items-end` to `sm:items-start`; "Load sample" button gets `mt-7` to align with the select top.
 
 ### Task 22.11 — Add success feedback to the download button
 

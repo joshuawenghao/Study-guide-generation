@@ -33,7 +33,7 @@ export default function PromptLabSamplePicker({
         </div>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+      <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
         <label className="space-y-2">
           <span className="text-sm font-medium text-slate-800">
             Sample case
@@ -53,23 +53,22 @@ export default function PromptLabSamplePicker({
               </option>
             ))}
           </select>
+          {selectedSample ? (
+            <p className="rounded-2xl border border-slate-200 bg-surface px-4 py-3 text-sm leading-6 text-slate-600">
+              {selectedSample.description}
+            </p>
+          ) : null}
         </label>
 
         <button
           type="button"
-          className="inline-flex items-center justify-center rounded-full border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-cyan-700 hover:text-cyan-800 disabled:cursor-not-allowed disabled:opacity-60"
+          className="mt-7 inline-flex items-center justify-center rounded-full border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-cyan-700 hover:text-cyan-800 disabled:cursor-not-allowed disabled:opacity-60"
           onClick={onApplySample}
           disabled={isLoading || samples.length === 0 || !selectedSampleId}
         >
           Load sample
         </button>
       </div>
-
-      {selectedSample ? (
-        <div className="rounded-2xl border border-slate-200 bg-surface px-4 py-4 text-sm leading-6 text-slate-700">
-          {selectedSample.description}
-        </div>
-      ) : null}
     </section>
   );
 }
