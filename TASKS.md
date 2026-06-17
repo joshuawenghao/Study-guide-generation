@@ -2343,3 +2343,200 @@ When all Gemini retries are exhausted the backend raises `RuntimeError("[context
 - The helper is unit-tested in `frontend/lib/errors.test.ts` (or similar) with at least: 429 string → quota, RESOURCE_EXHAUSTED → quota, generic string → generic
 - `cd frontend && npm run typecheck && npm run lint && npm run build` passes
 - `./scripts/validate-task.sh` passes
+
+---
+
+## Phase 22 — UI Polish (P0 → P2)
+
+### Task 22.1 — Replace jargon in progress tracker
+
+In `frontend/components/ProgressTracker.tsx`, replace internal developer terminology with plain teacher-facing language. Specifically: rename the "Retry Pass" step title to something like "Quality check retry" or similar plain English, replace any mention of "section nodes" in detail/description strings, and ensure the passive "Only runs when a hard validator fails" description is rewritten to be active and informative (e.g. "Runs when a section needs to be regenerated").
+
+**Files to change:**
+
+- `frontend/components/ProgressTracker.tsx` — update step title strings and detail/description copy
+
+**Done looks like:**
+
+- No instance of "section nodes", "Retry Pass" (capitalised dev term), or passive validator language remains in visible UI text
+- `cd frontend && npm run typecheck && npm run lint` passes
+- `./scripts/validate-task.sh` passes
+
+---
+
+### Task 22.2 — Fix inconsistent best-effort section terminology
+
+The term "best-effort sections" is used in some places and "carried-forward sections" in others. Standardise on "best-effort sections" everywhere in the frontend.
+
+**Files to change:**
+
+- `frontend/components/WebPreview.tsx` — check metric card labels and any prose
+- `frontend/components/PreviewSection.tsx` — check status badge text
+- Any other frontend file that renders or labels this concept
+
+**Done looks like:**
+
+- Only one term is used consistently across all visible UI text
+- `cd frontend && npm run typecheck && npm run lint` passes
+- `./scripts/validate-task.sh` passes
+
+---
+
+### Task 22.3 — Scroll-to-first-error on form submit
+
+After client-side validation fails in `InputForm.tsx`, the error message is shown but the user must manually scroll to find which field is invalid. Instead, automatically scroll to and visually highlight the first invalid field.
+
+**Files to change:**
+
+- `frontend/components/InputForm.tsx` — after validation failure, use a `ref` or `document.querySelector` to find the first empty/invalid field and call `.scrollIntoView({ behavior: "smooth", block: "center" })` on it; add a visible highlight (e.g. red ring) to that field
+
+**Done looks like:**
+
+- Submitting with a missing required field scrolls the page to that field and gives it a visible red ring
+- The existing bottom-of-form error message still appears
+- `cd frontend && npm run typecheck && npm run lint` passes
+- `./scripts/validate-task.sh` passes
+
+---
+
+### Task 22.4 — Add section navigation to the web preview
+
+The web preview renders 17 sections sequentially with no navigation. Add a sticky anchor list or table of contents so teachers can jump directly to any section.
+
+**Files to change:**
+
+- `frontend/components/WebPreview.tsx` — add a sticky TOC sidebar or horizontal anchor strip above the sections list; each anchor links to the corresponding section by id
+- `frontend/components/PreviewSection.tsx` — ensure each section article has a stable `id` attribute derived from `section_type` for anchor targeting
+
+**Done looks like:**
+
+- A visible navigation element renders above or beside the sections
+- Clicking a nav item scrolls smoothly to that section
+- The navigation stays accessible as the user scrolls (sticky or fixed)
+- `cd frontend && npm run typecheck && npm run lint` passes
+- `./scripts/validate-task.sh` passes
+
+---
+
+### Task 22.5 — Add field-level inline validation to the input form
+
+Currently `InputForm.tsx` only validates on submit. Add per-field error messages that appear when a required field is left empty after being focused (on blur).
+
+**Files to change:**
+
+- `frontend/components/InputForm.tsx` — track `touched` state per field; on blur, validate that field and show an inline error message beneath it if invalid; clear the error once the field has a valid value
+
+**Done looks like:**
+
+- Tabbing through required fields without filling them shows inline errors beneath each empty field
+- Filling a field clears its error
+- The existing submit-time validation and scroll-to-first-error (Task 22.3) still work
+- `cd frontend && npm run typecheck && npm run lint` passes
+- `./scripts/validate-task.sh` passes
+
+---
+
+### Task 22.6 — Add loading spinner to form submit button
+
+When the form is submitted, the submit button disables but gives no visual feedback during the transition to the planning/generating state. Add a small spinner or animated indicator inside the button.
+
+**Files to change:**
+
+- `frontend/components/InputForm.tsx` — when `isLoading` is true, render a spinner (e.g. an animated SVG or a Tailwind `animate-spin` border) inside the button alongside or replacing the label text
+
+**Done looks like:**
+
+- Clicking submit shows a visible spinner in the button while `isLoading` is true
+- The button remains disabled during loading
+- `cd frontend && npm run typecheck && npm run lint` passes
+- `./scripts/validate-task.sh` passes
+
+---
+
+### Task 22.7 — Add collapsible sections to the web preview
+
+Teachers reviewing long study guides must scroll through all 17 sections. Allow each section card to be collapsed to show only its header, and re-expanded on click.
+
+**Files to change:**
+
+- `frontend/components/PreviewSection.tsx` — add a local `expanded` state (default true); render a toggle button in the section header; hide the section body when collapsed
+
+**Done looks like:**
+
+- Each section has a visible expand/collapse control in its header
+- Collapsed state shows only the section title and type badge
+- Sections start expanded by default
+- `cd frontend && npm run typecheck && npm run lint` passes
+- `./scripts/validate-task.sh` passes
+
+---
+
+### Task 22.8 — Add a Reset / Clear form button
+
+Teachers have no way to clear the form and start over without refreshing the page. Add a "Clear form" or "Start over" button that resets all fields to their empty defaults.
+
+**Files to change:**
+
+- `frontend/components/InputForm.tsx` — add a secondary button that calls a reset handler, clearing all controlled state back to initial values
+- `frontend/app/page.tsx` — ensure `handleReset` also resets the form when called from outside (it already handles the page state; `InputForm` needs to expose or internally handle its own field reset)
+
+**Done looks like:**
+
+- A clearly labelled reset button is visible on the form
+- Clicking it clears all fields back to empty/default values
+- The page stage also resets to idle if clicked from a non-idle state
+- `cd frontend && npm run typecheck && npm run lint` passes
+- `./scripts/validate-task.sh` passes
+
+---
+
+### Task 22.9 — Prompt lab: show JSON parse errors on change
+
+In `frontend/components/PromptLabEditor.tsx`, the JSON textarea only surfaces parse errors when the Generate button is clicked. Validate the JSON as the user types (debounced) and show an inline error message beneath the textarea when the JSON is invalid.
+
+**Files to change:**
+
+- `frontend/components/PromptLabEditor.tsx` — add a debounced `useEffect` that attempts `JSON.parse` on the textarea value and sets a local error state; render the error beneath the textarea; clear the error when the JSON becomes valid
+
+**Done looks like:**
+
+- Typing invalid JSON in the textarea shows an inline "Invalid JSON" message within ~500 ms
+- Correcting the JSON clears the message
+- The existing generate-time validation still works as a final guard
+- `cd frontend && npm run typecheck && npm run lint` passes
+- `./scripts/validate-task.sh` passes
+
+---
+
+### Task 22.10 — Prompt lab: show sample description before loading
+
+In `frontend/components/PromptLabSamplePicker.tsx`, the sample description only appears after clicking "Load sample". Show the description inline with the dropdown selection so reviewers can preview the sample before committing.
+
+**Files to change:**
+
+- `frontend/components/PromptLabSamplePicker.tsx` — move the description display to appear immediately when a sample is selected in the dropdown (on change), before the "Load sample" button is clicked
+
+**Done looks like:**
+
+- Selecting a sample from the dropdown shows its description immediately below the dropdown
+- The "Load sample" button still loads the sample JSON into the editor
+- `cd frontend && npm run typecheck && npm run lint` passes
+- `./scripts/validate-task.sh` passes
+
+---
+
+### Task 22.11 — Add success feedback to the download button
+
+After the PDF download is triggered, there is no confirmation that the file was saved. Show a brief success message or checkmark after the download link is clicked.
+
+**Files to change:**
+
+- `frontend/components/DownloadButton.tsx` — after the synthetic anchor click, set a local `downloaded` state to true and render a brief success message (e.g. "File saved"); optionally auto-clear it after 3 seconds
+
+**Done looks like:**
+
+- Clicking "Download PDF" briefly shows a success message ("File saved" or similar)
+- The message disappears after a few seconds or on the next interaction
+- Error handling is unchanged
+- `cd frontend && npm run typecheck && npm run lint` passes
+- `./scripts/validate-task.sh` passes

@@ -545,3 +545,50 @@ Notes: `frontend/lib/errors.ts` now exports `classifyError(message): "quota" | "
 - Update the status of the exact matching task after implementation and a focused validation step.
 - Build on `complete` tasks freely.
 - Treat `partial` tasks as existing scaffolds that may need refactoring before extension.
+
+## Phase 22 — UI Polish (P0 → P2)
+
+### Task 22.1 — Replace jargon in progress tracker
+
+Status: `complete`
+Notes: `frontend/components/ProgressTracker.tsx` — "Retry Pass" renamed to "Section Retry"; "section nodes" in detail strings replaced with plain "sections"; "Only runs when a hard validator fails" rewritten to "Only runs if a section needs to be regenerated"; "Retrying X after validator feedback" rewritten to "Regenerating X after a quality check failed"; the latest-event box now shows the event message or a human-readable "Processing: X" label instead of raw `type on node` strings. `npm run typecheck`, `npm run lint`, and `./scripts/validate-task.sh` all passed.
+
+### Task 22.2 — Fix inconsistent best-effort section terminology
+
+Status: `not started`
+
+### Task 22.3 — Scroll-to-first-error on form submit
+
+Status: `not started`
+
+### Task 22.4 — Add section navigation to the web preview
+
+Status: `not started`
+
+### Task 22.5 — Add field-level inline validation to the input form
+
+Status: `not started`
+
+### Task 22.6 — Add loading spinner to form submit button
+
+Status: `not started`
+
+### Task 22.7 — Add collapsible sections to the web preview
+
+Status: `not started`
+
+### Task 22.8 — Add a Reset / Clear form button
+
+Status: `not started`
+
+### Task 22.9 — Prompt lab: show JSON parse errors on change
+
+Status: `not started`
+
+### Task 22.10 — Prompt lab: show sample description before loading
+
+Status: `not started`
+
+### Task 22.11 — Add success feedback to the download button
+
+Status: `not started`

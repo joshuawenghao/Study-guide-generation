@@ -255,8 +255,8 @@ export function buildSteps(
       key: "generation",
       title: "Section Generation",
       detail: generationStarted
-        ? `${generatedCount} section node${generatedCount === 1 ? "" : "s"} completed.`
-        : "Waiting for section nodes to start.",
+        ? `${generatedCount} section${generatedCount === 1 ? "" : "s"} generated.`
+        : "Waiting for sections to start generating.",
       status: statuses.generation,
     },
     {
@@ -268,10 +268,10 @@ export function buildSteps(
     },
     {
       key: "retry",
-      title: "Retry Pass",
+      title: "Section Retry",
       detail: latestRetry
-        ? `Retrying ${latestRetry.node} after validator feedback.`
-        : "Only runs when a hard validator fails.",
+        ? `Regenerating ${latestRetry.node} after a quality check failed.`
+        : "Only runs if a section needs to be regenerated.",
       status: statuses.retry,
     },
     {
@@ -408,7 +408,9 @@ export default function ProgressTracker({
         <p className="font-medium text-slate-900">Latest event</p>
         <p className="mt-2 leading-6">
           {latestEvent
-            ? `${latestEvent.type} on ${latestEvent.node}${latestEvent.message ? `: ${latestEvent.message}` : "."}`
+            ? latestEvent.message
+              ? latestEvent.message
+              : `Processing: ${latestEvent.node.replace(/_/g, " ")}`
             : "Waiting for the first progress event."}
         </p>
       </div>
