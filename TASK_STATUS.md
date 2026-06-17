@@ -576,7 +576,9 @@ Notes: Added `touched` and `fieldErrors` state to `InputForm.tsx`. `validateFiel
 
 ### Task 22.6 — Add loading spinner to form submit button
 
-Status: `not started`
+Status: `complete`
+
+Notes: Submit button in `InputForm.tsx` now shows an `animate-spin` border spinner alongside "Preparing request..." when `isLoading` is true, using `gap-2` on the button flex container.
 
 ### Task 22.7 — Add collapsible sections to the web preview
 
