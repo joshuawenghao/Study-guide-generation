@@ -582,7 +582,9 @@ Notes: Submit button in `InputForm.tsx` now shows an `animate-spin` border spinn
 
 ### Task 22.7 — Add collapsible sections to the web preview
 
-Status: `not started`
+Status: `complete`
+
+Notes: Added `"use client"` and `useState(true)` to `PreviewSection.tsx`. Section header now includes a chevron toggle button; body is wrapped in a conditional `{expanded ? <div>...</div> : null}`. The `border-b` on the header is also conditional so the divider disappears when collapsed.
 
 ### Task 22.8 — Add a Reset / Clear form button
 

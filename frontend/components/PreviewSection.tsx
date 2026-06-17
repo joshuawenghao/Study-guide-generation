@@ -1,4 +1,6 @@
-import React, { type JSX } from "react";
+"use client";
+
+import React, { useState, type JSX } from "react";
 
 import type {
   PreviewSection as PreviewSectionData,
@@ -1316,6 +1318,8 @@ export default function PreviewSection({
   section,
   validation,
 }: PreviewSectionProps) {
+  const [expanded, setExpanded] = useState(true);
+
   const sectionKey = toSectionKey(section.section_id);
   const failures = validation.failures[sectionKey] ?? [];
   const failed = validation.failed_sections.includes(sectionKey);
@@ -1325,9 +1329,11 @@ export default function PreviewSection({
   return (
     <article
       id={`section-${section.section_type}`}
-      className="scroll-mt-20 space-y-5 rounded-[2rem] border border-slate-200 bg-surface-strong p-6 shadow-sm sm:p-8"
+      className="scroll-mt-20 rounded-[2rem] border border-slate-200 bg-surface-strong p-6 shadow-sm sm:p-8"
     >
-      <header className="flex flex-col gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-start sm:justify-between">
+      <header
+        className={`flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between ${expanded ? "border-b border-slate-200 pb-5" : ""}`}
+      >
         <div className="flex items-start gap-4">
           {showSectionIcon ? (
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-900 shadow-sm">
@@ -1344,7 +1350,7 @@ export default function PreviewSection({
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
           {failed ? (
             <span className="rounded-full bg-rose-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-rose-800">
               Needs review
@@ -1355,26 +1361,49 @@ export default function PreviewSection({
               Best effort
             </span>
           ) : null}
+          <button
+            type="button"
+            onClick={() => setExpanded((prev) => !prev)}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:text-slate-700"
+            aria-label={expanded ? "Collapse section" : "Expand section"}
+          >
+            <svg
+              className={`h-4 w-4 transition-transform duration-150 ${expanded ? "rotate-0" : "-rotate-90"}`}
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <polyline points="4 6 8 10 12 6" />
+            </svg>
+          </button>
         </div>
       </header>
 
-      {failures.length > 0 ? (
-        <div className="flex gap-3 rounded-3xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm leading-6 text-rose-700">
-          <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/80 text-rose-700">
-            <PreviewIcon
-              iconKey={PREVIEW_CALLOUT_ICON_KEYS.warning}
-              className="h-5 w-5"
-            />
-          </span>
-          <div className="space-y-2">
-            {failures.map((failure) => (
-              <p key={failure}>{failure}</p>
-            ))}
-          </div>
+      {expanded ? (
+        <div className="mt-5 space-y-5">
+          {failures.length > 0 ? (
+            <div className="flex gap-3 rounded-3xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm leading-6 text-rose-700">
+              <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/80 text-rose-700">
+                <PreviewIcon
+                  iconKey={PREVIEW_CALLOUT_ICON_KEYS.warning}
+                  className="h-5 w-5"
+                />
+              </span>
+              <div className="space-y-2">
+                {failures.map((failure) => (
+                  <p key={failure}>{failure}</p>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {renderSectionBody(section)}
         </div>
       ) : null}
-
-      {renderSectionBody(section)}
     </article>
   );
 }
