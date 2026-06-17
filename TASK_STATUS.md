@@ -588,7 +588,9 @@ Notes: Added `"use client"` and `useState(true)` to `PreviewSection.tsx`. Sectio
 
 ### Task 22.8 — Add a Reset / Clear form button
 
-Status: `not started`
+Status: `complete`
+
+Notes: Added `handleFormReset` to `InputForm.tsx` that resets all 22 controlled state fields back to initial values (including `fieldErrors`, `touched`, and error state). A "Clear form" secondary button is now rendered in the form footer beside the submit button; it is disabled while `isLoading` is true.
 
 ### Task 22.9 — Prompt lab: show JSON parse errors on change
 

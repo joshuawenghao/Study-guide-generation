@@ -207,6 +207,35 @@ export default function InputForm({ onSubmit, isLoading }: InputFormProps) {
     );
   }
 
+  function handleFormReset() {
+    setSubject("");
+    setGradeLevel("6");
+    setMarket("PH");
+    setLanguage("en");
+    setUnitNumber("1");
+    setUnitTitle("");
+    setLessonNumber("1");
+    setLessonTitle("");
+    setLessonCode("");
+    setCompetencyCode("");
+    setCompetencyDescription("");
+    setSubCompetencies([initialSubCompetency]);
+    setCoreConcept("");
+    setBloomTargetOne("");
+    setBloomTargetTwo("");
+    setBloomTargetThree("");
+    setEssentialQuestionSeed("");
+    setVocabularySeeds("");
+    setModelPassageDomain("");
+    setAssessmentPassageDomain("");
+    setToneRegister("warm-formal");
+    setLengthPreset("standard");
+    setErrorMessage(null);
+    setFirstErrorField(null);
+    setFieldErrors({});
+    setTouched({});
+  }
+
   function buildRequest(): GenerateRequest | null {
     const trimmedSubject = subject.trim();
     const trimmedMarket = market.trim();
@@ -922,20 +951,31 @@ export default function InputForm({ onSubmit, isLoading }: InputFormProps) {
           </p>
         )}
 
-        <button
-          type="submit"
-          className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <>
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-              Preparing request...
-            </>
-          ) : (
-            "Continue to generation"
-          )}
-        </button>
+        <div className="flex shrink-0 items-center gap-3">
+          <button
+            type="button"
+            className="inline-flex items-center justify-center rounded-full border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-rose-300 hover:text-rose-700 disabled:cursor-not-allowed disabled:opacity-40"
+            disabled={isLoading}
+            onClick={handleFormReset}
+          >
+            Clear form
+          </button>
+
+          <button
+            type="submit"
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                Preparing request...
+              </>
+            ) : (
+              "Continue to generation"
+            )}
+          </button>
+        </div>
       </div>
     </form>
   );
