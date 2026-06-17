@@ -555,7 +555,8 @@ Notes: `frontend/components/ProgressTracker.tsx` — "Retry Pass" renamed to "Se
 
 ### Task 22.2 — Fix inconsistent best-effort section terminology
 
-Status: `not started`
+Status: `complete`
+Notes: `frontend/components/WebPreview.tsx` — replaced "No carried-forward sections." with "No best-effort sections." on the metric card. The badge text "Best effort" in `PreviewSection.tsx` and the metric card label "Best effort" in `WebPreview.tsx` were already consistent. `npm run typecheck`, `npm run lint`, and `./scripts/validate-task.sh` all passed.
 
 ### Task 22.3 — Scroll-to-first-error on form submit
 

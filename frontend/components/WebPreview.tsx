@@ -83,7 +83,7 @@ export default function WebPreview({ preview, validation }: WebPreviewProps) {
             </p>
             <p className="mt-1 text-sm text-slate-600">
               {bestEffortCount === 0
-                ? "No carried-forward sections."
+                ? "No best-effort sections."
                 : pluralize(
                     bestEffortCount,
                     "section kept after retry",
