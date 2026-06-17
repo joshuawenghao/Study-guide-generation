@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
 import {
   PROMPT_LAB_SECTION_KEYS,
   type PromptLabEditorProps,
@@ -22,6 +26,24 @@ export default function PromptLabEditor({
   isGenerating,
   errorMessage,
 }: PromptLabEditorProps) {
+  const [jsonError, setJsonError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!baseRequestJson.trim()) {
+      setJsonError(null);
+      return;
+    }
+    const timer = setTimeout(() => {
+      try {
+        JSON.parse(baseRequestJson);
+        setJsonError(null);
+      } catch {
+        setJsonError("Invalid JSON — fix the syntax before generating.");
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [baseRequestJson]);
+
   return (
     <section className="space-y-6 rounded-3xl border border-slate-200 bg-surface-strong p-6 shadow-sm sm:p-8">
       <div className="space-y-2">
@@ -48,11 +70,14 @@ export default function PromptLabEditor({
           Lesson request (JSON)
         </span>
         <textarea
-          className="min-h-[16rem] w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 font-mono text-xs leading-6 text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
+          className={`min-h-[16rem] w-full rounded-2xl border bg-white px-4 py-3 font-mono text-xs leading-6 text-slate-900 outline-none transition focus:ring-2 ${jsonError ? "border-rose-400 focus:border-rose-400 focus:ring-rose-100" : "border-slate-300 focus:border-cyan-700 focus:ring-cyan-100"}`}
           value={baseRequestJson}
           onChange={(event) => onBaseRequestJsonChange(event.target.value)}
           spellCheck={false}
         />
+        {jsonError ? (
+          <p className="text-xs text-rose-600">{jsonError}</p>
+        ) : null}
       </label>
 
       <label className="grid gap-2">

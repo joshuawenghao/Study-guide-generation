@@ -594,7 +594,9 @@ Notes: Added `handleFormReset` to `InputForm.tsx` that resets all 22 controlled 
 
 ### Task 22.9 — Prompt lab: show JSON parse errors on change
 
-Status: `not started`
+Status: `complete`
+
+Notes: Added `"use client"`, `useState<string | null>`, and a debounced (500 ms) `useEffect` to `PromptLabEditor.tsx`. On each change the effect clears the previous timer, attempts `JSON.parse`, and sets `jsonError` on failure. The JSON textarea border switches to rose when invalid; an inline `<p className="text-xs text-rose-600">` error message appears beneath it. Clearing the field or entering valid JSON removes the error.
 
 ### Task 22.10 — Prompt lab: show sample description before loading
 
