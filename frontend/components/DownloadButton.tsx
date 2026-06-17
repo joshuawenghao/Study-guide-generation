@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import type { DownloadButtonProps } from "@/lib/types";
 
@@ -35,8 +35,16 @@ export default function DownloadButton({
   filename,
 }: DownloadButtonProps) {
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [downloaded, setDownloaded] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function handleDownload() {
+    if (timerRef.current !== null) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    setDownloaded(false);
+
     if (!pdfBase64.trim()) {
       setDownloadError("The generated PDF is not available yet.");
       return;
@@ -58,6 +66,11 @@ export default function DownloadButton({
       link.remove();
       URL.revokeObjectURL(objectUrl);
       setDownloadError(null);
+      setDownloaded(true);
+      timerRef.current = setTimeout(() => {
+        setDownloaded(false);
+        timerRef.current = null;
+      }, 3000);
     } catch {
       setDownloadError(
         "The PDF could not be prepared for download. Try generating it again.",
@@ -78,6 +91,10 @@ export default function DownloadButton({
       {downloadError ? (
         <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm leading-6 text-rose-700">
           {downloadError}
+        </p>
+      ) : downloaded ? (
+        <p className="text-sm font-semibold text-emerald-700">
+          ✓ File saved — check your downloads folder.
         </p>
       ) : (
         <p className="text-sm leading-6 text-slate-600">

@@ -606,4 +606,6 @@ Notes: Moved the sample description block from below the button row to inside th
 
 ### Task 22.11 — Add success feedback to the download button
 
-Status: `not started`
+Status: `complete`
+
+Notes: Added `downloaded` boolean state and a `timerRef` to `DownloadButton.tsx`. After a successful synthetic anchor click, `downloaded` is set to `true` and auto-clears after 3 seconds via `setTimeout`. The status area now shows "✓ File saved — check your downloads folder." in emerald when `downloaded` is true, falls back to the error message or the normal description otherwise. A new click resets the timer cleanly.
