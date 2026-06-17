@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import type {
   GenerateRequest,
@@ -73,6 +73,24 @@ export default function InputForm({ onSubmit, isLoading }: InputFormProps) {
   const [lengthPreset, setLengthPreset] = useState<LengthPreset>("standard");
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [firstErrorField, setFirstErrorField] = useState<string | null>(null);
+
+  const formRef = useRef<HTMLFormElement>(null);
+
+  function fieldRingClass(fieldKey: string): string {
+    return firstErrorField === fieldKey
+      ? "border-rose-400 ring-2 ring-rose-100"
+      : "border-slate-300";
+  }
+
+  function scrollToFirstError(fieldKey: string) {
+    setFirstErrorField(fieldKey);
+    const el = formRef.current?.querySelector<HTMLElement>(
+      `[data-field="${fieldKey}"]`,
+    );
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    el?.focus({ preventScroll: true });
+  }
 
   function updateSubCompetency(
     index: number,
@@ -121,40 +139,61 @@ export default function InputForm({ onSubmit, isLoading }: InputFormProps) {
     const parsedUnitNumber = Number.parseInt(unitNumber, 10);
     const parsedLessonNumber = Number.parseInt(lessonNumber, 10);
 
-    if (
-      !trimmedSubject ||
-      !trimmedMarket ||
-      !trimmedLanguage ||
-      !trimmedUnitTitle ||
-      !trimmedLessonTitle ||
-      !trimmedLessonCode ||
-      !trimmedCompetencyCode ||
-      !trimmedCompetencyDescription ||
-      !trimmedCoreConcept ||
-      !trimmedBloomTargetOne ||
-      !trimmedBloomTargetTwo ||
-      !trimmedBloomTargetThree ||
-      !trimmedEssentialQuestionSeed ||
-      !trimmedToneRegister
-    ) {
+    // Check required text fields in top-to-bottom form order
+    const firstEmptyTextField = !trimmedSubject
+      ? "subject"
+      : !trimmedMarket
+        ? "market"
+        : !trimmedLanguage
+          ? "language"
+          : !trimmedUnitTitle
+            ? "unitTitle"
+            : !trimmedLessonTitle
+              ? "lessonTitle"
+              : !trimmedLessonCode
+                ? "lessonCode"
+                : !trimmedCompetencyCode
+                  ? "competencyCode"
+                  : !trimmedCompetencyDescription
+                    ? "competencyDescription"
+                    : !trimmedCoreConcept
+                      ? "coreConcept"
+                      : !trimmedBloomTargetOne
+                        ? "bloomTargetOne"
+                        : !trimmedBloomTargetTwo
+                          ? "bloomTargetTwo"
+                          : !trimmedBloomTargetThree
+                            ? "bloomTargetThree"
+                            : !trimmedEssentialQuestionSeed
+                              ? "essentialQuestionSeed"
+                              : !trimmedToneRegister
+                                ? "toneRegister"
+                                : null;
+
+    if (firstEmptyTextField) {
       setErrorMessage(
         "Complete every required field before generating a study guide.",
       );
+      scrollToFirstError(firstEmptyTextField);
       return null;
     }
 
-    if (
+    const firstInvalidNumber =
       Number.isNaN(parsedGradeLevel) ||
       parsedGradeLevel < 1 ||
-      parsedGradeLevel > 12 ||
-      Number.isNaN(parsedUnitNumber) ||
-      parsedUnitNumber < 1 ||
-      Number.isNaN(parsedLessonNumber) ||
-      parsedLessonNumber < 1
-    ) {
+      parsedGradeLevel > 12
+        ? "gradeLevel"
+        : Number.isNaN(parsedUnitNumber) || parsedUnitNumber < 1
+          ? "unitNumber"
+          : Number.isNaN(parsedLessonNumber) || parsedLessonNumber < 1
+            ? "lessonNumber"
+            : null;
+
+    if (firstInvalidNumber) {
       setErrorMessage(
         "Grade, unit number, and lesson number must be valid positive numbers.",
       );
+      scrollToFirstError(firstInvalidNumber);
       return null;
     }
 
@@ -170,10 +209,12 @@ export default function InputForm({ onSubmit, isLoading }: InputFormProps) {
       setErrorMessage(
         "Add at least one sub-competency and complete both its code and label.",
       );
+      scrollToFirstError("subCompetencies");
       return null;
     }
 
     setErrorMessage(null);
+    setFirstErrorField(null);
 
     return {
       lesson_metadata: {
@@ -224,8 +265,10 @@ export default function InputForm({ onSubmit, isLoading }: InputFormProps) {
 
   return (
     <form
+      ref={formRef}
       className="space-y-8 rounded-3xl border border-slate-200 bg-surface-strong p-6 shadow-sm sm:p-8"
       onSubmit={handleSubmit}
+      onInput={() => setFirstErrorField(null)}
     >
       <div className="flex flex-col gap-3 border-b border-slate-200 pb-6">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-800">
@@ -252,7 +295,8 @@ export default function InputForm({ onSubmit, isLoading }: InputFormProps) {
         <label className="space-y-2">
           <span className="text-sm font-medium text-slate-800">Subject</span>
           <input
-            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
+            data-field="subject"
+            className={`w-full rounded-2xl border bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100 ${fieldRingClass("subject")}`}
             value={subject}
             onChange={(event) => setSubject(event.target.value)}
             placeholder="English"
@@ -264,7 +308,8 @@ export default function InputForm({ onSubmit, isLoading }: InputFormProps) {
             Grade level
           </span>
           <input
-            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
+            data-field="gradeLevel"
+            className={`w-full rounded-2xl border bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100 ${fieldRingClass("gradeLevel")}`}
             value={gradeLevel}
             onChange={(event) => setGradeLevel(event.target.value)}
             inputMode="numeric"
@@ -275,7 +320,8 @@ export default function InputForm({ onSubmit, isLoading }: InputFormProps) {
         <label className="space-y-2">
           <span className="text-sm font-medium text-slate-800">Market</span>
           <input
-            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
+            data-field="market"
+            className={`w-full rounded-2xl border bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100 ${fieldRingClass("market")}`}
             value={market}
             onChange={(event) => setMarket(event.target.value)}
             placeholder="PH"
@@ -285,7 +331,8 @@ export default function InputForm({ onSubmit, isLoading }: InputFormProps) {
         <label className="space-y-2">
           <span className="text-sm font-medium text-slate-800">Language</span>
           <input
-            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
+            data-field="language"
+            className={`w-full rounded-2xl border bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100 ${fieldRingClass("language")}`}
             value={language}
             onChange={(event) => setLanguage(event.target.value)}
             placeholder="en"
@@ -297,7 +344,8 @@ export default function InputForm({ onSubmit, isLoading }: InputFormProps) {
             Unit number
           </span>
           <input
-            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
+            data-field="unitNumber"
+            className={`w-full rounded-2xl border bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100 ${fieldRingClass("unitNumber")}`}
             value={unitNumber}
             onChange={(event) => setUnitNumber(event.target.value)}
             inputMode="numeric"
@@ -308,7 +356,8 @@ export default function InputForm({ onSubmit, isLoading }: InputFormProps) {
         <label className="space-y-2">
           <span className="text-sm font-medium text-slate-800">Unit title</span>
           <input
-            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
+            data-field="unitTitle"
+            className={`w-full rounded-2xl border bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100 ${fieldRingClass("unitTitle")}`}
             value={unitTitle}
             onChange={(event) => setUnitTitle(event.target.value)}
             placeholder="Reading Across Text Types"
@@ -320,7 +369,8 @@ export default function InputForm({ onSubmit, isLoading }: InputFormProps) {
             Lesson number
           </span>
           <input
-            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
+            data-field="lessonNumber"
+            className={`w-full rounded-2xl border bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100 ${fieldRingClass("lessonNumber")}`}
             value={lessonNumber}
             onChange={(event) => setLessonNumber(event.target.value)}
             inputMode="numeric"
@@ -333,7 +383,8 @@ export default function InputForm({ onSubmit, isLoading }: InputFormProps) {
             Lesson title
           </span>
           <input
-            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
+            data-field="lessonTitle"
+            className={`w-full rounded-2xl border bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100 ${fieldRingClass("lessonTitle")}`}
             value={lessonTitle}
             onChange={(event) => setLessonTitle(event.target.value)}
             placeholder="Supporting Ideas With Evidence"
@@ -345,7 +396,8 @@ export default function InputForm({ onSubmit, isLoading }: InputFormProps) {
             Lesson code
           </span>
           <input
-            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
+            data-field="lessonCode"
+            className={`w-full rounded-2xl border bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100 ${fieldRingClass("lessonCode")}`}
             value={lessonCode}
             onChange={(event) => setLessonCode(event.target.value)}
             placeholder="ENG6-U1-L4"
@@ -366,7 +418,8 @@ export default function InputForm({ onSubmit, isLoading }: InputFormProps) {
               Competency code
             </span>
             <input
-              className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
+              data-field="competencyCode"
+              className={`w-full rounded-2xl border bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100 ${fieldRingClass("competencyCode")}`}
               value={competencyCode}
               onChange={(event) => setCompetencyCode(event.target.value)}
               placeholder="EN6RC-Ia-2.4"
@@ -378,7 +431,8 @@ export default function InputForm({ onSubmit, isLoading }: InputFormProps) {
               Competency description
             </span>
             <textarea
-              className="min-h-28 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
+              data-field="competencyDescription"
+              className={`min-h-28 w-full rounded-2xl border bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100 ${fieldRingClass("competencyDescription")}`}
               value={competencyDescription}
               onChange={(event) => setCompetencyDescription(event.target.value)}
               placeholder="Explain how details in a text support the author's main idea."
@@ -386,7 +440,14 @@ export default function InputForm({ onSubmit, isLoading }: InputFormProps) {
           </label>
         </div>
 
-        <div className="space-y-3 rounded-2xl border border-slate-200 bg-surface p-4">
+        <div
+          data-field="subCompetencies"
+          className={`space-y-3 rounded-2xl border p-4 transition ${
+            firstErrorField === "subCompetencies"
+              ? "border-rose-400 bg-rose-50/30 ring-2 ring-rose-100"
+              : "border-slate-200 bg-surface"
+          }`}
+        >
           <div className="flex items-center justify-between gap-3">
             <div>
               <h3 className="text-sm font-semibold text-slate-900">
@@ -467,7 +528,8 @@ export default function InputForm({ onSubmit, isLoading }: InputFormProps) {
             Core concept
           </span>
           <textarea
-            className="min-h-28 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
+            data-field="coreConcept"
+            className={`min-h-28 w-full rounded-2xl border bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100 ${fieldRingClass("coreConcept")}`}
             value={coreConcept}
             onChange={(event) => setCoreConcept(event.target.value)}
             placeholder="Strong readers use details from a text to justify what they understand."
@@ -479,7 +541,8 @@ export default function InputForm({ onSubmit, isLoading }: InputFormProps) {
             Bloom target 1
           </span>
           <input
-            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
+            data-field="bloomTargetOne"
+            className={`w-full rounded-2xl border bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100 ${fieldRingClass("bloomTargetOne")}`}
             value={bloomTargetOne}
             onChange={(event) => setBloomTargetOne(event.target.value)}
             placeholder="identify"
@@ -491,7 +554,8 @@ export default function InputForm({ onSubmit, isLoading }: InputFormProps) {
             Bloom target 2
           </span>
           <input
-            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
+            data-field="bloomTargetTwo"
+            className={`w-full rounded-2xl border bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100 ${fieldRingClass("bloomTargetTwo")}`}
             value={bloomTargetTwo}
             onChange={(event) => setBloomTargetTwo(event.target.value)}
             placeholder="explain"
@@ -503,7 +567,8 @@ export default function InputForm({ onSubmit, isLoading }: InputFormProps) {
             Bloom target 3
           </span>
           <input
-            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
+            data-field="bloomTargetThree"
+            className={`w-full rounded-2xl border bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100 ${fieldRingClass("bloomTargetThree")}`}
             value={bloomTargetThree}
             onChange={(event) => setBloomTargetThree(event.target.value)}
             placeholder="justify"
@@ -515,7 +580,8 @@ export default function InputForm({ onSubmit, isLoading }: InputFormProps) {
             Essential question seed
           </span>
           <textarea
-            className="min-h-28 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
+            data-field="essentialQuestionSeed"
+            className={`min-h-28 w-full rounded-2xl border bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100 ${fieldRingClass("essentialQuestionSeed")}`}
             value={essentialQuestionSeed}
             onChange={(event) => setEssentialQuestionSeed(event.target.value)}
             placeholder="How do readers prove an idea is supported by the text?"

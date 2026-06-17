@@ -560,7 +560,8 @@ Notes: `frontend/components/WebPreview.tsx` — replaced "No carried-forward sec
 
 ### Task 22.3 — Scroll-to-first-error on form submit
 
-Status: `not started`
+Status: `complete`
+Notes: `frontend/components/InputForm.tsx` — added `formRef` on the form, `firstErrorField` state, `scrollToFirstError(fieldKey)` helper (sets state + calls `scrollIntoView` + `focus` imperatively), and `onInput` on the form to clear the highlight when the user types. Required-field validation block restructured into a top-to-bottom conditional chain so the first missing field is identified precisely. All required inputs carry `data-field` attributes and receive a `border-rose-400 ring-2 ring-rose-100` highlight; the sub-competency container uses the same highlight on its wrapper div. `npm run typecheck`, `npm run lint`, Prettier, and `./scripts/validate-task.sh` all passed.
 
 ### Task 22.4 — Add section navigation to the web preview
 

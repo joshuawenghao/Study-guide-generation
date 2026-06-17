@@ -1,6 +1,6 @@
 # Codebase State
 
-Last updated: 2026-06-16
+Last updated: 2026-06-17
 
 This document is the live plain-language summary of the shipped codebase.
 It is intended to answer, in words, what currently exists in the repository without requiring a reader to inspect source files directly.
@@ -198,6 +198,9 @@ It is intended to answer, in words, what currently exists in the repository with
 - `frontend/lib/types.ts` `TopicDomains` interface now carries only `model_passage` and `assessment_passage`; `Blueprint` interface now includes `deep_dive_dimensions: string[]`, keeping the frontend type contract in sync with the backend after the Phase 18 changes.
 - `frontend/components/PreviewSection.tsx` now renders deep dive examples using `dimension` and `key_terms` (renamed from `mode` and `signal_words`), and displays "Key terms" instead of "Signal words" in the section preview.
 - `frontend/components/InputForm.tsx` no longer exposes the three ELA-specific "entertain example domain", "inform example domain", and "persuade example domain" state fields or their JSX input blocks; `parseTopicDomains` now accepts only `modelPassage` and `assessmentPassage`.
+- `frontend/components/ProgressTracker.tsx` now uses plain teacher-facing language: "Section Retry" instead of "Retry Pass", "sections" instead of "section nodes", active descriptions instead of passive validator language, and the latest-event box now shows the event message or a human-readable node label instead of raw `type on node` strings.
+- `frontend/components/WebPreview.tsx` now consistently uses "best-effort sections" terminology; the previous "No carried-forward sections." string has been replaced.
+- `frontend/components/InputForm.tsx` now scrolls to and highlights the first invalid field on submit failure: a `formRef` on the form, `firstErrorField` state, a `scrollToFirstError` helper, `data-field` attributes on all required inputs, and `onInput` clearing the highlight when the user starts typing. The required-field validation block was restructured into a top-to-bottom chain so the first missing field is identified precisely.
 
 ## Automation Workflow
 
@@ -243,4 +246,4 @@ It is intended to answer, in words, what currently exists in the repository with
 - The staging deployment (Cloud Run backend + Firebase App Hosting frontend) is live; the latest staging revision is `study-guide-agent-staging-00041-zzq` (deployed after Phase 20 resilience hardening: frontend idle timeout, Gemini exponential backoff, concurrency semaphore, and increased retry passes).
 - The production deployment path has not yet been formalized: the current staging service uses a literal `GOOGLE_API_KEY` Cloud Run env-var workaround because the runtime service account does not yet have Secret Manager access; production hardening (secret-backed deploy, service account IAM, custom domain) is the primary remaining infrastructure gap.
 - The Gemini 180-second per-call timeout prevents silent hangs but does not guarantee end-to-end success when Gemini is slow; a Cloud Run request near the 900-second limit will still fail after exhausting all retries. This is an acceptable operational risk for the prototype stage.
-- No additional task phases are currently planned; new work would require a new `/spec-groom` → `/spec-to-tasks` pass.
+- Phase 22 UI polish work (P0–P2) has begun: Task 22.1 replaced internal jargon in `ProgressTracker.tsx` ("Retry Pass" → "Section Retry", "section nodes" → "sections", passive validator language → plain English), Task 22.2 standardised "best-effort sections" terminology in `WebPreview.tsx`, and Task 22.3 added scroll-to-first-error behaviour to `InputForm.tsx` so the first invalid field is highlighted in red and scrolled into view on submit failure. Tasks 22.4–22.11 remain not started.
